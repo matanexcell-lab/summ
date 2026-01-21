@@ -1,1134 +1,1334 @@
-from kivy.config import Config
-Config.set('kivy', 'keyboard_mode', 'systemanddock')
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>סיכום שיחה</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f3f4f6;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+    .app-wrapper {
+      width: 100%;
+      max-width: 480px;
+      padding: 24px 12px 40px;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, 0.12);
+      padding: 24px 20px 16px;
+    }
+    h1 {
+      margin: 0 0 12px;
+      text-align: center;
+      font-size: 26px;
+      font-weight: 800;
+    }
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .step-indicator {
+      text-align: center;
+      font-size: 13px;
+      color: #4b5563;
+      margin-bottom: 8px;
+    }
+    .question-title {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .field-label {
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+    select,
+    input[type="text"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      padding: 10px 11px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 15px;
+      outline: none;
+      transition: border 0.15s, box-shadow 0.15s;
+      background-color: #fff;
+    }
+    select:focus,
+    input:focus,
+    textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.6);
+    }
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    .buttons-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .btn {
+      flex: 1;
+      border: none;
+      border-radius: 999px;
+      padding: 11px 0;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.05s, box-shadow 0.15s;
+    }
+    .btn-primary {
+      background: #2563eb;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    }
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+    .btn-small {
+      flex: 0 0 auto;
+      padding-inline: 14px;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    .btn-primary:active,
+    .btn-secondary:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+    .helper-text {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+    .error-text {
+      font-size: 13px;
+      color: #b91c1c;
+      margin-top: 6px;
+    }
+    .chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .chip {
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      color: #374151;
+    }
+    .summary-box {
+      margin-top: 18px;
+      background: #111827;
+      color: #f9fafb;
+      border-radius: 16px;
+      padding: 16px 14px;
+      white-space: pre-wrap;
+      font-size: 14px;
+      direction: rtl;
+    }
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .mode-pill {
+      font-size: 11px;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-wrapper">
+    <div class="card">
+      <div class="top-row">
+        <h1>סיכום שיחה</h1>
+        <span id="modePill" class="mode-pill hidden"></span>
+      </div>
+      <div id="subtitle" class="subtitle"></div>
+      <div id="stepIndicator" class="step-indicator"></div>
+      <div id="formContainer"></div>
+      <div class="buttons-row">
+        <button id="backBtn" class="btn btn-secondary">חזרה</button>
+        <button id="nextBtn" class="btn btn-primary">המשך</button>
+      </div>
+      <div id="summaryBox" class="summary-box hidden"></div>
+      <button id="copyBtn" class="btn btn-secondary btn-small hidden" style="width:100%;margin-top:8px;">
+        העתק סיכום
+      </button>
+    </div>
+  </div>
 
-from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
-from kivy.uix.button import Button
-from kivy.core.text import LabelBase
-from kivy.core.clipboard import Clipboard
-from kivy.clock import Clock
-from kivy.uix.scrollview import ScrollView
-from kivy.uix.popup import Popup
-from kivy.core.window import Window  # ← בשביל גובה המקלדת
+  <script>
+    // =====================
+    // נתונים קבועים
+    // =====================
 
-import os, re
-from datetime import datetime, date, timedelta, timezone
+    const ACTION_TYPES = ["ניוד", "השארה", "פתיחת קופה", "פרט"];
 
-# ---------- RTL helper ----------
-PAIR_MAP = str.maketrans("()[]{}<>«»‹›", ")(][}{><»«›‹")
+    const INVEST_COMPANIES = [
+      "מגדל",
+      "כלל",
+      "הראל",
+      "אלטשולר שחם",
+      "ילין לפידות",
+      "אנליסט",
+      "מיטב",
+      "מור",
+      "הפניקס",
+      "הכשרה",
+      "מנורה",
+      "איילון",
+      "ביטוח ישיר"
+    ];
 
-def rtl_visual(s: str) -> str:
-    if not s:
-        return ""
-    out = []
-    for line in s.split("\n"):
-        if any('\u0590' <= ch <= '\u05FF' for ch in line):
-            acc = ""
-            token = ""
-            for ch in line:
-                if ch.isdigit() or ch == ":":
-                    token += ch
-                else:
-                    if token:
-                        acc = token + acc
-                        token = ""
-                    acc = ch.translate(PAIR_MAP) + acc
-            if token:
-                acc = token + acc
-            out.append(acc)
-        else:
-            out.append(line)
-    return "\n".join(out)
+    const INSURANCE_COMPANIES = [
+      "מגדל",
+      "כלל",
+      "הראל",
+      "הפניקס",
+      "הכשרה",
+      "מנורה",
+      "איילון",
+      "ביטוח ישיר"
+    ];
 
+    const PRODUCTS = ["קרן פנסיה", "קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"];
 
-# ---------- Font ----------
-try:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-except NameError:
-    BASE_DIR = os.getcwd()
+    const PRIVATE_PRODUCTS = [
+      "פוליסת חיים",
+      "פוליסת חיים משועבדת",
+      "פוליסת משכנתא",
+      "ביטוח בריאות",
+      "ביטוח בריאות ומחלות קשות"
+    ];
 
-FONTS_DIR = os.path.join(BASE_DIR, "static")
-font_path = os.path.join(FONTS_DIR, "NotoSansHebrew-Regular.ttf")
+    const PRIVATE_ACTIONS = [
+      "ביטול",
+      "השארה",
+      "הפקה",
+      "מינוי סוכן",
+      "ביטול והפקה חדשה"
+    ];
 
-if os.path.exists(font_path):
-    LabelBase.register(name="HebrewFont", fn_regular=font_path)
-    FONT_NAME = "HebrewFont"
-else:
-    FONT_NAME = "Roboto"
+    const BASE_TRACKS = [
+      "כללי",
+      "לבני 50 ומטה",
+      "לבני 50-60",
+      "לבני 60 ומעלה",
+      "מניות",
+      "Snp500",
+      "משולב סחיר",
+      "עוקב מדדים גמיש",
+      "מניות סחיר",
+      "עוקב מדדי מניות",
+      "השלוש הקדוש",
+      "חצי חצי אנליסט"
+    ];
 
+    const SPECIAL_TRACK_OUTPUT = {
+      "השלוש הקדוש": "33% משולב סחיר, 33% מדדי מניות, 34% Snp500",
+      "חצי חצי אנליסט": "50% עוקב מדדים גמיש, 50% Snp500"
+    };
 
-# ---------- Google Calendar (Service Account) ----------
-try:
-    from google.oauth2.service_account import Credentials
-    from googleapiclient.discovery import build
-    GOOGLE_CAL_AVAILABLE = True
-except ImportError:
-    GOOGLE_CAL_AVAILABLE = False
+    const EMPLOYMENT_TYPES = ["שכירה", "עצמאית", "ללא"];
 
-SERVICE_ACCOUNT_FILE = os.path.join(
-    BASE_DIR,
-    "calendar_credentials.json"
-)
+    const MODE_SUMMARY = "סיכום הדברים";
+    const MODE_RECOMMENDATION = "המלצות";
 
-CALENDAR_ID = "matanexcell@gmail.com"
-CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar"]
+    const HEBREW_LETTERS = "אבגדהוזחטיכלמנסעפצקרשת".split("");
 
+    // =====================
+    // סטייט גלובלי
+    // =====================
 
-# ---------- שאלות ----------
-Q_BASE = [
-    "האם היה 10 שעונים מעוררים עד 10-",
-    "בקבוק מים ליד המיטה-",
-    "האם היה תכנון של היום עם תזכורות-",
-    "מתי הלכת לישון אתמול-",
-    "קריאת הגנות ופרסים-",
-    "האם היה עבודה אחרי 11:30 בלילה-",
-    "קריאה ביומן בבוקר-",
-    "מתי קמת-",
-    "תיעוד הלילה וניתוחו-",
-    "כתיבה עצמית בבוקר (10 דקות עם הקפה)-",
-    "סרטון מוטביציה בבוקר-",
-    "משקל ששקלת בבוקר-",
-    "כדור-",
-    "ויטמין D-",
-    "האם היה טלפון/טלווזיה בלילה-",
-    "זמן טלפון בבוקר-",
-    "קריאה באמצע היום-",
-    "לימוד תורה-",
-    "מה למדת היום (עשרה דברים)-",
-    "כושר 16:00 דקות-",
-    "מטלות-",
-    "לימוד אנגלית-",
-    "הכתבה 20 דקות-",
-    "עשיית דברים-",
-    "דיבור עם חברים 20 דקות-",
-    "רימונים-",
-    "כדור-",
-    "חטא-",
-    "אכילת מתוק-",
-    "שתית קפה-",
-    "אכילת לחם-",
-    "כמה אכלת סלט ירקות-",
-    "סיג-",
-    "אוכל לפי תפריט-",
-    "מה אכלת היום-",
-    "כמות גרם חלבון-",
-    "כדור-",
-    "כמות מים-",
-    "עשיית משימות היה-",
-    "בזבוזים של אוכל-",
-    "כמות זמן שהיית בטלפון ובטלווזיה-",
-    "זמן שהיית בפעילות-",
-    "תיעוד של היום וניתוחו-",
-    "מתי רשמת את סיכום היום-",
-]
+    let mode = MODE_SUMMARY;
+    let totalActions = 1;
+    let currentActionIndex = 0;
+    let currentStep = "mode";
+    let history = [];
 
-# ---------- כותרות מקטעים ----------
-SECTIONS_ORDER = [
-    ("דברים צריך לכתוב בלילה שלפני", [0,1,2,3,4,5]),
-    ("דברים שצריך לכתוב בבוקר",      [6,7,8,9,10,11,12,13,14,15]),
-    ("דברים שצריכים לכתוב בזמן שהם קורים", [16]),
-    ("מטלות",                         [17,18,19,20,21,22,23,24,25,26]),
-    ("ארבע העייפות",                  [27,28,29]),
-    ("דברים שצריכים להיכתב בערב",    [30,31,32,33,34,35,36,37,38,39,40,41,42,43]),
-]
+    const actions = [];
 
-# ---------- מטרות שבועיות ----------
-Q_WEEKLY = [
-    "מטרה לסוף השבוע- מטרה לסוף שבוע 7 היה היה",
-    "מטרה לסוף השבוע- 5 היה (מטרה יומית- היה)",
-    "מטרה לסוף השבוע- 5 היה (מטרה יומית- היה)",
-    "מטרה לסוף שבוע ויומי- 25:00",
-    "מטרה לסוף השבוע- 5 היה (מטרה יומית- היה)",
-    "מטרה לסוף השבוע 5 לא היה (מטרה יומית- לא היה)",
-    "מטרה לסוף השבוע- 5 היה (מטרה יומית- היה)",
-    "מטרה לסוף השבוע ממוצע- 09:30 (מטרה יומית: מתחת ל09:30)",
-    "מטרה לסוף השבוע- ממוצע של 1.5 (מטרה יומית 1 או מתחת)",
-    "מטרה לסוף השבוע- 5 היה (מטרה יומית- היה)",
-    "מטרה לסוף השבוע- 3 פעמים (מטרה יומית היה)",
-    "מטרה לסוף השבוע- 3 פעמים (מטרה יומית היה)",
-    "מטרה לסוף השבוע- 14 (מטרה יומית- היה)",
-    "מטרה לסוף השבוע- 7 פעמים היה (מטרה יומית- היה)",
-    "מטרה לסוף השבוע- 3 היה או מתחת (מטרה יומית- לא היה)",
-    "מטרה לסוף השבוע ממוצע- 00:20 (מטרה יומית 00:20 או מתחת)",
-    "מטרה לסוף השבוע- 7 פעמים היה (מטרה יומית היה)",
-    "מטרה לסוף השבוע- 7 פעמים היה (מטרה יומית היה)",
-    "מטרה לסוף השבוע- 7 פעמים היה (מטרה יומית היה)",
-    "מטרה לסוף השבוע- 3 פעמים היה (מטרה יומית היה)",
-    "מטרה לסוף השבוע- 2 היה (מטרה יומית: היה)",
-    "מטרה לסוף השבוע- 7 פעמים היה (מטרה יומית היה)",
-    "מטרה לסוף השבוע- 7 פעמים היה (מטרה יומית היה)",
-    "מטרה לסוף השבוע- 3 פעמים היה (מטרה יומית היה)",
-    "מטרה לסוף השבוע- 3 פעמים היה (מטרה יומית- היה)",
-    "מטרה לסוף השבוע- 3 פעמים היה (מטרה יומית: היה)",
-    "מטרה לסוף השבוע- 7 היה (מטרה יומית- היה)",
-    "מטרה לסוף השבוע ממוצע- 0.42 (מטרה יומית- לא היה אלא אם זה במטרת עשיית דברים)",
-    "מטרה לסוף השבוע ממוצע- 0.42 (מטרה יומית- לא היה)",
-    "מטרה לסוף השבוע ממוצע- 3 (מטרה יומית: מתחת ל3)",
-    "מטרה לסוף השבוע ממוצע- 0.42 (מטרה יומית- לא היה)",
-    "מטרה לסוף השבוע ממוצע- 2 (מטרה יומית- 2)",
-    "מטרה לסוף השבוע ממוצע- 1 (מטרה יומית 1 או מתחת)",
-    "מטרה לסוף השבוע- 55 (מטרה יומית- 50)",
-    "מטרה לסוף השבוע- 55 (מטרה יומית- 50)",
-    "מטרה לסוף השבוע- 55 (מטרה יומית- 50)",
-    "מטרה לסוף השבוע- 14 (מטרה יומית- היה)",
-    "מטרה לסוף השבוע- 1700 מדוד (מטרה יומית- 1700)",
-    "מטרה לסוף השבוע ממוצע- 20 (מטרה יומית- מתחת ל20)",
-    "מטרה לסוף השבוע- 01:30 (מטרה יומית- מתחת ל01:30)",
-    "מטרה לסוף השבוע ממוצע- 07:30 (מטרה יומית- 07:30)",
-    "מטרה לסוף שבוע- ממוצע של 0.6 היה (מטרה יומית- היה)",
-    "מטרה לסוף השבוע ממוצע- 24:00 (מטרה יומית- מתחת ל24:00)",
-    "מטרה לסוף השבוע ממוצע- 24:00 (מטרה יומית- מתחת ל24:00)",
-]
+    // =====================
+    // עזרים
+    // =====================
 
-# ---------- מטרות יומיות ----------
-Q_DAILY = [
-    "מטרה יומית – היה",
-    "מטרה יומית – היה",
-    "מטרה יומית – היה",
-    "מטרה יומית – מתחת ל-25:00",
-    "מטרה יומית – היה",
-    "מטרה יומית – לא היה",
-    "מטרה יומית – היה",
-    "מטרה יומית – מתחת ל-09:30",
-    "מטרה יומית – 1 או פחות",
-    "מטרה יומית – היה",
-    "מטרה יומית – היה",
-    "מטרה יומית – יש ערך",
-    "מטרה יומית – היה",
-    "מטרה יומית – היה",
-    "מטרה יומית – לא היה",
-    "מטרה יומית – 00:20 או פחות",
-    "מטרה יומית – היה",
-    "מטרה יומית – היה",
-    "מטרה יומית – יש ערך",
-    "מטרה יומית – היה",
-    "מטרה יומית – היה",
-    "מטרה יומית – היה",
-    "מטרה יומית – היה",
-    "מטרה יומית – היה",
-    "מטרה יומית – היה",
-    "מטרה יומית – היה",
-    "מטרה יומית – היה",
-    "מטרה יומית – לא היה",
-    "מטרה יומית – לא היה",
-    "מטרה יומית – 2 או פחות",
-    "מטרה יומית – לא היה",
-    "מטרה יומית – 2 או יותר",
-    "מטרה יומית – 1 או פחות",
-    "מטרה יומית – היה",
-    "מטרה יומית – יש ערך",
-    "מטרה יומית – 55 או יותר",
-    "מטרה יומית – היה",
-    "מטרה יומית – 1500 או יותר",
-    "מטרה יומית – היה",
-    "מטרה יומית – 20 או פחות",
-    "מטרה יומית – 01:30 או פחות",
-    "מטרה יומית – 07:30 או יותר",
-    "מטרה יומית – היה",
-    "מטרה יומית – 24:00 או פחות",
-]
+    function getCurrentAction() {
+      if (!actions[currentActionIndex]) {
+        actions[currentActionIndex] = {
+          index: currentActionIndex,
+          type: null,
+          reasons: []
+        };
+      }
+      return actions[currentActionIndex];
+    }
 
-# ---------- כללי בדיקה ----------
-GOAL_RULES = [
-    ('bool', True),
-    ('bool', True),
-    ('bool', True),
-    ('time_max', "25:00"),
-    ('bool', True),
-    ('bool', False),
-    ('bool', True),
-    ('time_max', "09:30"),
-    ('num_max', 1.0),
-    ('bool', True),
-    ('bool', True),
-    ('nonempty', None),
-    ('bool', True),
-    ('bool', True),
-    ('bool', False),
-    ('time_max', "00:20"),
-    ('bool', True),
-    ('bool', True),
-    ('nonempty', None),
-    ('bool', True),
-    ('bool', True),
-    ('bool', True),
-    ('bool', True),
-    ('bool', True),
-    ('bool', True),
-    ('bool', True),
-    ('bool', True),
-    ('bool', False),
-    ('bool', False),
-    ('num_max', 2.0),
-    ('bool', False),
-    ('num_min', 2.0),
-    ('num_max', 1.0),
-    ('bool', True),
-    ('nonempty', None),
-    ('num_min', 55.0),
-    ('bool', True),
-    ('num_min', 1500.0),
-    ('bool', True),
-    ('num_max', 20.0),
-    ('time_max', "01:30"),
-    ('time_min', "07:30"),
-    ('bool', True),
-    ('time_max', "24:00"),
-]
+    function setSubtitle(text) {
+      document.getElementById("subtitle").textContent = text || "";
+    }
 
-INTRO_TEXT = (
-    "כל דבר שאתה עושה הופך לנכס!\n"
-    "כל דבר שאתה לא עושה הופך להתחייבות!\n"
-    "השעה 20 תבוא בכל מקרה והשאלה היא האם יהיה לך דברים טובים לכתוב!\n"
-)
+    function setStepIndicator() {
+      const el = document.getElementById("stepIndicator");
+      if (currentStep === "mode" || currentStep === "totalActions") {
+        el.textContent = "";
+        return;
+      }
+      el.textContent = `פעולה ${currentActionIndex + 1} מתוך ${totalActions}`;
+    }
 
-# אינדקסים לשאלות מיוחדות
-SUMMARY_TIME_INDEX = Q_BASE.index("מתי רשמת את סיכום היום-")
-SLEEP_TIME_INDEX   = Q_BASE.index("מתי הלכת לישון אתמול-")
+    function setModePill() {
+      const pill = document.getElementById("modePill");
+      pill.classList.remove("hidden");
+      pill.textContent = mode === MODE_SUMMARY ? "מצב: סיכום דברים" : "מצב: המלצות";
+    }
 
-
-# ------------------- פונקציות עזר -------------------
-
-def parse_time_to_minutes(s: str):
-    if not s:
-        return None
-    m = re.search(r'(\d{1,2}):(\d{2})', s)
-    if not m:
-        return None
-    return int(m.group(1)) * 60 + int(m.group(2))
-
-def extract_number(s: str):
-    if not s:
-        return None
-    m = re.search(r'(\d+(?:\.\d+)?)', s.replace(",", "."))
-    return float(m.group(1)) if m else None
-
-def normalize_bool_answer(s: str):
-    if not s:
-        return None
-    if "לא היה" in s:
-        return False
-    if "היה" in s:
-        return True
-    return None
-
-def goal_met(i, a):
-    rule, param = GOAL_RULES[i]
-    a = (a or "").strip()
-
-    if rule == 'bool':
-        v = normalize_bool_answer(a)
-        return v is not None and v == param
-
-    if rule == 'time_max':
-        t = parse_time_to_minutes(param)
-        g = parse_time_to_minutes(a)
-        return g is not None and g <= t
-
-    if rule == 'time_min':
-        t = parse_time_to_minutes(param)
-        g = parse_time_to_minutes(a)
-        return g is not None and g >= t
-
-    if rule == 'num_max':
-        g = extract_number(a)
-        return g is not None and g <= param
-
-    if rule == 'num_min':
-        g = extract_number(a)
-        return g is not None and g >= param
-
-    if rule == 'nonempty':
-        return len(a) > 0
-
-    return False
-
-def get_extended_now_hhmm():
-    """
-    00:00–04:59 → +24 שעות (24–28), מ-05:00 רגיל.
-    """
-    now = datetime.now()
-    h = now.hour
-    m = now.minute
-    if 0 <= h < 5:
-        h += 24
-    return f"{h:02d}:{m:02d}"
-
-
-# --------------------------------------------------
-#                האפליקציה
-# --------------------------------------------------
-
-class HebrewApp(App):
-
-    def build(self):
-        self.answers = {}
-        self.current_index = 0
-        self.root_anchor = AnchorLayout(anchor_y="top")
-        self._summary_full = ""
-        self._summary_no_numbers = ""
-        self._pending_calendar_text = ""
-        self._loaded_event_date = None
-        self._summary_time_initialized = False
-        self.container = None
-
-        # האזנה לגובה המקלדת
-        Window.bind(on_keyboard_height=self._on_keyboard_height)
-
-        return self.build_opening()
-
-    # ----- שינוי padding כשמקלדת נפתחת/נסגרת -----
-    def _on_keyboard_height(self, window, height):
-        """
-        אם height > 0 → מקלדת פתוחה.
-        דוחף את כל השאלה עוד קצת למטה.
-        """
-        if not self.container:
-            return
-        if height > 0:
-            top_pad = 140  # מקלדת פתוחה – דחיפה בינונית (B)
-        else:
-            top_pad = 100  # מצב רגיל – גם קצת יותר נמוך
-        left, _, right, bottom = self.container.padding
-        self.container.padding = [left, top_pad, right, bottom]
-
-    # ------------------ הודעה קטנה ------------------
-    def show_message(self, msg, duration=1.5):
-        p = Popup(
-            title="",
-            content=Label(
-                text=rtl_visual(msg),
-                font_name=FONT_NAME,
-                font_size=20
-            ),
-            size_hint=(None, None),
-            size=(320, 200)
+    function createSelect(id, options, value) {
+      const htmlOptions = options
+        .map(
+          (opt) =>
+            `<option value="${opt}" ${opt === value ? "selected" : ""}>${opt}</option>`
         )
-        p.open()
-        Clock.schedule_once(lambda dt: p.dismiss(), duration)
+        .join("");
+      return `<select id="${id}">
+        <option value="">בחר...</option>
+        ${htmlOptions}
+        <option value="אחר">אחר...</option>
+      </select>`;
+    }
 
-    # ------------------ מסך פתיחה ------------------
-    def build_opening(self):
-        self.root_anchor.clear_widgets()
+    function getValue(id) {
+      const el = document.getElementById(id);
+      return el ? el.value.trim() : "";
+    }
 
-        layout = BoxLayout(orientation="vertical", padding=20, spacing=12,
-                           size_hint=(1, None), height=520)
+    function setValue(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.value = value != null ? value : "";
+    }
 
-        layout.add_widget(Label(
-            text=rtl_visual("הדבק כאן את הטקסט שלך (לא חובה):"),
-            font_name=FONT_NAME, font_size=24,
-            halign="center", valign="middle",
-            size_hint=(1, None), height=40
-        ))
+    function showError(msg) {
+      return `<div class="error-text">${msg}</div>`;
+    }
 
-        self.paste_box = TextInput(
-            hint_text=rtl_visual("הדבקה כאן..."),
-            font_name=FONT_NAME, font_size=18,
-            multiline=True,
-            halign="right",
-            size_hint=(1, None), height=360
-        )
-        layout.add_widget(self.paste_box)
+    function formatTrack(track) {
+      if (SPECIAL_TRACK_OUTPUT[track]) {
+        return SPECIAL_TRACK_OUTPUT[track];
+      }
+      return track;
+    }
 
-        start_btn = Button(
-            text=rtl_visual("התחל שאלון"),
-            font_name=FONT_NAME,
-            size_hint=(1, None), height=56
-        )
-        start_btn.bind(on_press=self.start_questionnaire)
-        layout.add_widget(start_btn)
+    function formatCompanyWithOther(selected, other) {
+      if (selected === "אחר") return other || "";
+      return selected || "";
+    }
 
-        load_btn = Button(
-            text=rtl_visual("טען סיכום מיומן"),
-            font_name=FONT_NAME,
-            size_hint=(1, None), height=56
-        )
-        load_btn.bind(on_press=self.ask_date_and_load)
-        layout.add_widget(load_btn)
+    function bindOtherField(selectId, inputId) {
+      const sel = document.getElementById(selectId);
+      const inp = document.getElementById(inputId);
+      if (!sel || !inp) return;
+      function update() {
+        if (sel.value === "אחר") {
+          inp.style.display = "block";
+        } else {
+          inp.style.display = "none";
+        }
+      }
+      sel.addEventListener("change", update);
+      update();
+    }
 
-        self.root_anchor.add_widget(layout)
-        return self.root_anchor
+    function updateEmploymentVisibility() {
+      const sel = document.getElementById("employmentSelect");
+      const employer = document.getElementById("employerName");
+      const selfDep = document.getElementById("selfDeposit");
+      if (!sel) return;
+      function update() {
+        if (employer) {
+          employer.style.display = sel.value === "שכירה" ? "block" : "none";
+        }
+        if (selfDep) {
+          selfDep.style.display = sel.value === "עצמאית" ? "block" : "none";
+        }
+      }
+      sel.addEventListener("change", update);
+      update();
+    }
 
-    # ---------------------------------
-    def parse_pasted(self, raw):
-        if not raw:
-            return
-        lines = [l.strip() for l in raw.splitlines() if l.strip()]
-        for i, base in enumerate(Q_BASE):
-            for line in lines:
-                if base in line:
-                    after = line.split(base, 1)[1].strip()
-                    if after:
-                        self.answers[i] = after
-                    break
+    function updateKgiDepositVisibility() {
+      const sel = document.getElementById("kgiDepositType");
+      const monthly = document.getElementById("kgiMonthly");
+      const oneTime = document.getElementById("kgiOneTime");
+      if (!sel) return;
+      function update() {
+        if (!monthly || !oneTime) return;
+        if (sel.value === "ללא הפקדה" || !sel.value) {
+          monthly.style.display = "none";
+          oneTime.style.display = "none";
+        } else if (sel.value === "הוראת קבע") {
+          monthly.style.display = "block";
+          oneTime.style.display = "none";
+        } else if (sel.value === "חד פעמי") {
+          monthly.style.display = "none";
+          oneTime.style.display = "block";
+        } else if (sel.value === "גם וגם") {
+          monthly.style.display = "block";
+          oneTime.style.display = "block";
+        }
+      }
+      sel.addEventListener("change", update);
+      update();
+    }
 
-    # ---------------------------------
-    def start_questionnaire(self, *args):
-        try:
-            self.parse_pasted(self.paste_box.text)
-        except:
-            pass
+    function setupDynamicVisibility() {
+      // שדות "אחר"
+      bindOtherField("companySelect", "companyOther");
+      bindOtherField("productSelect", "productOther");
+      bindOtherField("currentTrackSelect", "currentTrackOther");
+      bindOtherField("newTrackSelect", "newTrackOther");
+      bindOtherField("openTrackSelect", "openTrackOther");
+      bindOtherField("privateCompanySelect", "privateCompanyOther");
+      bindOtherField("privateProductSelect", "privateProductOther");
+      bindOtherField("newPolicyTypeSelect", "newPolicyTypeOther");
+      bindOtherField("newPolicyCompanySelect", "newPolicyCompanyOther");
 
-        self.root_anchor.clear_widgets()
-        anchor = AnchorLayout(anchor_y="top")
+      // דמי ניהול "אחר" (רק אם זה select, לא אם זה input רגיל)
+      const mgmtSel = document.getElementById("mgmtSelect");
+      const mgmtOther = document.getElementById("mgmtOther");
+      if (mgmtSel && mgmtOther && mgmtSel.tagName === "SELECT") {
+        function updateMgmt() {
+          mgmtOther.style.display =
+            mgmtSel.value === "אחר" ? "block" : "none";
+        }
+        mgmtSel.addEventListener("change", updateMgmt);
+        updateMgmt();
+      } else if (mgmtOther && (!mgmtSel || mgmtSel.tagName !== "SELECT")) {
+        // במקרה של אינפוט חופשי – אפשר להשאיר גלוי
+        mgmtOther.style.display = "none";
+      }
 
-        # padding עליון התחלתי 100 (קצת יותר נמוך)
-        self.container = BoxLayout(
-            orientation="vertical",
-            padding=[20, 100, 20, 20],
-            spacing=15,
-            size_hint=(1, None),
-            height=600,
-            pos_hint={"top": 1}
-        )
+      // מצב תעסוקתי
+      updateEmploymentVisibility();
 
-        anchor.add_widget(self.container)
-        self.root_anchor.add_widget(anchor)
+      // קופת גמל להשקעה – הפקדות
+      updateKgiDepositVisibility();
+    }
 
-        self.build_question(0)
+    // =====================
+    // רנדר לצעד
+    // =====================
 
-    # ---------------------------------
-    def build_question(self, idx):
-        self.container.clear_widgets()
-        self.current_index = idx
+    function render() {
+      const container = document.getElementById("formContainer");
+      const summaryBox = document.getElementById("summaryBox");
+      const copyBtn = document.getElementById("copyBtn");
+      summaryBox.classList.add("hidden");
+      summaryBox.textContent = "";
+      copyBtn.classList.add("hidden");
 
-        # כותרת מקטע
-        section_name = None
-        for title, indices in SECTIONS_ORDER:
-            if idx in indices:
-                section_name = title
-                break
+      setStepIndicator();
+      setModePill();
 
-        if section_name:
-            self.container.add_widget(Label(
-                text=rtl_visual(section_name),
-                font_name=FONT_NAME,
-                font_size=26,
-                size_hint=(1, None),
-                height=48,
-                halign="center",
-                valign="middle"
-            ))
+      let html = "";
+      let action = getCurrentAction();
 
-        current_answer = self.answers.get(idx, "")
+      switch (currentStep) {
+        case "mode":
+          setSubtitle("");
+          html += `<div class="question-title">האם זה סיכום של הדברים או המלצות?</div>`;
+          html += createSelect("modeSelect", [MODE_SUMMARY, MODE_RECOMMENDATION], mode);
+          if (mode === MODE_RECOMMENDATION) {
+            html += `<div class="helper-text">במצב המלצות ניתן להוסיף נימוקים אחרי כל פעולה.</div>`;
+          }
+          break;
 
-        # דיפולט שעת סיכום יום (שאלה אחרונה)
-        if idx == SUMMARY_TIME_INDEX:
-            if (not self._summary_time_initialized) and (not current_answer):
-                current_answer = get_extended_now_hhmm()
-                self.answers[idx] = current_answer
-                self._summary_time_initialized = True
+        case "totalActions":
+          setSubtitle("");
+          html += `<div class="question-title">כמה פעולות אתה רוצה לרשום?</div>`;
+          html += `<input type="number" id="actionsCount" min="1" max="20" value="${totalActions}" />`;
+          html += `<div class="helper-text">אפשר לשנות אחר כך אם צריך.</div>`;
+          break;
 
-        # דיפולט "מתי הלכת לישון" אם ריק
-        if idx == SLEEP_TIME_INDEX and not current_answer:
-            current_answer = get_extended_now_hhmm()
-            self.answers[idx] = current_answer
+        case "actionType":
+          setSubtitle("בחר את סוג הפעולה");
+          html += `<div class="question-title">מה סוג הפעולה?</div>`;
+          html += createSelect("actionTypeSelect", ACTION_TYPES, action.type);
+          break;
 
-        # טקסט השאלה
-        self.container.add_widget(Label(
-            text=rtl_visual(f"{idx+1}. {Q_BASE[idx]}"),
-            font_name=FONT_NAME,
-            font_size=26,
-            size_hint=(1, None),
-            height=60
-        ))
+        // ===== פנסיוני / השקעות =====
+        case "company":
+          setSubtitle("פרטי החברה והמוצר");
+          html += `<div class="field-label">מה שם החברה?</div>`;
+          html += createSelect("companySelect", INVEST_COMPANIES, action.company);
+          html += `<input type="text" id="companyOther" placeholder="שם החברה (אם נבחר 'אחר')" style="margin-top:6px; display:none;" value="${action.companyOther || ""}" />`;
+          break;
 
-        # מטרות
-        self.container.add_widget(Label(
-            text=rtl_visual(Q_WEEKLY[idx]),
-            font_name=FONT_NAME, font_size=18,
-            size_hint=(1, None), height=32
-        ))
-        self.container.add_widget(Label(
-            text=rtl_visual(Q_DAILY[idx]),
-            font_name=FONT_NAME, font_size=18,
-            size_hint=(1, None), height=32
-        ))
+        case "product":
+          setSubtitle("פרטי החברה והמוצר");
+          html += `<div class="field-label">מה סוג המוצר?</div>`;
+          html += createSelect("productSelect", PRODUCTS, action.product);
+          html += `<input type="text" id="productOther" placeholder="סוג מוצר (אם נבחר 'אחר')" style="margin-top:6px; display:none;" value="${action.productOther || ""}" />`;
+          break;
 
-        # תצוגת תשובה חיה
-        self.answer_display = Label(
-            text=rtl_visual(current_answer),
-            font_name=FONT_NAME, font_size=20,
-            size_hint=(1, None), height=40
-        )
-        self.container.add_widget(self.answer_display)
+        case "employment":
+          setSubtitle("מצב תעסוקתי");
+          html += `<div class="field-label">האם הלקוח שכיר, עצמאי או כלום?</div>`;
+          html += createSelect("employmentSelect", EMPLOYMENT_TYPES, action.employmentType);
+          html += `<input type="text" id="employerName" placeholder="שם המעסיק (אם שכירה)" style="margin-top:6px; display:none;" value="${action.employerName || ""}" />`;
+          html += `<input type="number" id="selfDeposit" placeholder="סכום הפקדה (אם עצמאי)" style="margin-top:6px; display:none;" value="${action.selfDeposit || ""}" />`;
+          break;
 
-        # שדה הקלדה
-        self.text_input = TextInput(
-            text=current_answer,
-            font_name=FONT_NAME,
-            font_size=20,
-            multiline=False,
-            halign="right",
-            size_hint=(1, None),
-            height=56
-        )
-        self.text_input.bind(text=self.update_answer_display)
-        self.text_input.bind(on_text_validate=self.next_question)
-        self.container.add_widget(self.text_input)
+        case "kgiDeposit":
+          setSubtitle("אופי ההפקדה");
+          html += `<div class="field-label">האם יש הפקדה לקופת גמל להשקעה?</div>`;
+          html += createSelect(
+            "kgiDepositType",
+            ["ללא הפקדה", "הוראת קבע", "חד פעמי", "גם וגם"],
+            action.kgiDepositType
+          );
+          html += `<input type="number" id="kgiMonthly" placeholder="סכום הוראת קבע חודשית" style="margin-top:6px; display:none;" value="${action.kgiMonthly || ""}" />`;
+          html += `<input type="number" id="kgiOneTime" placeholder="סכום הפקדה חד פעמית" style="margin-top:6px; display:none;" value="${action.kgiOneTime || ""}" />`;
+          break;
 
-        # כפתורי זמן מיוחדים לשאלת השינה
-        if idx == SLEEP_TIME_INDEX:
-            row_sleep = BoxLayout(size_hint=(1, None), height=60, spacing=10)
+        case "transferTargetCompany":
+          setSubtitle("ניוד קופה");
+          html += `<div class="field-label">לאיזו חברה תנויד הקופה?</div>`;
+          html += createSelect(
+            "targetCompanySelect",
+            INVEST_COMPANIES,
+            action.targetCompany
+          );
+          html += `<input type="text" id="targetCompanyOther" placeholder="שם חברה (אם 'אחר')" style="margin-top:6px; display:none;" value="${action.targetCompanyOther || ""}" />`;
+          break;
 
-            def make_plus_btn(label, delta):
-                btn = Button(
-                    text=rtl_visual(label),
-                    font_name=FONT_NAME
-                )
-                btn.bind(on_press=lambda inst, d=delta: self.adjust_sleep_time(d))
-                return btn
+        case "accountNumber":
+          setSubtitle("פרטי קופה");
+          html += `<div class="field-label">מה מספר הקופה?</div>`;
+          html += `<input type="text" id="accountNumberInput" value="${action.accountNumber || ""}" />`;
+          break;
 
-            row_sleep.add_widget(make_plus_btn("+5", 5))
-            row_sleep.add_widget(make_plus_btn("+10", 10))
-            row_sleep.add_widget(make_plus_btn("+15", 15))
-            row_sleep.add_widget(make_plus_btn("+20", 20))
+        case "keepType":
+          setSubtitle("קופה קיימת");
+          html += `<div class="field-label">כאשר הקופה נשארת – מה יקרה?</div>`;
+          html += createSelect(
+            "keepTypeSelect",
+            ["ללא שינוי", "שינוי מסלול השקעה", "מינוי סוכן"],
+            action.keepType
+          );
+          break;
 
-            btn_free = Button(
-                text=rtl_visual("חופשי"),
-                font_name=FONT_NAME
+        case "currentTrack":
+          setSubtitle("שינוי מסלול השקעה");
+          html += `<div class="field-label">מה מסלול ההשקעה הנוכחי?</div>`;
+          html += createSelect("currentTrackSelect", BASE_TRACKS, action.currentTrack);
+          html += `<input type="text" id="currentTrackOther" placeholder="מסלול אחר (אם 'אחר')" style="margin-top:6px; display:none;" value="${action.currentTrackOther || ""}" />`;
+          break;
+
+        case "newTrack":
+          setSubtitle("מסלול השקעה עתידי");
+          html += `<div class="field-label">מהו מסלול ההשקעה החדש?</div>`;
+          html += createSelect("newTrackSelect", BASE_TRACKS, action.newTrack);
+          html += `<input type="text" id="newTrackOther" placeholder="מסלול אחר (אם 'אחר')" style="margin-top:6px; display:none;" value="${action.newTrackOther || ""}" />`;
+          break;
+
+        case "trackForOpen":
+          setSubtitle("מסלול להשקעה");
+          html += `<div class="field-label">באיזה מסלול יושקע הכסף?</div>`;
+          html += createSelect(
+            "openTrackSelect",
+            BASE_TRACKS,
+            action.openTrack
+          );
+          html += `<input type="text" id="openTrackOther" placeholder="מסלול אחר (אם 'אחר')" style="margin-top:6px; display:none;" value="${action.openTrackOther || ""}" />`;
+          break;
+
+        case "managementFee":
+          setSubtitle("דמי ניהול");
+          html += `<div class="field-label">מהם דמי הניהול?</div>`;
+
+          if (action.product === "קרן פנסיה") {
+            html += createSelect(
+              "mgmtSelect",
+              [
+                "0.1% מצבירה ועוד 1.5% מהפקדה",
+                "0.15% מצבירה ועוד 1.5% מהפקדה"
+              ],
+              action.managementFee
+            );
+          } else if (
+            ["קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"].includes(
+              action.product
             )
-
-            def on_free(instance):
-                Clock.schedule_once(
-                    lambda dt: setattr(self.text_input, "focus", True), 0.05
-                )
-
-            btn_free.bind(on_press=on_free)
-            row_sleep.add_widget(btn_free)
-
-            self.container.add_widget(row_sleep)
-
-        # פוקוס לשדה
-        Clock.schedule_once(lambda dt: setattr(self.text_input, "focus", True), 0.1)
-
-        # כפתורי היה/לא היה
-        row_yesno = BoxLayout(size_hint=(1, None), height=60, spacing=20)
-        btn_yes = Button(text=rtl_visual("היה"), font_name=FONT_NAME)
-        btn_no = Button(text=rtl_visual("לא היה"), font_name=FONT_NAME)
-        btn_yes.bind(on_press=lambda *a: self.set_answer_and_next("היה"))
-        btn_no.bind(on_press=lambda *a: self.set_answer_and_next("לא היה"))
-        row_yesno.add_widget(btn_yes)
-        row_yesno.add_widget(btn_no)
-        self.container.add_widget(row_yesno)
-
-        # מעבר למקטע אחר
-        btn_section = Button(
-            text=rtl_visual("מעבר למקטע אחר"),
-            font_name=FONT_NAME,
-            size_hint=(1, None), height=60
-        )
-        btn_section.bind(on_press=self.open_section_menu)
-        self.container.add_widget(btn_section)
-
-        # ניווט
-        nav_row = BoxLayout(size_hint=(1, None), height=90, spacing=18)
-
-        btn_prev = Button(
-            text=rtl_visual("שאלה קודמת"),
-            font_name=FONT_NAME, size_hint=(1, None), height=80
-        )
-        btn_prev.bind(on_press=self.prev_question)
-        nav_row.add_widget(btn_prev)
-
-        btn_next = Button(
-            text=rtl_visual("לשאלה הבאה"),
-            font_name=FONT_NAME, size_hint=(1, None), height=80
-        )
-        btn_next.bind(on_press=self.next_question)
-        nav_row.add_widget(btn_next)
-
-        btn_finish = Button(
-            text=rtl_visual("סיום השאלון"),
-            font_name=FONT_NAME, size_hint=(1, None), height=80
-        )
-        btn_finish.bind(on_press=self.show_summary)
-        nav_row.add_widget(btn_finish)
-
-        self.container.add_widget(nav_row)
-
-    # -------- כפתורי זמן לשינה --------
-    def adjust_sleep_time(self, delta_minutes):
-        txt = (self.text_input.text or "").strip()
-        m = re.search(r'(\d{1,2}):(\d{2})', txt)
-        if m:
-            h = int(m.group(1))
-            mins = int(m.group(2))
-        else:
-            now_str = get_extended_now_hhmm()
-            h = int(now_str[:2])
-            mins = int(now_str[3:])
-
-        total = h * 60 + mins + delta_minutes
-        new_h = total // 60
-        new_m = total % 60
-        new_val = f"{new_h:02d}:{new_m:02d}"
-
-        self.text_input.text = new_val
-        self.answers[self.current_index] = new_val
-        self.next_question()
-
-    # -------- ניווט למקטע --------
-    def open_section_menu(self, *args):
-        layout = BoxLayout(orientation="vertical", spacing=12, padding=12)
-        for title, indices in SECTIONS_ORDER:
-            btn = Button(
-                text=rtl_visual(title),
-                font_name=FONT_NAME,
-                size_hint=(1, None),
-                height=60
-            )
-            btn.bind(on_press=lambda inst, q=indices[0]: self.jump_to_section(q))
-            layout.add_widget(btn)
-
-        popup = Popup(
-            title=rtl_visual("בחר מקטע"),
-            size_hint=(0.8, 0.8),
-            content=layout
-        )
-        self._section_popup = popup
-        popup.open()
-
-    def jump_to_section(self, q_index):
-        self._section_popup.dismiss()
-        self.build_question(q_index)
-
-    def prev_question(self, *args):
-        if self.current_index > 0:
-            self.answers[self.current_index] = self.text_input.text.strip()
-            self.build_question(self.current_index - 1)
-
-    def update_answer_display(self, instance, value):
-        self.answer_display.text = rtl_visual(value)
-
-    def set_answer_and_next(self, value):
-        self.text_input.text = value
-        self.answers[self.current_index] = value
-        self.next_question()
-
-    def next_question(self, *args):
-        self.answers[self.current_index] = self.text_input.text.strip()
-        nxt = self.current_index + 1
-        if nxt < len(Q_BASE):
-            self.build_question(nxt)
-        else:
-            self.show_summary()
-
-    # -------- סיכום --------
-    def show_summary(self, *args):
-        lines = []
-        lines.append(INTRO_TEXT.rstrip("\n"))
-        lines.append("")
-
-        for title, indices in SECTIONS_ORDER:
-            lines.append("--------------------")
-            lines.append(title)
-
-            for idx in indices:
-                num = f"{idx+1}. "
-                qtext = Q_BASE[idx]
-                ans = self.answers.get(idx, "").strip()
-
-                if ans:
-                    lines.append(f"{num}{qtext} {ans}")
-                else:
-                    lines.append(f"{num}{qtext}")
-
-                lines.append(Q_WEEKLY[idx])
-                lines.append(Q_DAILY[idx])
-                lines.append("")
-
-        achieved = sum(
-            1 for i in range(len(Q_BASE))
-            if goal_met(i, self.answers.get(i, ""))
-        )
-
-        lines.append(f"כמה מטרות הושגו מתוך 37 מטרות- {achieved}")
-        lines.append("מטרה לסוף שבוע ממוצע- 23 (מטרה יומית:19)")
-
-        summary_body = "\n".join(lines)
-
-        self._summary_full = summary_body
-        self._summary_no_numbers = self.remove_numbers(summary_body)
-
-        self.root_anchor.clear_widgets()
-
-        wrapper = BoxLayout(orientation="vertical", padding=16, spacing=12)
-        self.root_anchor.add_widget(wrapper)
-
-        intro_lbl = Label(
-            text=rtl_visual(INTRO_TEXT),
-            font_name=FONT_NAME,
-            font_size=18,
-            halign="right",
-            valign="top",
-            size_hint=(1, None),
-            height=80
-        )
-        wrapper.add_widget(intro_lbl)
-
-        scroll = ScrollView(size_hint=(1, 0.75))
-        self.summary_box = Label(
-            text=rtl_visual(summary_body),
-            font_name=FONT_NAME,
-            font_size=18,
-            halign="right",
-            valign="top",
-            size_hint_y=None
-        )
-        self.summary_box.bind(texture_size=lambda inst, val: setattr(inst, "height", val[1]))
-        scroll.add_widget(self.summary_box)
-        wrapper.add_widget(scroll)
-
-        row = BoxLayout(size_hint=(1, None), height=60, spacing=12)
-
-        btn_copy_all = Button(
-            text=rtl_visual("העתק עם מספרים + יומן"),
-            font_name=FONT_NAME
-        )
-        btn_copy_all.bind(
-            on_press=lambda *a: self.ask_date_and_send(self._summary_full)
-        )
-        row.add_widget(btn_copy_all)
-
-        btn_copy_no_nums = Button(
-            text=rtl_visual("העתק בלי מספרים + יומן"),
-            font_name=FONT_NAME
-        )
-        btn_copy_no_nums.bind(
-            on_press=lambda *a: self.ask_date_and_send(self._summary_no_numbers)
-        )
-        row.add_widget(btn_copy_no_nums)
-
-        wrapper.add_widget(row)
-
-    def copy_text(self, txt):
-        Clipboard.copy(txt)
-        self.show_message("הטקסט הועתק")
-
-    def remove_numbers(self, txt):
-        return "\n".join([
-            re.sub(r'^\s*\d+\.\s*', '', l)
-            for l in txt.splitlines()
-        ])
-
-    # -------- בחירת תאריך + שליחה ליומן --------
-    def ask_date_and_send(self, txt_for_calendar):
-        self._pending_calendar_text = txt_for_calendar
-
-        if self._loaded_event_date is not None:
-            self.send_to_calendar(self._loaded_event_date, self._pending_calendar_text)
-            return
-
-        content = BoxLayout(orientation="vertical", padding=12, spacing=8)
-
-        lbl = Label(
-            text=rtl_visual("בחר תאריך לסיכום יום (פורמט yyyy-mm-dd):"),
-            font_name=FONT_NAME,
-            font_size=18,
-            size_hint=(1, None),
-            height=60
-        )
-        content.add_widget(lbl)
-
-        today = date.today()
-        default_str = today.strftime("%Y-%m-%d")
-
-        txt_input = TextInput(
-            text=default_str,
-            multiline=False,
-            halign="center",
-            font_name=FONT_NAME,
-            font_size=20,
-            size_hint=(1, None),
-            height=50
-        )
-        content.add_widget(txt_input)
-
-        row1 = BoxLayout(size_hint=(1, None), height=50, spacing=10)
-
-        btn_today = Button(text=rtl_visual("היום"), font_name=FONT_NAME)
-        btn_yesterday = Button(text=rtl_visual("אתמול"), font_name=FONT_NAME)
-
-        def set_today(instance):
-            d = date.today()
-            txt_input.text = d.strftime("%Y-%m-%d")
-
-        def set_yesterday(instance):
-            d = date.today() - timedelta(days=1)
-            txt_input.text = d.strftime("%Y-%m-%d")
-
-        btn_today.bind(on_press=set_today)
-        btn_yesterday.bind(on_press=set_yesterday)
-
-        row1.add_widget(btn_today)
-        row1.add_widget(btn_yesterday)
-        content.add_widget(row1)
-
-        row2 = BoxLayout(size_hint=(1, None), height=50, spacing=10)
-
-        btn_ok = Button(text=rtl_visual("אישור"), font_name=FONT_NAME)
-        btn_cancel = Button(text=rtl_visual("ביטול"), font_name=FONT_NAME)
-
-        popup = Popup(
-            title=rtl_visual("בחירת תאריך"),
-            content=content,
-            size_hint=(0.9, None),
-            height=260
-        )
-
-        def on_ok(instance):
-            raw = txt_input.text.strip()
-            try:
-                y, m, d = map(int, raw.split("-"))
-                chosen_date = date(y, m, d)
-            except Exception:
-                self.show_message("תאריך לא תקין, השתמש בפורמט yyyy-mm-dd", duration=2.5)
-                return
-
-            popup.dismiss()
-            self.send_to_calendar(chosen_date, self._pending_calendar_text)
-
-        def on_cancel(instance):
-            popup.dismiss()
-
-        btn_ok.bind(on_press=on_ok)
-        btn_cancel.bind(on_press=on_cancel)
-
-        row2.add_widget(btn_ok)
-        row2.add_widget(btn_cancel)
-        content.add_widget(row2)
-
-        popup.open()
-
-    def send_to_calendar(self, chosen_date: date, text: str):
-        Clipboard.copy(text)
-
-        if not GOOGLE_CAL_AVAILABLE:
-            self.show_message("Google Calendar API לא מותקן", duration=3)
-            return
-
-        if not os.path.exists(SERVICE_ACCOUNT_FILE):
-            self.show_message("לא נמצא calendar_credentials.json", duration=3)
-            return
-
-        try:
-            creds = Credentials.from_service_account_file(
-                SERVICE_ACCOUNT_FILE,
-                scopes=CALENDAR_SCOPES
-            )
-            service = build("calendar", "v3", credentials=creds)
-        except Exception as e:
-            self.show_message("שגיאה בחיבור ליומן:\n" + str(e)[:120], duration=3.5)
-            return
-
-        tz = timezone(timedelta(hours=2))
-
-        start_dt = datetime(
-            chosen_date.year, chosen_date.month, chosen_date.day,
-            22, 0, tzinfo=tz
-        )
-        end_dt = datetime(
-            chosen_date.year, chosen_date.month, chosen_date.day,
-            23, 0, tzinfo=tz
-        )
-
-        time_min = datetime(
-            chosen_date.year, chosen_date.month, chosen_date.day,
-            0, 0, tzinfo=tz
-        )
-        time_max = datetime(
-            chosen_date.year, chosen_date.month, chosen_date.day,
-            23, 59, 59, tzinfo=tz
-        )
-
-        try:
-            events_result = service.events().list(
-                calendarId=CALENDAR_ID,
-                timeMin=time_min.isoformat(),
-                timeMax=time_max.isoformat(),
-                singleEvents=True,
-                orderBy="startTime",
-                q="סיכום יום"
-            ).execute()
-
-            items = events_result.get("items", [])
-            existing = None
-            for ev in items:
-                if ev.get("summary") == "סיכום יום":
-                    existing = ev
-                    break
-
-            if existing:
-                existing["description"] = text
-                service.events().update(
-                    calendarId=CALENDAR_ID,
-                    eventId=existing["id"],
-                    body=existing
-                ).execute()
-                self.show_message("האירוע 'סיכום יום' עודכן ביומן", duration=2.0)
-            else:
-                body = {
-                    "summary": "סיכום יום",
-                    "description": text,
-                    "start": {"dateTime": start_dt.isoformat()},
-                    "end": {"dateTime": end_dt.isoformat()},
-                }
-                service.events().insert(
-                    calendarId=CALENDAR_ID,
-                    body=body
-                ).execute()
-                self.show_message("האירוע 'סיכום יום' נוצר ביומן", duration=2.0)
-
-        except Exception as e:
-            self.show_message("שגיאה בשליחת האירוע ליומן:\n" + str(e)[:120], duration=3.5)
-
-    # -------- טעינת אירוע מהיומן --------
-    def ask_date_and_load(self, *args):
-        content = BoxLayout(orientation="vertical", padding=12, spacing=8)
-
-        lbl = Label(
-            text=rtl_visual("בחר תאריך לטעינת סיכום יום (yyyy-mm-dd):"),
-            font_name=FONT_NAME,
-            font_size=18,
-            size_hint=(1, None),
-            height=60
-        )
-        content.add_widget(lbl)
-
-        today = date.today()
-        default_str = today.strftime("%Y-%m-%d")
-
-        txt_input = TextInput(
-            text=default_str,
-            multiline=False,
-            halign="center",
-            font_name=FONT_NAME,
-            font_size=20,
-            size_hint=(1, None),
-            height=50
-        )
-        content.add_widget(txt_input)
-
-        row1 = BoxLayout(size_hint=(1, None), height=50, spacing=10)
-
-        btn_today = Button(text=rtl_visual("היום"), font_name=FONT_NAME)
-        btn_yesterday = Button(text=rtl_visual("אתמול"), font_name=FONT_NAME)
-
-        def set_today(instance):
-            d = date.today()
-            txt_input.text = d.strftime("%Y-%m-%d")
-
-        def set_yesterday(instance):
-            d = date.today() - timedelta(days=1)
-            txt_input.text = d.strftime("%Y-%m-%d")
-
-        btn_today.bind(on_press=set_today)
-        btn_yesterday.bind(on_press=set_yesterday)
-
-        row1.add_widget(btn_today)
-        row1.add_widget(btn_yesterday)
-        content.add_widget(row1)
-
-        row2 = BoxLayout(size_hint=(1, None), height=50, spacing=10)
-
-        btn_ok = Button(text=rtl_visual("אישור"), font_name=FONT_NAME)
-        btn_cancel = Button(text=rtl_visual("ביטול"), font_name=FONT_NAME)
-
-        popup = Popup(
-            title=rtl_visual("בחירת תאריך לטעינה"),
-            content=content,
-            size_hint=(0.9, None),
-            height=260
-        )
-
-        def on_ok(instance):
-            raw = txt_input.text.strip()
-            try:
-                y, m, d = map(int, raw.split("-"))
-                chosen_date = date(y, m, d)
-            except Exception:
-                self.show_message("תאריך לא תקין, השתמש בפורמט yyyy-mm-dd", duration=2.5)
-                return
-
-            popup.dismiss()
-            self.load_from_calendar(chosen_date)
-
-        def on_cancel(instance):
-            popup.dismiss()
-
-        btn_ok.bind(on_press=on_ok)
-        btn_cancel.bind(on_press=on_cancel)
-
-        row2.add_widget(btn_ok)
-        row2.add_widget(btn_cancel)
-        content.add_widget(row2)
-
-        popup.open()
-
-    def load_from_calendar(self, chosen_date: date):
-        if not GOOGLE_CAL_AVAILABLE:
-            self.show_message("Google Calendar API לא מותקן", duration=3)
-            return
-
-        if not os.path.exists(SERVICE_ACCOUNT_FILE):
-            self.show_message("לא נמצא calendar_credentials.json", duration=3)
-            return
-
-        try:
-            creds = Credentials.from_service_account_file(
-                SERVICE_ACCOUNT_FILE,
-                scopes=CALENDAR_SCOPES
-            )
-            service = build("calendar", "v3", credentials=creds)
-        except Exception as e:
-            self.show_message("שגיאה בחיבור ליומן:\n" + str(e)[:120], duration=3.5)
-            return
-
-        tz = timezone(timedelta(hours=2))
-
-        time_min = datetime(
-            chosen_date.year, chosen_date.month, chosen_date.day,
-            0, 0, tzinfo=tz
-        )
-        time_max = datetime(
-            chosen_date.year, chosen_date.month, chosen_date.day,
-            23, 59, 59, tzinfo=tz
-        )
-
-        try:
-            events_result = service.events().list(
-                calendarId=CALENDAR_ID,
-                timeMin=time_min.isoformat(),
-                timeMax=time_max.isoformat(),
-                singleEvents=True,
-                orderBy="startTime",
-                q="סיכום יום"
-            ).execute()
-
-            items = events_result.get("items", [])
-            existing = None
-            for ev in items:
-                if ev.get("summary") == "סיכום יום":
-                    existing = ev
-                    break
-
-            if not existing:
-                self.show_message("לא נמצא אירוע 'סיכום יום' לתאריך הזה", duration=3)
-                return
-
-            desc = existing.get("description", "") or ""
-
-            self._loaded_event_date = chosen_date
-            self.paste_box.text = desc
-            self.start_questionnaire()
-
-        except Exception as e:
-            self.show_message("שגיאה בטעינה מהיומן:\n" + str(e)[:120], duration=3.5)
-
-
-if __name__ == "__main__":
-    HebrewApp().run()
+          ) {
+            html += createSelect(
+              "mgmtSelect",
+              ["0.6%", "0.7%", "0.8%"],
+              action.managementFee
+            );
+          } else {
+            html += `<input type="text" id="mgmtSelect" value="${
+              action.managementFee || ""
+            }" />`;
+          }
+          html += `<input type="text" id="mgmtOther" placeholder="דמי ניהול אחרים (אם 'אחר')" style="margin-top:6px; display:none;" value="${action.managementFeeOther || ""}" />`;
+          break;
+
+        // ===== פרט / ביטוח =====
+        case "privateCompany":
+          setSubtitle("פרטי החברה");
+          html += `<div class="field-label">מה שם החברה?</div>`;
+          html += createSelect(
+            "privateCompanySelect",
+            INSURANCE_COMPANIES,
+            action.privateCompany
+          );
+          html += `<input type="text" id="privateCompanyOther" placeholder="שם חברה (אם 'אחר')" style="margin-top:6px; display:none;" value="${action.privateCompanyOther || ""}" />`;
+          break;
+
+        case "privateProduct":
+          setSubtitle("סוג ביטוח");
+          html += `<div class="field-label">מה סוג הביטוח?</div>`;
+          html += createSelect(
+            "privateProductSelect",
+            PRIVATE_PRODUCTS,
+            action.privateProduct
+          );
+          html += `<input type="text" id="privateProductOther" placeholder="סוג ביטוח (אם 'אחר')" style="margin-top:6px; display:none;" value="${action.privateProductOther || ""}" />`;
+          break;
+
+        case "privateAction":
+          setSubtitle("פעולה בפוליסה");
+          html += `<div class="field-label">מה סוג הפעולה בפוליסה?</div>`;
+          html += createSelect(
+            "privateActionSelect",
+            PRIVATE_ACTIONS,
+            action.privateAction
+          );
+          break;
+
+        case "policyNumber":
+          setSubtitle("פרטי פוליסה");
+          html += `<div class="field-label">מה מספר הפוליסה?</div>`;
+          html += `<input type="text" id="policyNumberInput" value="${action.policyNumber || ""}" />`;
+          break;
+
+        case "insuranceSum":
+          setSubtitle("סכום ביטוח");
+          html += `<div class="field-label">מהו סכום הביטוח (פיצוי)?</div>`;
+          html += `<input type="number" id="insuranceSumInput" value="${action.insuranceSum || ""}" />`;
+          break;
+
+        case "newPolicyDetails":
+          setSubtitle("פרטי הפוליסה החדשה");
+          html += `<div class="field-label">סוג הביטוח החדש:</div>`;
+          html += createSelect(
+            "newPolicyTypeSelect",
+            PRIVATE_PRODUCTS,
+            action.newPolicyType
+          );
+          html += `<input type="text" id="newPolicyTypeOther" placeholder="סוג ביטוח (אם 'אחר')" style="margin-top:6px; display:none;" value="${action.newPolicyTypeOther || ""}" />`;
+          html += `<div class="field-label" style="margin-top:10px;">באיזו חברה תופק הפוליסה החדשה?</div>`;
+          html += createSelect(
+            "newPolicyCompanySelect",
+            INSURANCE_COMPANIES,
+            action.newPolicyCompany
+          );
+          html += `<input type="text" id="newPolicyCompanyOther" placeholder="שם חברה (אם 'אחר')" style="margin-top:6px; display:none;" value="${action.newPolicyCompanyOther || ""}" />`;
+          html += `<div class="field-label" style="margin-top:10px;">מה הפרמיה החודשית?</div>`;
+          html += `<input type="number" id="newPolicyPremium" value="${action.newPolicyPremium || ""}" />`;
+          break;
+
+        // ===== נימוקים =====
+        case "reasons":
+          setSubtitle("נימוקים להמלצה");
+          html += `<div class="field-label">כתוב נימוק להמלצה זו:</div>`;
+          html += `<textarea id="reasonInput" placeholder="לדוגמה: דמי ניהול נמוכים יותר, תשואות טובות יותר וכו'"></textarea>`;
+          if (action.reasons && action.reasons.length) {
+            html += `<div class="field-label" style="margin-top:10px;">נימוקים שנוספו:</div><ul>`;
+            action.reasons.forEach((r, idx) => {
+              const letter =
+                action.reasons.length > 1 ? `${HEBREW_LETTERS[idx]}. ` : "";
+              html += `<li>${letter}${r}</li>`;
+            });
+            html += `</ul>`;
+          }
+          html += `<button type="button" class="btn btn-secondary btn-small" id="addReasonBtn">הוסף נימוק נוסף</button>`;
+          break;
+
+        default:
+          break;
+      }
+
+      container.innerHTML = html;
+
+      const addBtn = document.getElementById("addReasonBtn");
+      if (addBtn) {
+        addBtn.onclick = () => {
+          const txt = getValue("reasonInput");
+          if (!txt) return;
+          action.reasons = action.reasons || [];
+          action.reasons.push(txt);
+          document.getElementById("reasonInput").value = "";
+          render();
+        };
+      }
+
+      document.getElementById("backBtn").disabled =
+        history.length === 0 && (currentStep === "mode");
+
+      // אחרי שיצרנו את ה־HTML – להפעיל הצגות דינמיות
+      setupDynamicVisibility();
+    }
+
+    // =====================
+    // שמירת צעד וחישוב הצעד הבא
+    // =====================
+
+    function saveCurrentStep() {
+      const a = getCurrentAction();
+
+      switch (currentStep) {
+        case "mode": {
+          const v = getValue("modeSelect");
+          if (!v) {
+            alert("בחר מצב: סיכום הדברים או המלצות.");
+            return false;
+          }
+          mode = v;
+          return true;
+        }
+        case "totalActions": {
+          let n = parseInt(getValue("actionsCount"), 10);
+          if (!n || n < 1) {
+            alert("נא להזין מספר פעולות תקין.");
+            return false;
+          }
+          totalActions = n;
+          actions.length = totalActions;
+          return true;
+        }
+        case "actionType": {
+          const t = getValue("actionTypeSelect");
+          if (!t) {
+            alert("נא לבחור סוג פעולה.");
+            return false;
+          }
+          a.type = t;
+          return true;
+        }
+
+        case "company": {
+          a.company = getValue("companySelect");
+          a.companyOther = getValue("companyOther");
+          if (!a.company && !a.companyOther) {
+            alert("נא לבחור חברה או לכתוב שם חברה.");
+            return false;
+          }
+          return true;
+        }
+
+        case "product": {
+          a.product = getValue("productSelect");
+          a.productOther = getValue("productOther");
+          if (!a.product && !a.productOther) {
+            alert("נא לבחור סוג מוצר או לכתוב אותו.");
+            return false;
+          }
+          return true;
+        }
+
+        case "employment": {
+          a.employmentType = getValue("employmentSelect");
+          a.employerName = getValue("employerName");
+          a.selfDeposit = getValue("selfDeposit");
+
+          if (a.employmentType === "שכירה" && !a.employerName) {
+            alert("נא לרשום שם מעסיק.");
+            return false;
+          }
+          if (a.employmentType === "עצמאית" && !a.selfDeposit) {
+            alert("נא לרשום סכום הפקדה.");
+            return false;
+          }
+          return true;
+        }
+
+        case "kgiDeposit": {
+          a.kgiDepositType = getValue("kgiDepositType");
+          a.kgiMonthly = getValue("kgiMonthly");
+          a.kgiOneTime = getValue("kgiOneTime");
+          if (!a.kgiDepositType) {
+            alert("נא לבחור אופי הפקדה.");
+            return false;
+          }
+          if (
+            (a.kgiDepositType === "הוראת קבע" ||
+              a.kgiDepositType === "גם וגם") &&
+            !a.kgiMonthly
+          ) {
+            alert("נא להזין סכום הוראת קבע.");
+            return false;
+          }
+          if (
+            (a.kgiDepositType === "חד פעמי" ||
+              a.kgiDepositType === "גם וגם") &&
+            !a.kgiOneTime
+          ) {
+            alert("נא להזין סכום הפקדה חד פעמית.");
+            return false;
+          }
+          return true;
+        }
+
+        case "transferTargetCompany": {
+          a.targetCompany = getValue("targetCompanySelect");
+          a.targetCompanyOther = getValue("targetCompanyOther");
+          if (!a.targetCompany && !a.targetCompanyOther) {
+            alert("נא לבחור חברה אליה תנויד הקופה או לכתוב שם חברה.");
+            return false;
+          }
+          return true;
+        }
+
+        case "accountNumber": {
+          a.accountNumber = getValue("accountNumberInput");
+          if (!a.accountNumber) {
+            alert("נא להזין מספר קופה.");
+            return false;
+          }
+          return true;
+        }
+
+        case "keepType": {
+          a.keepType = getValue("keepTypeSelect");
+          if (!a.keepType) {
+            alert("נא לבחור מה יקרה בקופה.");
+            return false;
+          }
+          return true;
+        }
+
+        case "currentTrack": {
+          a.currentTrack = getValue("currentTrackSelect");
+          a.currentTrackOther = getValue("currentTrackOther");
+          if (!a.currentTrack && !a.currentTrackOther) {
+            alert("נא לבחור מסלול נוכחי או לרשום אחד.");
+            return false;
+          }
+          return true;
+        }
+
+        case "newTrack": {
+          a.newTrack = getValue("newTrackSelect");
+          a.newTrackOther = getValue("newTrackOther");
+          if (!a.newTrack && !a.newTrackOther) {
+            alert("נא לבחור מסלול חדש או לרשום אחד.");
+            return false;
+          }
+          return true;
+        }
+
+        case "trackForOpen": {
+          a.openTrack = getValue("openTrackSelect");
+          a.openTrackOther = getValue("openTrackOther");
+          if (!a.openTrack && !a.openTrackOther) {
+            alert("נא לבחור מסלול השקעה או לרשום אחד.");
+            return false;
+          }
+          return true;
+        }
+
+        case "managementFee": {
+          a.managementFee = getValue("mgmtSelect");
+          a.managementFeeOther = getValue("mgmtOther");
+          if (!a.managementFee && !a.managementFeeOther) {
+            alert("נא להזין דמי ניהול.");
+            return false;
+          }
+          return true;
+        }
+
+        case "privateCompany": {
+          a.privateCompany = getValue("privateCompanySelect");
+          a.privateCompanyOther = getValue("privateCompanyOther");
+          if (!a.privateCompany && !a.privateCompanyOther) {
+            alert("נא לבחור חברה או לרשום אחת.");
+            return false;
+          }
+          return true;
+        }
+
+        case "privateProduct": {
+          a.privateProduct = getValue("privateProductSelect");
+          a.privateProductOther = getValue("privateProductOther");
+          if (!a.privateProduct && !a.privateProductOther) {
+            alert("נא לבחור סוג ביטוח או לרשום אחד.");
+            return false;
+          }
+          return true;
+        }
+
+        case "privateAction": {
+          a.privateAction = getValue("privateActionSelect");
+          if (!a.privateAction) {
+            alert("נא לבחור סוג פעולה בפוליסה.");
+            return false;
+          }
+          return true;
+        }
+
+        case "policyNumber": {
+          a.policyNumber = getValue("policyNumberInput");
+          if (!a.policyNumber) {
+            alert("נא להזין מספר פוליסה.");
+            return false;
+          }
+          return true;
+        }
+
+        case "insuranceSum": {
+          a.insuranceSum = getValue("insuranceSumInput");
+          if (!a.insuranceSum) {
+            alert("נא להזין סכום ביטוח.");
+            return false;
+          }
+          return true;
+        }
+
+        case "newPolicyDetails": {
+          a.newPolicyType = getValue("newPolicyTypeSelect");
+          a.newPolicyTypeOther = getValue("newPolicyTypeOther");
+          a.newPolicyCompany = getValue("newPolicyCompanySelect");
+          a.newPolicyCompanyOther = getValue("newPolicyCompanyOther");
+          a.newPolicyPremium = getValue("newPolicyPremium");
+
+          if (!a.newPolicyType && !a.newPolicyTypeOther) {
+            alert("נא לבחור סוג ביטוח חדש או לרשום אחד.");
+            return false;
+          }
+          if (!a.newPolicyCompany && !a.newPolicyCompanyOther) {
+            alert("נא לבחור חברה חדשה או לרשום אחת.");
+            return false;
+          }
+          if (!a.newPolicyPremium) {
+            alert("נא להזין פרמיה חודשית.");
+            return false;
+          }
+          return true;
+        }
+
+        case "reasons": {
+          const txt = getValue("reasonInput");
+          if (txt) {
+            a.reasons = a.reasons || [];
+            a.reasons.push(txt);
+          }
+          return true;
+        }
+
+        default:
+          return true;
+      }
+    }
+
+    function computeNextStep() {
+      const a = getCurrentAction();
+
+      if (currentStep === "mode") return "totalActions";
+      if (currentStep === "totalActions") {
+        currentActionIndex = 0;
+        return "actionType";
+      }
+
+      if (currentStep === "actionType") {
+        if (a.type === "פרט") {
+          return "privateCompany";
+        } else {
+          return "company";
+        }
+      }
+
+      if (a.type !== "פרט") {
+        switch (currentStep) {
+          case "company":
+            return "product";
+
+          case "product":
+            if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(a.product)) {
+              return "employment";
+            }
+            if (a.product === "קופת גמל להשקעה") {
+              return "kgiDeposit";
+            }
+            return a.type === "פתיחת קופה"
+              ? "trackForOpen"
+              : a.type === "ניוד"
+              ? "transferTargetCompany"
+              : "keepType";
+
+          case "employment":
+            if (a.product === "קופת גמל להשקעה") return "kgiDeposit";
+            return a.type === "פתיחת קופה"
+              ? "trackForOpen"
+              : a.type === "ניוד"
+              ? "transferTargetCompany"
+              : "keepType";
+
+          case "kgiDeposit":
+            return a.type === "פתיחת קופה"
+              ? "trackForOpen"
+              : a.type === "ניוד"
+              ? "transferTargetCompany"
+              : "keepType";
+
+          case "transferTargetCompany":
+            return "accountNumber";
+
+          case "accountNumber":
+            return a.type === "ניוד" ? "trackForOpen" : "managementFee";
+
+          case "keepType":
+            if (a.keepType === "שינוי מסלול השקעה") return "currentTrack";
+            if (a.keepType === "מינוי סוכן") return "accountNumber";
+            return "managementFee";
+
+          case "currentTrack":
+            return "newTrack";
+
+          case "newTrack":
+            return "managementFee";
+
+          case "trackForOpen":
+            return "managementFee";
+
+          case "managementFee":
+            if (mode === MODE_RECOMMENDATION) {
+              return "reasons";
+            } else {
+              return advanceActionOrFinish();
+            }
+
+          case "reasons":
+            return advanceActionOrFinish();
+
+          default:
+            return null;
+        }
+      } else {
+        switch (currentStep) {
+          case "privateCompany":
+            return "privateProduct";
+
+          case "privateProduct":
+            return "privateAction";
+
+          case "privateAction":
+            if (["ביטול", "השארה", "ביטול והפקה חדשה"].includes(a.privateAction)) {
+              return "policyNumber";
+            }
+            if (
+              ["פוליסת חיים", "פוליסת חיים משועבדת", "ביטוח בריאות", "ביטוח בריאות ומחלות קשות"].includes(
+                a.privateProduct
+              )
+            ) {
+              return a.privateAction === "הפקה" ? "insuranceSum" : "insuranceSum";
+            }
+            if (a.privateAction === "הפקה") {
+              return "newPolicyDetails";
+            }
+            if (a.privateAction === "מינוי סוכן") {
+              return mode === MODE_RECOMMENDATION ? "reasons" : advanceActionOrFinish();
+            }
+            return mode === MODE_RECOMMENDATION ? "reasons" : advanceActionOrFinish();
+
+          case "policyNumber":
+            if (
+              ["פוליסת חיים", "פוליסת חיים משועבדת", "ביטוח בריאות", "ביטוח בריאות ומחלות קשות"].includes(
+                a.privateProduct
+              )
+            ) {
+              return "insuranceSum";
+            }
+            if (a.privateAction === "ביטול והפקה חדשה") {
+              return "newPolicyDetails";
+            }
+            return mode === MODE_RECOMMENDATION ? "reasons" : advanceActionOrFinish();
+
+          case "insuranceSum":
+            if (a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה") {
+              return "newPolicyDetails";
+            }
+            return mode === MODE_RECOMMENDATION ? "reasons" : advanceActionOrFinish();
+
+          case "newPolicyDetails":
+            return mode === MODE_RECOMMENDATION ? "reasons" : advanceActionOrFinish();
+
+          case "reasons":
+            return advanceActionOrFinish();
+
+          default:
+            return null;
+        }
+      }
+    }
+
+    function advanceActionOrFinish() {
+      if (currentActionIndex + 1 < totalActions) {
+        currentActionIndex++;
+        return "actionType";
+      } else {
+        showSummary();
+        return null;
+      }
+    }
+
+    // =====================
+    // סיכום סופי
+    // =====================
+
+    function showSummary() {
+      const box = document.getElementById("summaryBox");
+      const copyBtn = document.getElementById("copyBtn");
+      const lines = [];
+
+      if (mode === MODE_SUMMARY) {
+        lines.push("בהמשך לשיחתנו");
+        lines.push("סוכם על הדברים הבאים:");
+        lines.push("");
+      } else {
+        lines.push("בהמשך לשיחתנו");
+        lines.push("להלן ההמלצות שנאמרו בשיחה:");
+        lines.push("");
+      }
+
+      actions.forEach((a, idx) => {
+        if (!a || !a.type) return;
+
+        let line = `${idx + 1}. `;
+
+        if (a.type !== "פרט") {
+          const company = formatCompanyWithOther(a.company, a.companyOther);
+          const product = a.product === "אחר" ? a.productOther : a.product;
+
+          let empPart = "";
+          if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(product)) {
+            if (a.employmentType === "שכירה") {
+              empPart = a.employerName
+                ? ` שכירה תחת המעסיק ${a.employerName}`
+                : " שכירה בלבד";
+            } else if (a.employmentType === "עצמאית") {
+              empPart = a.selfDeposit
+                ? ` עצמאית עם הפקדה חודשית של ${a.selfDeposit} ₪`
+                : " עצמאית";
+            }
+          }
+
+          if (a.type === "פתיחת קופה") {
+            let track =
+              a.openTrack === "אחר" ? a.openTrackOther : a.openTrack;
+            track = formatTrack(track);
+            line += `פתיחת ${product}${empPart} בחברת ${company} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${
+              a.managementFee === "אחר" ? a.managementFeeOther : a.managementFee
+            }.`;
+          } else if (a.type === "ניוד") {
+            const target = formatCompanyWithOther(
+              a.targetCompany,
+              a.targetCompanyOther
+            );
+            let track =
+              a.openTrack === "אחר" ? a.openTrackOther : a.openTrack;
+            track = formatTrack(track);
+            const mgmt =
+              a.managementFee === "אחר"
+                ? a.managementFeeOther
+                : a.managementFee;
+            line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber}- תנויד לחברת ${target} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${mgmt}.`;
+          } else if (a.type === "השארה") {
+            const mgmt =
+              a.managementFee === "אחר"
+                ? a.managementFeeOther
+                : a.managementFee;
+            if (a.keepType === "ללא שינוי") {
+              line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber}- תישאר ללא שינוי בדמי ניהול ${mgmt}.`;
+            } else if (a.keepType === "שינוי מסלול השקעה") {
+              let cur =
+                a.currentTrack === "אחר"
+                  ? a.currentTrackOther
+                  : a.currentTrack;
+              let n =
+                a.newTrack === "אחר" ? a.newTrackOther : a.newTrack;
+              cur = formatTrack(cur);
+              n = formatTrack(n);
+              line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber}- תישאר באותה חברה כאשר יתבצע שינוי מסלול מ${cur} ל${n} בדמי ניהול ${mgmt}.`;
+            } else if (a.keepType === "מינוי סוכן") {
+              line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber}- יתבצע מינוי סוכן בדמי ניהול ${mgmt}.`;
+            }
+          }
+
+          if (product === "קופת גמל להשקעה") {
+            if (a.kgiDepositType && a.kgiDepositType !== "ללא הפקדה") {
+              let dep = "";
+              if (a.kgiDepositType === "הוראת קבע") {
+                dep = ` עם הוראת קבע של ${a.kgiMonthly} ₪ בחודש`;
+              } else if (a.kgiDepositType === "חד פעמי") {
+                dep = ` עם הפקדה חד פעמית של ${a.kgiOneTime} ₪`;
+              } else if (a.kgiDepositType === "גם וגם") {
+                dep = ` עם הוראת קבע של ${a.kgiMonthly} ₪ בחודש והפקדה חד פעמית של ${a.kgiOneTime} ₪`;
+              }
+              line += dep;
+            }
+          }
+        } else {
+          const company = formatCompanyWithOther(
+            a.privateCompany,
+            a.privateCompanyOther
+          );
+          const product =
+            a.privateProduct === "אחר"
+              ? a.privateProductOther
+              : a.privateProduct;
+
+          if (a.privateAction === "ביטול") {
+            line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber}- תבוטל.`;
+          } else if (a.privateAction === "השארה") {
+            line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber}- תישאר ללא שינוי.`;
+          } else if (a.privateAction === "מינוי סוכן") {
+            line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber}- יתבצע מינוי סוכן.`;
+          } else if (a.privateAction === "הפקה") {
+            let newType =
+              a.newPolicyType === "אחר"
+                ? a.newPolicyTypeOther
+                : a.newPolicyType || product;
+            let newComp = formatCompanyWithOther(
+              a.newPolicyCompany,
+              a.newPolicyCompanyOther
+            );
+            let sumPart = "";
+            if (
+              ["פוליסת חיים", "פוליסת חיים משועבדת", "ביטוח בריאות", "ביטוח בריאות ומחלות קשות"].includes(
+                product
+              ) && a.insuranceSum
+            ) {
+              sumPart = ` עם פיצוי של ${a.insuranceSum} ₪`;
+            }
+            if (mode === MODE_RECOMMENDATION) {
+              line += `פתיחת פוליסה של ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
+            } else {
+              line += `תופק פוליסה חדשה של ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
+            }
+          } else if (a.privateAction === "ביטול והפקה חדשה") {
+            let newType =
+              a.newPolicyType === "אחר"
+                ? a.newPolicyTypeOther
+                : a.newPolicyType;
+            let newComp = formatCompanyWithOther(
+              a.newPolicyCompany,
+              a.newPolicyCompanyOther
+            );
+            let sumPart = "";
+            if (
+              ["פוליסת חיים", "פוליסת חיים משועבדת", "ביטוח בריאות", "ביטוח בריאות ומחלות קשות"].includes(
+                product
+              ) && a.insuranceSum
+            ) {
+              sumPart = ` עם פיצוי של ${a.insuranceSum} ₪`;
+            }
+            line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber}- פוליסה זו תתבטל ובמקום זה תופק פוליסת ${newType}${sumPart} ב${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
+          }
+        }
+
+        if (mode === MODE_RECOMMENDATION && a.reasons && a.reasons.length) {
+          line += "\nלהלן הסיבות להמלצה זאת:\n";
+          if (a.reasons.length === 1) {
+            line += a.reasons[0];
+          } else {
+            a.reasons.forEach((r, i) => {
+              const letter = HEBREW_LETTERS[i] || "";
+              line += `${letter}. ${r}\n`;
+            });
+            line = line.trimEnd();
+          }
+        }
+
+        lines.push(line);
+        lines.push("");
+      });
+
+      box.textContent = lines.join("\n").trim();
+      box.classList.remove("hidden");
+      copyBtn.classList.remove("hidden");
+    }
+
+    // =====================
+    // ניווט + העתקה
+    // =====================
+
+    document.getElementById("nextBtn").addEventListener("click", () => {
+      if (!saveCurrentStep()) return;
+      history.push(currentStep);
+      const next = computeNextStep();
+      if (next) {
+        currentStep = next;
+        render();
+      }
+    });
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+      if (!history.length) return;
+      currentStep = history.pop();
+      render();
+    });
+
+    document.getElementById("copyBtn").addEventListener("click", () => {
+      const box = document.getElementById("summaryBox");
+      const text = box.textContent;
+      if (!text) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+          .then(() => {
+            alert("הסיכום הועתק ללוח.");
+          })
+          .catch(() => {
+            alert("לא הצלחתי להעתיק. ייתכן שהדפדפן חוסם.");
+          });
+      } else {
+        alert("העתקה אוטומטית אינה נתמכת בדפדפן זה.");
+      }
+    });
+
+    // התחלה
+    render();
+  </script>
+</body>
+</html>
