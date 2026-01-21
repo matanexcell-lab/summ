@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>סיכום שיחה</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-wrapper">
+    <div class="card">
+      <div class="top-row">
+        <h1>סיכום שיחה</h1>
+        <!-- הבדג' של מצב נשאר מוסתר, אם תרצה נחזיר -->
+        <span id="modePill" class="mode-pill hidden"></span>
+      </div>
+      <div id="subtitle" class="subtitle"></div>
+      <div id="stepIndicator" class="step-indicator"></div>
+
+      <div id="formContainer"></div>
+
+      <div class="buttons-row">
+        <button id="backBtn" class="btn btn-secondary">חזרה</button>
+        <button id="nextBtn" class="btn btn-primary">המשך</button>
+      </div>
+
+      <div id="summaryBox" class="summary-box hidden"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
