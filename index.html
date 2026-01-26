@@ -125,6 +125,20 @@
       color: #b91c1c;
       margin-top: 6px;
     }
+    .chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .chip {
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      color: #374151;
+    }
     .summary-box {
       margin-top: 18px;
       background: #111827;
@@ -153,8 +167,8 @@
       display: none !important;
     }
     #copyBtn {
-      width: 100%;
       margin-top: 8px;
+      width: 100%;
     }
   </style>
 </head>
@@ -173,7 +187,7 @@
         <button id="nextBtn" class="btn btn-primary">המשך</button>
       </div>
       <div id="summaryBox" class="summary-box hidden"></div>
-      <button id="copyBtn" class="btn btn-secondary hidden">העתק סיכום</button>
+      <button id="copyBtn" class="btn btn-secondary btn-small hidden">העתק סיכום</button>
     </div>
   </div>
 
@@ -214,12 +228,12 @@
     const PRODUCTS = ["קרן פנסיה", "קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"];
 
     const PRIVATE_PRODUCTS = [
-      "פוליסת חיים",
-      "פוליסת חיים משועבדת",
-      "פוליסת משכנתא",
+      "ביטוח חיים",
+      "ביטוח חיים משועבדת",
+      "ביטוח משכנתא",
       "ביטוח בריאות",
-      "ביטוח בריאות ומחלות קשות",
-      "מחלות קשות"
+      "ביטוח מחלות קשות",
+      "ביטוח בריאות ומחלות קשות"
     ];
 
     const PRIVATE_ACTIONS = [
@@ -313,7 +327,7 @@
       return `<select id="${id}">
         <option value="">בחר...</option>
         ${htmlOptions}
-        <option value="אחר" ${value === "אחר" ? "selected" : ""}>אחר...</option>
+        <option value="אחר">אחר...</option>
       </select>`;
     }
 
@@ -325,6 +339,10 @@
     function setValue(id, value) {
       const el = document.getElementById(id);
       if (el) el.value = value != null ? value : "";
+    }
+
+    function showError(msg) {
+      return `<div class="error-text">${msg}</div>`;
     }
 
     function formatTrack(track) {
@@ -343,41 +361,41 @@
       const sel = document.getElementById(selectId);
       const wrap = document.getElementById(wrapperId);
       if (!sel || !wrap) return;
-      const update = () => {
-        wrap.style.display = sel.value === "אחר" ? "block" : "none";
+      const sync = () => {
+        wrap.classList.toggle("hidden", sel.value !== "אחר");
       };
-      sel.addEventListener("change", update);
-      update();
+      sel.addEventListener("change", sync);
+      sync();
     }
 
-    function toggleEmploymentFields() {
+    function toggleEmploymentVisibility() {
       const sel = document.getElementById("employmentSelect");
       const empWrap = document.getElementById("employerWrapper");
       const selfWrap = document.getElementById("selfDepositWrapper");
       if (!sel || !empWrap || !selfWrap) return;
-      const update = () => {
+      const sync = () => {
         const v = sel.value;
-        empWrap.style.display = v === "שכירה" ? "block" : "none";
-        selfWrap.style.display = v === "עצמאית" ? "block" : "none";
+        empWrap.classList.toggle("hidden", v !== "שכירה");
+        selfWrap.classList.toggle("hidden", v !== "עצמאית");
       };
-      sel.addEventListener("change", update);
-      update();
+      sel.addEventListener("change", sync);
+      sync();
     }
 
-    function toggleKgiDepositFields() {
+    function toggleKgiDepositVisibility() {
       const sel = document.getElementById("kgiDepositType");
-      const mWrap = document.getElementById("kgiMonthlyWrapper");
-      const oWrap = document.getElementById("kgiOneTimeWrapper");
-      if (!sel || !mWrap || !oWrap) return;
-      const update = () => {
+      const monthWrap = document.getElementById("kgiMonthlyWrapper");
+      const oneWrap = document.getElementById("kgiOneTimeWrapper");
+      if (!sel || !monthWrap || !oneWrap) return;
+      const sync = () => {
         const v = sel.value;
         const showMonthly = v === "הוראת קבע" || v === "גם וגם";
-        const showOneTime = v === "חד פעמי" || v === "גם וגם";
-        mWrap.style.display = showMonthly ? "block" : "none";
-        oWrap.style.display = showOneTime ? "block" : "none";
+        const showOne = v === "חד פעמי" || v === "גם וגם";
+        monthWrap.classList.toggle("hidden", !showMonthly);
+        oneWrap.classList.toggle("hidden", !showOne);
       };
-      sel.addEventListener("change", update);
-      update();
+      sel.addEventListener("change", sync);
+      sync();
     }
 
     // =====================
@@ -426,69 +444,77 @@
           setSubtitle("פרטי החברה והמוצר");
           html += `<div class="field-label">מה שם החברה?</div>`;
           html += createSelect("companySelect", INVEST_COMPANIES, action.company);
-          html += `
-            <div id="companyOtherWrapper" style="margin-top:6px; display:none;">
-              <input type="text" id="companyOther" placeholder="שם החברה (אם נבחר 'אחר')" value="${action.companyOther || ""}" />
-            </div>
-          `;
+          html += `<div id="companyOtherWrapper" class="${
+            action.company === "אחר" ? "" : "hidden"
+          }">
+              <input type="text" id="companyOther" placeholder="שם החברה (אם נבחר 'אחר')" style="margin-top:6px;" value="${action.companyOther || ""}" />
+            </div>`;
           break;
 
         case "product":
           setSubtitle("פרטי החברה והמוצר");
           html += `<div class="field-label">מה סוג המוצר?</div>`;
           html += createSelect("productSelect", PRODUCTS, action.product);
-          html += `
-            <div id="productOtherWrapper" style="margin-top:6px; display:none;">
-              <input type="text" id="productOther" placeholder="סוג מוצר (אם נבחר 'אחר')" value="${action.productOther || ""}" />
-            </div>
-          `;
+          html += `<div id="productOtherWrapper" class="${
+            action.product === "אחר" ? "" : "hidden"
+          }">
+              <input type="text" id="productOther" placeholder="סוג מוצר (אם נבחר 'אחר')" style="margin-top:6px;" value="${action.productOther || ""}" />
+            </div>`;
           break;
 
         case "employment":
           setSubtitle("מצב תעסוקתי");
           html += `<div class="field-label">האם הלקוח שכיר, עצמאי או כלום?</div>`;
           html += createSelect("employmentSelect", EMPLOYMENT_TYPES, action.employmentType);
-          html += `
-            <div id="employerWrapper" style="margin-top:6px; display:none;">
-              <input type="text" id="employerName" placeholder="שם המעסיק (אם שכירה)" value="${action.employerName || ""}" />
-            </div>
-            <div id="selfDepositWrapper" style="margin-top:6px; display:none;">
-              <input type="number" id="selfDeposit" placeholder="סכום הפקדה חודשית (אם עצמאי)" value="${action.selfDeposit || ""}" />
-            </div>
-          `;
+          html += `<div id="employerWrapper" class="${
+            action.employmentType === "שכירה" ? "" : "hidden"
+          }">
+              <input type="text" id="employerName" placeholder="שם המעסיק (אם שכירה)" style="margin-top:6px;" value="${action.employerName || ""}" />
+            </div>`;
+          html += `<div id="selfDepositWrapper" class="${
+            action.employmentType === "עצמאית" ? "" : "hidden"
+          }">
+              <input type="number" id="selfDeposit" placeholder="סכום הפקדה (אם עצמאי)" style="margin-top:6px;" value="${action.selfDeposit || ""}" />
+            </div>`;
           break;
 
         case "kgiDeposit":
-          setSubtitle("אופי ההפקדה");
+          setSubtitle("אופי ההפקדה לקופת גמל להשקעה");
           html += `<div class="field-label">האם יש הפקדה לקופת גמל להשקעה?</div>`;
-          html += `
-            <select id="kgiDepositType">
-              <option value="">בחר...</option>
-              <option value="ללא הפקדה" ${action.kgiDepositType === "ללא הפקדה" ? "selected" : ""}>ללא הפקדה</option>
-              <option value="הוראת קבע" ${action.kgiDepositType === "הוראת קבע" ? "selected" : ""}>הוראת קבע</option>
-              <option value="חד פעמי" ${action.kgiDepositType === "חד פעמי" ? "selected" : ""}>הפקדה חד פעמית</option>
-              <option value="גם וגם" ${action.kgiDepositType === "גם וגם" ? "selected" : ""}>גם וגם</option>
-            </select>
-          `;
-          html += `
-            <div id="kgiMonthlyWrapper" style="margin-top:6px; display:none;">
-              <input type="number" id="kgiMonthly" placeholder="סכום הוראת קבע חודשית" value="${action.kgiMonthly || ""}" />
-            </div>
-            <div id="kgiOneTimeWrapper" style="margin-top:6px; display:none;">
-              <input type="number" id="kgiOneTime" placeholder="סכום הפקדה חד פעמית" value="${action.kgiOneTime || ""}" />
-            </div>
-          `;
+          html += createSelect(
+            "kgiDepositType",
+            ["ללא הפקדה", "הוראת קבע", "חד פעמי", "גם וגם"],
+            action.kgiDepositType
+          );
+          html += `<div id="kgiMonthlyWrapper" class="${
+            action.kgiDepositType === "הוראת קבע" || action.kgiDepositType === "גם וגם"
+              ? ""
+              : "hidden"
+          }">
+              <input type="number" id="kgiMonthly" placeholder="סכום הוראת קבע חודשית" style="margin-top:6px;" value="${action.kgiMonthly || ""}" />
+            </div>`;
+          html += `<div id="kgiOneTimeWrapper" class="${
+            action.kgiDepositType === "חד פעמי" || action.kgiDepositType === "גם וגם"
+              ? ""
+              : "hidden"
+          }">
+              <input type="number" id="kgiOneTime" placeholder="סכום הפקדה חד פעמית" style="margin-top:6px;" value="${action.kgiOneTime || ""}" />
+            </div>`;
           break;
 
         case "transferTargetCompany":
           setSubtitle("ניוד קופה");
           html += `<div class="field-label">לאיזו חברה תנויד הקופה?</div>`;
-          html += createSelect("targetCompanySelect", INVEST_COMPANIES, action.targetCompany);
-          html += `
-            <div id="targetCompanyOtherWrapper" style="margin-top:6px; display:none;">
-              <input type="text" id="targetCompanyOther" placeholder="שם חברה (אם 'אחר')" value="${action.targetCompanyOther || ""}" />
-            </div>
-          `;
+          html += createSelect(
+            "targetCompanySelect",
+            INVEST_COMPANIES,
+            action.targetCompany
+          );
+          html += `<div id="targetCompanyOtherWrapper" class="${
+            action.targetCompany === "אחר" ? "" : "hidden"
+          }">
+              <input type="text" id="targetCompanyOther" placeholder="שם חברה (אם 'אחר')" style="margin-top:6px;" value="${action.targetCompanyOther || ""}" />
+            </div>`;
           break;
 
         case "accountNumber":
@@ -511,67 +537,73 @@
           setSubtitle("שינוי מסלול השקעה");
           html += `<div class="field-label">מה מסלול ההשקעה הנוכחי?</div>`;
           html += createSelect("currentTrackSelect", BASE_TRACKS, action.currentTrack);
-          html += `
-            <div id="currentTrackOtherWrapper" style="margin-top:6px; display:none;">
-              <input type="text" id="currentTrackOther" placeholder="מסלול אחר (אם 'אחר')" value="${action.currentTrackOther || ""}" />
-            </div>
-          `;
+          html += `<div id="currentTrackOtherWrapper" class="${
+            action.currentTrack === "אחר" ? "" : "hidden"
+          }">
+              <input type="text" id="currentTrackOther" placeholder="מסלול אחר (אם 'אחר')" style="margin-top:6px;" value="${action.currentTrackOther || ""}" />
+            </div>`;
           break;
 
         case "newTrack":
           setSubtitle("מסלול השקעה עתידי");
           html += `<div class="field-label">מהו מסלול ההשקעה החדש?</div>`;
           html += createSelect("newTrackSelect", BASE_TRACKS, action.newTrack);
-          html += `
-            <div id="newTrackOtherWrapper" style="margin-top:6px; display:none;">
-              <input type="text" id="newTrackOther" placeholder="מסלול אחר (אם 'אחר')" value="${action.newTrackOther || ""}" />
-            </div>
-          `;
+          html += `<div id="newTrackOtherWrapper" class="${
+            action.newTrack === "אחר" ? "" : "hidden"
+          }">
+              <input type="text" id="newTrackOther" placeholder="מסלול אחר (אם 'אחר')" style="margin-top:6px;" value="${action.newTrackOther || ""}" />
+            </div>`;
           break;
 
         case "trackForOpen":
           setSubtitle("מסלול להשקעה");
           html += `<div class="field-label">באיזה מסלול יושקע הכסף?</div>`;
-          html += createSelect("openTrackSelect", BASE_TRACKS, action.openTrack);
-          html += `
-            <div id="openTrackOtherWrapper" style="margin-top:6px; display:none;">
-              <input type="text" id="openTrackOther" placeholder="מסלול אחר (אם 'אחר')" value="${action.openTrackOther || ""}" />
-            </div>
-          `;
+          html += createSelect(
+            "openTrackSelect",
+            BASE_TRACKS,
+            action.openTrack
+          );
+          html += `<div id="openTrackOtherWrapper" class="${
+            action.openTrack === "אחר" ? "" : "hidden"
+          }">
+              <input type="text" id="openTrackOther" placeholder="מסלול אחר (אם 'אחר')" style="margin-top:6px;" value="${action.openTrackOther || ""}" />
+            </div>`;
           break;
 
         case "managementFee":
           setSubtitle("דמי ניהול");
           html += `<div class="field-label">מהם דמי הניהול?</div>`;
 
-          let mgmtOptions = [];
           if (action.product === "קרן פנסיה") {
-            mgmtOptions = [
-              "0.1% מצבירה ועוד 1.5% מהפקדה",
-              "0.15% מצבירה ועוד 1.5% מהפקדה"
-            ];
+            html += createSelect(
+              "mgmtSelect",
+              [
+                "0.1% מצבירה ועוד 1.5% מהפקדה",
+                "0.15% מצבירה ועוד 1.5% מהפקדה",
+                "ללא שינוי"
+              ],
+              action.managementFee
+            );
           } else if (
             ["קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"].includes(
               action.product
             )
           ) {
-            mgmtOptions = ["0.6%", "0.7%", "0.8%"];
-          }
-
-          if (action.type === "השארה" && mgmtOptions.length) {
-            mgmtOptions.push("ללא שינוי");
-          }
-
-          if (mgmtOptions.length) {
-            html += createSelect("mgmtSelect", mgmtOptions, action.managementFee);
-            html += `
-              <div id="mgmtOtherWrapper" style="margin-top:6px; display:none;">
-                <input type="text" id="mgmtOther" placeholder="דמי ניהול אחרים (אם 'אחר')" value="${action.managementFeeOther || ""}" />
-              </div>
-            `;
+            html += createSelect(
+              "mgmtSelect",
+              ["0.6%", "0.7%", "0.8%", "ללא שינוי"],
+              action.managementFee
+            );
           } else {
-            html += `<input type="text" id="mgmtSelect" value="${action.managementFee || ""}" />`;
+            html += `<input type="text" id="mgmtSelect" value="${
+              action.managementFee || ""
+            }" />`;
           }
+          html += `<div id="mgmtOtherWrapper" class="${
+            action.managementFee === "אחר" ? "" : "hidden"
+          }">
+              <input type="text" id="mgmtOther" placeholder="דמי ניהול אחרים (אם 'אחר')" style="margin-top:6px;" value="${action.managementFeeOther || ""}" />
+            </div>`;
           break;
 
         // ===== פרט / ביטוח =====
@@ -583,11 +615,11 @@
             INSURANCE_COMPANIES,
             action.privateCompany
           );
-          html += `
-            <div id="privateCompanyOtherWrapper" style="margin-top:6px; display:none;">
-              <input type="text" id="privateCompanyOther" placeholder="שם חברה (אם 'אחר')" value="${action.privateCompanyOther || ""}" />
-            </div>
-          `;
+          html += `<div id="privateCompanyOtherWrapper" class="${
+            action.privateCompany === "אחר" ? "" : "hidden"
+          }">
+              <input type="text" id="privateCompanyOther" placeholder="שם חברה (אם 'אחר')" style="margin-top:6px;" value="${action.privateCompanyOther || ""}" />
+            </div>`;
           break;
 
         case "privateProduct":
@@ -598,11 +630,11 @@
             PRIVATE_PRODUCTS,
             action.privateProduct
           );
-          html += `
-            <div id="privateProductOtherWrapper" style="margin-top:6px; display:none;">
-              <input type="text" id="privateProductOther" placeholder="סוג ביטוח (אם 'אחר')" value="${action.privateProductOther || ""}" />
-            </div>
-          `;
+          html += `<div id="privateProductOtherWrapper" class="${
+            action.privateProduct === "אחר" ? "" : "hidden"
+          }">
+              <input type="text" id="privateProductOther" placeholder="סוג ביטוח (אם 'אחר')" style="margin-top:6px;" value="${action.privateProductOther || ""}" />
+            </div>`;
           break;
 
         case "privateAction":
@@ -623,7 +655,7 @@
 
         case "insuranceSum":
           setSubtitle("סכום ביטוח");
-          html += `<div class="field-label">מהו סכום הביטוח (פיצוי)?</div>`;
+          html += `<div class="field-label">מהו סכום הביטוח?</div>`;
           html += `<input type="number" id="insuranceSumInput" value="${action.insuranceSum || ""}" />`;
           break;
 
@@ -635,22 +667,22 @@
             PRIVATE_PRODUCTS,
             action.newPolicyType
           );
-          html += `
-            <div id="newPolicyTypeOtherWrapper" style="margin-top:6px; display:none;">
-              <input type="text" id="newPolicyTypeOther" placeholder="סוג ביטוח (אם 'אחר')" value="${action.newPolicyTypeOther || ""}" />
-            </div>
-          `;
-          html += `<div class="field-label" style="margin-top:10px;">באיזו חברה תופק הפוליסה החדשה?</div>`;
+          html += `<div id="newPolicyTypeOtherWrapper" class="${
+            action.newPolicyType === "אחר" ? "" : "hidden"
+          }">
+              <input type="text" id="newPolicyTypeOther" placeholder="סוג ביטוח (אם 'אחר')" style="margin-top:6px;" value="${action.newPolicyTypeOther || ""}" />
+            </div>`;
+          html += `<div class="field-label" style="margin-top:10px;">באיזו חברה תיפתח הפוליסה החדשה?</div>`;
           html += createSelect(
             "newPolicyCompanySelect",
             INSURANCE_COMPANIES,
             action.newPolicyCompany
           );
-          html += `
-            <div id="newPolicyCompanyOtherWrapper" style="margin-top:6px; display:none;">
-              <input type="text" id="newPolicyCompanyOther" placeholder="שם חברה (אם 'אחר')" value="${action.newPolicyCompanyOther || ""}" />
-            </div>
-          `;
+          html += `<div id="newPolicyCompanyOtherWrapper" class="${
+            action.newPolicyCompany === "אחר" ? "" : "hidden"
+          }">
+              <input type="text" id="newPolicyCompanyOther" placeholder="שם חברה (אם 'אחר')" style="margin-top:6px;" value="${action.newPolicyCompanyOther || ""}" />
+            </div>`;
           html += `<div class="field-label" style="margin-top:10px;">מה הפרמיה החודשית?</div>`;
           html += `<input type="number" id="newPolicyPremium" value="${action.newPolicyPremium || ""}" />`;
           break;
@@ -663,9 +695,12 @@
           if (action.reasons && action.reasons.length) {
             html += `<div class="field-label" style="margin-top:10px;">נימוקים שנוספו:</div><ul>`;
             action.reasons.forEach((r, idx) => {
-              const letter =
-                action.reasons.length > 1 ? `${HEBREW_LETTERS[idx]}. ` : "";
-              html += `<li>${letter}${r}</li>`;
+              let prefix = "";
+              if (action.reasons.length > 1) {
+                const letter = HEBREW_LETTERS[idx] || "";
+                prefix = `${letter}. `;
+              }
+              html += `<li>${prefix}${r}</li>`;
             });
             html += `</ul>`;
           }
@@ -678,7 +713,7 @@
 
       container.innerHTML = html;
 
-      // הצגת/הסתרת שדות "אחר"
+      // חיבור דינמי ל"אחר"
       toggleOtherVisibility("companySelect", "companyOtherWrapper");
       toggleOtherVisibility("productSelect", "productOtherWrapper");
       toggleOtherVisibility("targetCompanySelect", "targetCompanyOtherWrapper");
@@ -691,11 +726,11 @@
       toggleOtherVisibility("newPolicyCompanySelect", "newPolicyCompanyOtherWrapper");
       toggleOtherVisibility("mgmtSelect", "mgmtOtherWrapper");
 
-      // שדות מצב תעסוקתי
-      toggleEmploymentFields();
+      // מצב תעסוקתי
+      toggleEmploymentVisibility();
 
-      // שדות קופת גמל להשקעה
-      toggleKgiDepositFields();
+      // בגמל להשקעה – פתיחת שורות הפקדה
+      toggleKgiDepositVisibility();
 
       // כפתור נימוק נוסף
       const addBtn = document.getElementById("addReasonBtn");
@@ -716,7 +751,7 @@
     }
 
     // =====================
-    // שמירת צעד
+    // שמירת צעד וחישוב הצעד הבא
     // =====================
 
     function saveCurrentStep() {
@@ -755,12 +790,8 @@
         case "company": {
           a.company = getValue("companySelect");
           a.companyOther = getValue("companyOther");
-          if (!a.company) {
-            alert("נא לבחור חברה.");
-            return false;
-          }
-          if (a.company === "אחר" && !a.companyOther) {
-            alert("נא לרשום שם חברה.");
+          if (!a.company && !a.companyOther) {
+            alert("נא לבחור חברה או לכתוב שם חברה.");
             return false;
           }
           return true;
@@ -769,12 +800,8 @@
         case "product": {
           a.product = getValue("productSelect");
           a.productOther = getValue("productOther");
-          if (!a.product) {
-            alert("נא לבחור סוג מוצר.");
-            return false;
-          }
-          if (a.product === "אחר" && !a.productOther) {
-            alert("נא לרשום סוג מוצר.");
+          if (!a.product && !a.productOther) {
+            alert("נא לבחור סוג מוצר או לכתוב אותו.");
             return false;
           }
           return true;
@@ -785,16 +812,12 @@
           a.employerName = getValue("employerName");
           a.selfDeposit = getValue("selfDeposit");
 
-          if (!a.employmentType) {
-            alert("נא לבחור מצב תעסוקתי.");
-            return false;
-          }
           if (a.employmentType === "שכירה" && !a.employerName) {
             alert("נא לרשום שם מעסיק.");
             return false;
           }
           if (a.employmentType === "עצמאית" && !a.selfDeposit) {
-            alert("נא לרשום סכום הפקדה חודשית.");
+            alert("נא לרשום סכום הפקדה.");
             return false;
           }
           return true;
@@ -830,12 +853,8 @@
         case "transferTargetCompany": {
           a.targetCompany = getValue("targetCompanySelect");
           a.targetCompanyOther = getValue("targetCompanyOther");
-          if (!a.targetCompany) {
-            alert("נא לבחור חברה אליה תנויד הקופה.");
-            return false;
-          }
-          if (a.targetCompany === "אחר" && !a.targetCompanyOther) {
-            alert("נא לרשום שם חברה.");
+          if (!a.targetCompany && !a.targetCompanyOther) {
+            alert("נא לבחור חברה אליה תנויד הקופה או לכתוב שם חברה.");
             return false;
           }
           return true;
@@ -862,12 +881,8 @@
         case "currentTrack": {
           a.currentTrack = getValue("currentTrackSelect");
           a.currentTrackOther = getValue("currentTrackOther");
-          if (!a.currentTrack) {
-            alert("נא לבחור מסלול נוכחי.");
-            return false;
-          }
-          if (a.currentTrack === "אחר" && !a.currentTrackOther) {
-            alert("נא לרשום מסלול אחר.");
+          if (!a.currentTrack && !a.currentTrackOther) {
+            alert("נא לבחור מסלול נוכחי או לרשום אחד.");
             return false;
           }
           return true;
@@ -876,12 +891,8 @@
         case "newTrack": {
           a.newTrack = getValue("newTrackSelect");
           a.newTrackOther = getValue("newTrackOther");
-          if (!a.newTrack) {
-            alert("נא לבחור מסלול חדש.");
-            return false;
-          }
-          if (a.newTrack === "אחר" && !a.newTrackOther) {
-            alert("נא לרשום מסלול חדש.");
+          if (!a.newTrack && !a.newTrackOther) {
+            alert("נא לבחור מסלול חדש או לרשום אחד.");
             return false;
           }
           return true;
@@ -890,39 +901,19 @@
         case "trackForOpen": {
           a.openTrack = getValue("openTrackSelect");
           a.openTrackOther = getValue("openTrackOther");
-          if (!a.openTrack) {
-            alert("נא לבחור מסלול השקעה.");
-            return false;
-          }
-          if (a.openTrack === "אחר" && !a.openTrackOther) {
-            alert("נא לרשום מסלול השקעה.");
+          if (!a.openTrack && !a.openTrackOther) {
+            alert("נא לבחור מסלול השקעה או לרשום אחד.");
             return false;
           }
           return true;
         }
 
         case "managementFee": {
-          if (
-            ["קרן פנסיה", "קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"].includes(
-              a.product
-            )
-          ) {
-            a.managementFee = getValue("mgmtSelect");
-            a.managementFeeOther = getValue("mgmtOther");
-            if (!a.managementFee) {
-              alert("נא לבחור דמי ניהול.");
-              return false;
-            }
-            if (a.managementFee === "אחר" && !a.managementFeeOther) {
-              alert("נא לרשום דמי ניהול אחרים.");
-              return false;
-            }
-          } else {
-            a.managementFee = getValue("mgmtSelect");
-            if (!a.managementFee) {
-              alert("נא להזין דמי ניהול.");
-              return false;
-            }
+          a.managementFee = getValue("mgmtSelect");
+          a.managementFeeOther = getValue("mgmtOther");
+          if (!a.managementFee && !a.managementFeeOther) {
+            alert("נא להזין דמי ניהול.");
+            return false;
           }
           return true;
         }
@@ -930,12 +921,8 @@
         case "privateCompany": {
           a.privateCompany = getValue("privateCompanySelect");
           a.privateCompanyOther = getValue("privateCompanyOther");
-          if (!a.privateCompany) {
-            alert("נא לבחור חברה.");
-            return false;
-          }
-          if (a.privateCompany === "אחר" && !a.privateCompanyOther) {
-            alert("נא לרשום חברה.");
+          if (!a.privateCompany && !a.privateCompanyOther) {
+            alert("נא לבחור חברה או לרשום אחת.");
             return false;
           }
           return true;
@@ -944,12 +931,8 @@
         case "privateProduct": {
           a.privateProduct = getValue("privateProductSelect");
           a.privateProductOther = getValue("privateProductOther");
-          if (!a.privateProduct) {
-            alert("נא לבחור סוג ביטוח.");
-            return false;
-          }
-          if (a.privateProduct === "אחר" && !a.privateProductOther) {
-            alert("נא לרשום סוג ביטוח.");
+          if (!a.privateProduct && !a.privateProductOther) {
+            alert("נא לבחור סוג ביטוח או לרשום אחד.");
             return false;
           }
           return true;
@@ -989,20 +972,12 @@
           a.newPolicyCompanyOther = getValue("newPolicyCompanyOther");
           a.newPolicyPremium = getValue("newPolicyPremium");
 
-          if (!a.newPolicyType) {
-            alert("נא לבחור סוג ביטוח חדש.");
+          if (!a.newPolicyType && !a.newPolicyTypeOther) {
+            alert("נא לבחור סוג ביטוח חדש או לרשום אחד.");
             return false;
           }
-          if (a.newPolicyType === "אחר" && !a.newPolicyTypeOther) {
-            alert("נא לרשום סוג ביטוח חדש.");
-            return false;
-          }
-          if (!a.newPolicyCompany) {
-            alert("נא לבחור חברה חדשה.");
-            return false;
-          }
-          if (a.newPolicyCompany === "אחר" && !a.newPolicyCompanyOther) {
-            alert("נא לרשום חברה חדשה.");
+          if (!a.newPolicyCompany && !a.newPolicyCompanyOther) {
+            alert("נא לבחור חברה חדשה או לרשום אחת.");
             return false;
           }
           if (!a.newPolicyPremium) {
@@ -1026,10 +1001,6 @@
       }
     }
 
-    // =====================
-    // מעבר לצעד הבא
-    // =====================
-
     function computeNextStep() {
       const a = getCurrentAction();
 
@@ -1039,12 +1010,16 @@
         return "actionType";
       }
 
+      // ----- שלבים משותפים לכל פעולה -----
       if (currentStep === "actionType") {
-        if (a.type === "פרט") return "privateCompany";
-        return "company";
+        if (a.type === "פרט") {
+          return "privateCompany";
+        } else {
+          return "company";
+        }
       }
 
-      // פנסיוני / השקעות
+      // ----- פנסיוני / השקעות -----
       if (a.type !== "פרט") {
         switch (currentStep) {
           case "company":
@@ -1061,40 +1036,30 @@
               ? "trackForOpen"
               : a.type === "ניוד"
               ? "transferTargetCompany"
-              : "keepType";
+              : "accountNumber";
 
           case "employment":
-            if (a.product === "קופת גמל להשקעה") {
-              return "kgiDeposit";
-            }
-            return a.type === "פתיחת קופה"
-              ? "trackForOpen"
-              : a.type === "ניוד"
-              ? "transferTargetCompany"
-              : "keepType";
+            if (a.product === "קופת גמל להשקעה") return "kgiDeposit";
+            if (a.type === "פתיחת קופה") return "trackForOpen";
+            if (a.type === "ניוד") return "transferTargetCompany";
+            return "accountNumber";
 
           case "kgiDeposit":
-            return a.type === "פתיחת קופה"
-              ? "trackForOpen"
-              : a.type === "ניוד"
-              ? "transferTargetCompany"
-              : "keepType";
+            if (a.type === "פתיחת קופה") return "trackForOpen";
+            if (a.type === "ניוד") return "transferTargetCompany";
+            return "accountNumber";
 
           case "transferTargetCompany":
             return "accountNumber";
 
           case "accountNumber":
-            if (a.type === "ניוד") {
-              return "trackForOpen";
-            }
-            if (a.type === "השארה" && a.keepType === "מינוי סוכן") {
-              return "managementFee";
-            }
+            if (a.type === "ניוד") return "trackForOpen";
+            if (a.type === "השארה") return "keepType";
             return "trackForOpen";
 
           case "keepType":
             if (a.keepType === "שינוי מסלול השקעה") return "currentTrack";
-            if (a.keepType === "מינוי סוכן") return "accountNumber";
+            if (a.keepType === "מינוי סוכן") return "managementFee";
             // ללא שינוי
             return "managementFee";
 
@@ -1110,8 +1075,9 @@
           case "managementFee":
             if (mode === MODE_RECOMMENDATION) {
               return "reasons";
+            } else {
+              return advanceActionOrFinish();
             }
-            return advanceActionOrFinish();
 
           case "reasons":
             return advanceActionOrFinish();
@@ -1121,7 +1087,7 @@
         }
       }
 
-      // פרט
+      // ----- פרט / ביטוח -----
       else {
         switch (currentStep) {
           case "privateCompany":
@@ -1135,9 +1101,9 @@
               return "policyNumber";
             }
             if (
-              ["פוליסת חיים", "פוליסת חיים משועבדת", "ביטוח בריאות", "ביטוח בריאות ומחלות קשות", "מחלות קשות"].includes(
-                a.privateProduct
-              )
+              ["ביטוח חיים", "ביטוח חיים משועבדת", "ביטוח בריאות", "ביטוח מחלות קשות", "ביטוח בריאות ומחלות קשות"]
+                .includes(a.privateProduct) &&
+              (a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה")
             ) {
               return "insuranceSum";
             }
@@ -1151,9 +1117,9 @@
 
           case "policyNumber":
             if (
-              ["פוליסת חיים", "פוליסת חיים משועבדת", "ביטוח בריאות", "ביטוח בריאות ומחלות קשות", "מחלות קשות"].includes(
-                a.privateProduct
-              )
+              ["ביטוח חיים", "ביטוח חיים משועבדת", "ביטוח בריאות", "ביטוח מחלות קשות", "ביטוח בריאות ומחלות קשות"]
+                .includes(a.privateProduct) &&
+              (a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה")
             ) {
               return "insuranceSum";
             }
@@ -1163,10 +1129,7 @@
             return mode === MODE_RECOMMENDATION ? "reasons" : advanceActionOrFinish();
 
           case "insuranceSum":
-            if (a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה") {
-              return "newPolicyDetails";
-            }
-            return mode === MODE_RECOMMENDATION ? "reasons" : advanceActionOrFinish();
+            return "newPolicyDetails";
 
           case "newPolicyDetails":
             return mode === MODE_RECOMMENDATION ? "reasons" : advanceActionOrFinish();
@@ -1184,9 +1147,10 @@
       if (currentActionIndex + 1 < totalActions) {
         currentActionIndex++;
         return "actionType";
+      } else {
+        showSummary();
+        return null;
       }
-      showSummary();
-      return null;
     }
 
     // =====================
@@ -1216,14 +1180,11 @@
         if (a.type !== "פרט") {
           const company = formatCompanyWithOther(a.company, a.companyOther);
           const product = a.product === "אחר" ? a.productOther : a.product;
-
-          // חלק של שכיר/עצמאי
           let empPart = "";
+
           if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(product)) {
-            if (a.employmentType === "שכירה") {
-              empPart = a.employerName
-                ? ` שכירה תחת המעסיק ${a.employerName}`
-                : " שכירה בלבד";
+            if (a.employmentType === "שכירה" && a.employerName) {
+              empPart = ` שכירה תחת המעסיק ${a.employerName}`;
             } else if (a.employmentType === "עצמאית") {
               empPart = a.selfDeposit
                 ? ` עצמאית עם הפקדה חודשית של ${a.selfDeposit} ₪`
@@ -1231,16 +1192,51 @@
             }
           }
 
+          let mgmt =
+            a.managementFee === "אחר"
+              ? a.managementFeeOther
+              : a.managementFee;
+
+          // פתיחת קופה
           if (a.type === "פתיחת קופה") {
             let track =
               a.openTrack === "אחר" ? a.openTrackOther : a.openTrack;
             track = formatTrack(track);
-            const mgmt =
-              a.managementFee === "אחר"
-                ? a.managementFeeOther
-                : a.managementFee;
-            line += `פתיחת ${product}${empPart} בחברת ${company} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${mgmt}.`;
-          } else if (a.type === "ניוד") {
+
+            if (product === "קופת גמל להשקעה") {
+              line += `פתיחת ${product} בחברת ${company} כאשר הכסף יושקע במסלול השקעה ${track}`;
+              // הפקדות
+              if (a.kgiDepositType && a.kgiDepositType !== "ללא הפקדה") {
+                if (a.kgiDepositType === "הוראת קבע") {
+                  line += ` עם הפקדה חודשית של ${a.kgiMonthly} ₪`;
+                } else if (a.kgiDepositType === "חד פעמי") {
+                  line += ` עם הפקדה חד פעמית של ${a.kgiOneTime} ₪`;
+                } else if (a.kgiDepositType === "גם וגם") {
+                  line += ` עם הפקדה חודשית של ${a.kgiMonthly} ₪ בחודש והפקדה חד פעמית של ${a.kgiOneTime} ₪`;
+                }
+              }
+              if (mgmt && mgmt !== "ללא שינוי") {
+                line += ` בדמי ניהול ${mgmt}.`;
+              } else if (mgmt === "ללא שינוי") {
+                line += ` בדמי ניהול באותם דמי ניהול.`;
+              } else {
+                line += `.`;
+              }
+            } else {
+              // קרן פנסיה / השתלמות / גמל רגילה
+              line += `פתיחת ${product}${empPart} בחברת ${company} כאשר הכסף יושקע במסלול השקעה ${track}`;
+              if (mgmt && mgmt !== "ללא שינוי") {
+                line += ` בדמי ניהול ${mgmt}.`;
+              } else if (mgmt === "ללא שינוי") {
+                line += ` בדמי ניהול באותם דמי ניהול.`;
+              } else {
+                line += `.`;
+              }
+            }
+          }
+
+          // ניוד
+          else if (a.type === "ניוד") {
             const target = formatCompanyWithOther(
               a.targetCompany,
               a.targetCompanyOther
@@ -1248,25 +1244,36 @@
             let track =
               a.openTrack === "אחר" ? a.openTrackOther : a.openTrack;
             track = formatTrack(track);
-            const mgmt =
-              a.managementFee === "אחר"
-                ? a.managementFeeOther
-                : a.managementFee;
-            line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber}- תנויד לחברת ${target} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${mgmt}.`;
-          } else if (a.type === "השארה") {
-            const rawMgmt =
-              a.managementFee === "אחר"
-                ? a.managementFeeOther
-                : a.managementFee;
-            const mgmtText =
-              rawMgmt === "ללא שינוי"
-                ? "באותם דמי ניהול"
-                : rawMgmt
-                ? `בדמי ניהול ${rawMgmt}`
-                : "";
 
+            if (product === "קופת גמל להשקעה") {
+              line += `${company} ${product} מספר קופה ${a.accountNumber}- תנויד לחברת ${target} כאשר הכסף יושקע במסלול השקעה ${track}`;
+              if (mgmt) {
+                line += ` בדמי ניהול ${mgmt}.`;
+              } else {
+                line += `.`;
+              }
+            } else {
+              line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber}- תנויד לחברת ${target} כאשר הכסף יושקע במסלול השקעה ${track}`;
+              if (mgmt) {
+                line += ` בדמי ניהול ${mgmt}.`;
+              } else {
+                line += `.`;
+              }
+            }
+          }
+
+          // השארה
+          else if (a.type === "השארה") {
             if (a.keepType === "ללא שינוי") {
-              line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber}- תישאר ללא שינוי${mgmtText ? " " + mgmtText : ""}.`;
+              if (product === "קופת גמל להשקעה") {
+                line += `${company} ${product} מספר קופה ${a.accountNumber}- תישאר ללא שינוי באותם דמי ניהול.`;
+              } else {
+                if (mgmt && mgmt !== "ללא שינוי") {
+                  line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber}- תישאר ללא שינוי בדמי ניהול ${mgmt}.`;
+                } else {
+                  line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber}- תישאר ללא שינוי באותם דמי ניהול.`;
+                }
+              }
             } else if (a.keepType === "שינוי מסלול השקעה") {
               let cur =
                 a.currentTrack === "אחר"
@@ -1276,32 +1283,23 @@
                 a.newTrack === "אחר" ? a.newTrackOther : a.newTrack;
               cur = formatTrack(cur);
               n = formatTrack(n);
-              line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber}- תישאר באותה חברה כאשר יתבצע שינוי מסלול מ${cur} ל${n}${mgmtText ? " " + mgmtText : ""}.`;
+              line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber}- תישאר באותה חברה כאשר יתבצע שינוי מסלול מ${cur} ל${n}`;
+              if (mgmt && mgmt !== "ללא שינוי") {
+                line += ` בדמי ניהול ${mgmt}.`;
+              } else if (mgmt === "ללא שינוי") {
+                line += ` בדמי ניהול באותם דמי ניהול.`;
+              } else {
+                line += `.`;
+              }
             } else if (a.keepType === "מינוי סוכן") {
-              line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber}- יתבצע מינוי סוכן${mgmtText ? " " + mgmtText : ""}.`;
-            }
-          }
-
-          // קופת גמל להשקעה – אופי הפקדה
-          const productForDeposit = a.product === "אחר" ? a.productOther : a.product;
-          if (productForDeposit === "קופת גמל להשקעה") {
-            if (a.kgiDepositType && a.kgiDepositType !== "ללא הפקדה") {
-              let dep = "";
-              if (
-                a.kgiDepositType === "הוראת קבע" ||
-                a.kgiDepositType === "גם וגם"
-              ) {
-                dep += ` עם הוראת קבע של ${a.kgiMonthly} ₪ בחודש`;
+              line += `${company} ${product} מספר קופה ${a.accountNumber}- יתבצע מינוי סוכן`;
+              if (mgmt && mgmt !== "ללא שינוי") {
+                line += ` בדמי ניהול ${mgmt}.`;
+              } else if (mgmt === "ללא שינוי") {
+                line += ` באותם דמי ניהול.`;
+              } else {
+                line += `.`;
               }
-              if (
-                a.kgiDepositType === "חד פעמי" ||
-                a.kgiDepositType === "גם וגם"
-              ) {
-                dep +=
-                  (dep ? " והפקדה חד פעמית של " : " עם הפקדה חד פעמית של ") +
-                  `${a.kgiOneTime} ₪`;
-              }
-              line += dep;
             }
           }
         } else {
@@ -1332,17 +1330,13 @@
             );
             let sumPart = "";
             if (
-              ["פוליסת חיים", "פוליסת חיים משועבדת", "ביטוח בריאות", "ביטוח בריאות ומחלות קשות", "מחלות קשות"].includes(
+              ["ביטוח חיים", "ביטוח חיים משועבדת", "ביטוח בריאות", "ביטוח מחלות קשות", "ביטוח בריאות ומחלות קשות"].includes(
                 product
               ) && a.insuranceSum
             ) {
-              sumPart = ` עם פיצוי של ${a.insuranceSum} ₪`;
+              sumPart = ` עם סכום ביטוח של ${a.insuranceSum} ₪`;
             }
-            const verb =
-              mode === MODE_RECOMMENDATION
-                ? "פתיחת פוליסה של"
-                : "תופק פוליסה חדשה של";
-            line += `${verb} ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
+            line += `פתיחת פוליסה של ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
           } else if (a.privateAction === "ביטול והפקה חדשה") {
             let newType =
               a.newPolicyType === "אחר"
@@ -1354,11 +1348,11 @@
             );
             let sumPart = "";
             if (
-              ["פוליסת חיים", "פוליסת חיים משועבדת", "ביטוח בריאות", "ביטוח בריאות ומחלות קשות", "מחלות קשות"].includes(
+              ["ביטוח חיים", "ביטוח חיים משועבדת", "ביטוח בריאות", "ביטוח מחלות קשות", "ביטוח בריאות ומחלות קשות"].includes(
                 product
               ) && a.insuranceSum
             ) {
-              sumPart = ` עם פיצוי של ${a.insuranceSum} ₪`;
+              sumPart = ` עם סכום ביטוח של ${a.insuranceSum} ₪`;
             }
             line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber}- פוליסה זו תתבטל ובמקום זה תופק פוליסת ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
           }
@@ -1385,6 +1379,18 @@
       box.textContent = lines.join("\n").trim();
       box.classList.remove("hidden");
       copyBtn.classList.remove("hidden");
+
+      copyBtn.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(box.textContent);
+          copyBtn.textContent = "הועתק ✔";
+          setTimeout(() => {
+            copyBtn.textContent = "העתק סיכום";
+          }, 1500);
+        } catch (e) {
+          alert("לא הצלחתי להעתיק אוטומטית, אפשר לסמן ולהעתיק ידנית.");
+        }
+      };
     }
 
     // =====================
@@ -1405,19 +1411,6 @@
       if (!history.length) return;
       currentStep = history.pop();
       render();
-    });
-
-    document.getElementById("copyBtn").addEventListener("click", () => {
-      const text = document.getElementById("summaryBox").textContent || "";
-      if (!text) return;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(
-          () => alert("הסיכום הועתק ללוח 🎉"),
-          () => alert("לא הצלחתי להעתיק אוטומטית, אפשר לסמן ולהעתיק ידנית.")
-        );
-      } else {
-        alert("הדפדפן לא תומך בהעתקה אוטומטית, אפשר לסמן ולהעתיק ידנית.");
-      }
     });
 
     // התחלה
