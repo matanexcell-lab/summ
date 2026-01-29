@@ -398,12 +398,11 @@
           break;
 
         case "employment":
-          setSubtitle("מצב תעסוקתי");
-          html += `<div class="field-label">האם הלקוח שכיר, עצמאי או כלום?</div>`;
-          html += createSelect("employmentSelect", EMPLOYMENT_TYPES, action.employmentType);
-          html += `<input type="text" id="employerName" class="${action.employmentType === "שכירה" ? "" : "hidden"}" placeholder="שם המעסיק (אם שכירה)" style="margin-top:6px;" value="${action.employerName || ""}" />`;
-          html += `<input type="number" id="selfDeposit" class="${action.employmentType === "עצמאית" ? "" : "hidden"}" placeholder="סכום הפקדה (אם עצמאי)" style="margin-top:6px;" value="${action.selfDeposit || ""}" />`;
-          break;
+  setSubtitle("מצב תעסוקתי");
+  html += `<div class="field-label">האם הלקוח שכיר, עצמאי או כלום?</div>`;
+  html += createSelect("employmentSelect", EMPLOYMENT_TYPES, action.employmentType);
+  html += `<input type="text" id="employerName" class="${action.employmentType === "שכירה" ? "" : "hidden"}" placeholder="שם המעסיק (אם שכירה)" style="margin-top:6px;">`;
+  break;
 
         case "kgiDeposit":
           setSubtitle("אופי ההפקדה בקופת גמל להשקעה");
@@ -644,18 +643,18 @@
       // מצב תעסוקתי
       const empSel = document.getElementById("employmentSelect");
       const employer = document.getElementById("employerName");
-      const selfDep = document.getElementById("selfDeposit");
-      if (empSel && employer && selfDep) {
+      
+      if (empSel && employer) {
         function updateEmp() {
           if (empSel.value === "שכירה") {
             employer.classList.remove("hidden");
-            selfDep.classList.add("hidden");
+            
           } else if (empSel.value === "עצמאית") {
             employer.classList.add("hidden");
-            selfDep.classList.remove("hidden");
+            
           } else {
             employer.classList.add("hidden");
-            selfDep.classList.add("hidden");
+            
           }
         }
         empSel.addEventListener("change", updateEmp);
@@ -1149,9 +1148,8 @@ case "employment": {
           if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(product)) {
             if (a.employmentType === "שכירה" && a.employerName) {
               empPart = ` שכירה תחת המעסיק ${a.employerName}`;
-            } else if (a.employmentType === "עצמאית" && a.selfDeposit) {
-              empPart = ` עצמאית עם הפקדה חודשית של ${a.selfDeposit} ₪`;
-            } else if (a.employmentType === "עצמאית") {
+            } 
+            else if (a.employmentType === "עצמאית") {
               empPart = " עצמאית";
             }
           }
