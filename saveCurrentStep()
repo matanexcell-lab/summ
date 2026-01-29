@@ -969,19 +969,19 @@ case "employment": {
               : a.type === "ניוד"
               ? "transferTargetCompany"
               : "keepType";
+case "employment": {
+  const p = (a.product === "אחר" ? a.productOther : a.product);
 
-        case "employment": {
-  const p = a.product === "אחר" ? a.productOther : a.product;
+  // ✅ קופת גמל להשקעה תמיד הולכת למסך הפקדה
+  // רק קג"ש או קרן השתלמות עצמאי הולכים למסך הפקדות
+if (
+  p === "קופת גמל להשקעה" ||
+  (p === "קרן השתלמות" && a.employmentType === "עצמאית")
+) {
+  return "kgiDeposit";
+}
 
-  if (
-    p === "קופת גמל להשקעה" ||
-    (p === "קרן השתלמות" && a.employmentType === "עצמאית") ||
-    p === "קרן פנסיה" ||
-    p === "קופת גמל"
-  ) {
-    return "kgiDeposit";
-  }
-
+  // אחרת ממשיכים רגיל
   return a.type === "פתיחת קופה"
     ? "trackForOpen"
     : a.type === "ניוד"
