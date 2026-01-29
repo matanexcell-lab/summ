@@ -404,8 +404,11 @@
   html += `<input type="text" id="employerName" class="${action.employmentType === "שכירה" ? "" : "hidden"}" placeholder="שם המעסיק (אם שכירה)" style="margin-top:6px;">`;
   break;
 
-        case "kgiDeposit":
-          setSubtitle("אופי ההפקדה בקופת גמל להשקעה");
+          case "kgiDeposit": {
+  const p = (action.product === "אחר" ? action.productOther : action.product);
+
+  setSubtitle(`אופי ההפקדה ב${p}`);
+  html += `<div class="field-label">האם יש הפקדה ל${p}?</div>`;
           html += `<div class="field-label">האם יש הפקדה לקופת גמל להשקעה?</div>`;
           html += createSelect(
             "kgiDepositType",
@@ -960,12 +963,8 @@ case "employment": {
           case "product": {
   const p = (a.product === "אחר" ? a.productOther : a.product);
 
-  if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(p)) {
+  if (["קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"].includes(p)) {
     return "employment";
-  }
-
-  if (p === "קופת גמל להשקעה") {
-    return "kgiDeposit";
   }
 
   return a.type === "פתיחת קופה"
@@ -977,16 +976,10 @@ case "employment": {
 case "employment": {
   const p = (a.product === "אחר" ? a.productOther : a.product);
 
-  // ✅ קופת גמל להשקעה תמיד הולכת למסך הפקדה
-  // רק קג"ש או קרן השתלמות עצמאי הולכים למסך הפקדות
-if (
-  p === "קופת גמל להשקעה" ||
-  (p === "קרן השתלמות" && a.employmentType === "עצמאית")
-) {
-  return "kgiDeposit";
-}
+  if (["קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"].includes(p)) {
+    return "kgiDeposit";
+  }
 
-  // אחרת ממשיכים רגיל
   return a.type === "פתיחת קופה"
     ? "trackForOpen"
     : a.type === "ניוד"
