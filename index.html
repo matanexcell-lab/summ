@@ -738,21 +738,20 @@
           return true;
         }
 
-        case "employment": {
-          a.employmentType = getValue("employmentSelect");
-          a.employerName = getValue("employerName");
-          a.selfDeposit = getValue("selfDeposit");
+case "employment": {
+  a.employmentType = getValue("employmentSelect");
+  a.employerName = getValue("employerName");
 
-          if (a.employmentType === "שכירה" && !a.employerName) {
-            alert("נא לרשום שם מעסיק.");
-            return false;
-          }
-          if (a.employmentType === "עצמאית" && !a.selfDeposit) {
-            alert("נא לרשום סכום הפקדה.");
-            return false;
-          }
-          return true;
-        }
+  if (a.employmentType === "שכירה" && !a.employerName) {
+    alert("נא לרשום שם מעסיק.");
+    return false;
+  }
+
+  // עצמאי לא שואלים סכום כאן!
+  // הסכומים נשאלים במסך kgiDeposit
+
+  return true;
+}
 
         case "kgiDeposit": {
           a.kgiDepositType = getValue("kgiDepositType");
@@ -972,23 +971,24 @@
               ? "transferTargetCompany"
               : "keepType";
 
-          case "employment": {
-            const p =
-          a.product === "אחר" ? a.productOther : a.product;
+        case "employment": {
+  const p = a.product === "אחר" ? a.productOther : a.product;
 
-        if (
-          p === "קופת גמל להשקעה" ||
-          (p === "קרן השתלמות" && a.employmentType === "עצמאית")
-          ) {
-          return "kgiDeposit";
-        }
+  if (
+    p === "קופת גמל להשקעה" ||
+    (p === "קרן השתלמות" && a.employmentType === "עצמאית") ||
+    p === "קרן פנסיה" ||
+    p === "קופת גמל"
+  ) {
+    return "kgiDeposit";
+  }
 
-        return a.type === "פתיחת קופה"
-          ? "trackForOpen"
-          : a.type === "ניוד"
-          ? "transferTargetCompany"
-          : "keepType";
-        }
+  return a.type === "פתיחת קופה"
+    ? "trackForOpen"
+    : a.type === "ניוד"
+    ? "transferTargetCompany"
+    : "keepType";
+}
 
           case "kgiDeposit":
             return a.type === "פתיחת קופה"
