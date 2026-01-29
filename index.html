@@ -972,13 +972,23 @@
               ? "transferTargetCompany"
               : "keepType";
 
-          case "employment":
-            if (a.product === "קופת גמל להשקעה") return "kgiDeposit";
-            return a.type === "פתיחת קופה"
-              ? "trackForOpen"
-              : a.type === "ניוד"
-              ? "transferTargetCompany"
-              : "keepType";
+          case "employment": {
+            const p =
+          a.product === "אחר" ? a.productOther : a.product;
+
+        if (
+          p === "קופת גמל להשקעה" ||
+          (p === "קרן השתלמות" && a.employmentType === "עצמאית")
+          ) {
+          return "kgiDeposit";
+        }
+
+        return a.type === "פתיחת קופה"
+          ? "trackForOpen"
+          : a.type === "ניוד"
+          ? "transferTargetCompany"
+          : "keepType";
+        }
 
           case "kgiDeposit":
             return a.type === "פתיחת קופה"
@@ -1164,7 +1174,10 @@
               }`;
             }
 
-            if (product === "קופת גמל להשקעה") {
+              if (
+                 product === "קופת גמל להשקעה" ||  product === "קרן פנסיה" ||  product === "קופת גמל"
+                 (product === "קרן השתלמות" && a.employmentType === "עצמאית")
+                  ) {
               if (a.kgiDepositType && a.kgiDepositType !== "ללא הפקדה") {
                 if (a.kgiDepositType === "הוראת קבע") {
                   line += ` עם הוראת קבע של ${a.kgiMonthly} ₪ בחודש`;
