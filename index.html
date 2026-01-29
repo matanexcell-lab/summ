@@ -1173,11 +1173,12 @@
                   : a.managementFee
               }`;
             }
-
-              if (
-                 product === "קופת גמל להשקעה" ||  product === "קרן פנסיה" ||  product === "קופת גמל"
-                 (product === "קרן השתלמות" && a.employmentType === "עצמאית")
-                  ) {
+if (
+  product === "קופת גמל להשקעה" ||
+  product === "קרן פנסיה" ||
+  product === "קופת גמל" ||
+  (product === "קרן השתלמות" && a.employmentType === "עצמאית")
+) { 
               if (a.kgiDepositType && a.kgiDepositType !== "ללא הפקדה") {
                 if (a.kgiDepositType === "הוראת קבע") {
                   line += ` עם הוראת קבע של ${a.kgiMonthly} ₪ בחודש`;
