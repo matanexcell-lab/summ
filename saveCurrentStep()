@@ -957,18 +957,23 @@ case "employment": {
           case "company":
             return "product";
 
-          case "product":
-            if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(a.product)) {
-              return "employment";
-            }
-            if (a.product === "קופת גמל להשקעה") {
-              return "kgiDeposit";
-            }
-            return a.type === "פתיחת קופה"
-              ? "trackForOpen"
-              : a.type === "ניוד"
-              ? "transferTargetCompany"
-              : "keepType";
+          case "product": {
+  const p = (a.product === "אחר" ? a.productOther : a.product);
+
+  if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(p)) {
+    return "employment";
+  }
+
+  if (p === "קופת גמל להשקעה") {
+    return "kgiDeposit";
+  }
+
+  return a.type === "פתיחת קופה"
+    ? "trackForOpen"
+    : a.type === "ניוד"
+    ? "transferTargetCompany"
+    : "keepType";
+}
 case "employment": {
   const p = (a.product === "אחר" ? a.productOther : a.product);
 
