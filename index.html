@@ -194,7 +194,7 @@
     const PRODUCTS = ["קרן פנסיה", "קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"];
 
     // ✅ מוצרים שצריכים מסך "אופי הפקדה"
-    const DEPOSIT_PRODUCTS = ["קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"];
+    const DEPOSIT_PRODUCTS = ["קרן השתלמות", "קופת גמל", "קופת גמל להשקעה","קרן פנסיה"];
 
     const PRIVATE_PRODUCTS = [
       "פוליסת חיים",
@@ -848,19 +848,26 @@
               : "keepType";
           }
 
-          case "employment": {
-            const p = resolveProduct(a);
+           case "employment": {
+  const p = resolveProduct(a);
 
-            // ✅ כאן התיקון: מסך הפקדות לכל שלושת המוצרים בלבד
-            if (DEPOSIT_PRODUCTS.includes(p)) {
-              return "deposit";
-            }
+  // פנסיה עצמאי → כן שואלים הפקדה
+  if (p === "קרן פנסיה" && a.employmentType === "עצמאית") {
+    return "deposit";
+  }
 
-            // אחרת ממשיכים רגיל
-            return a.type === "פתיחת קופה" ? "trackForOpen"
-              : a.type === "ניוד" ? "transferTargetCompany"
-              : "keepType";
-          }
+  // מוצרים שתמיד שואלים הפקדה
+  if (["קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"].includes(p)) {
+    return "deposit";
+  }
+
+  // אחרת ממשיכים רגיל
+  return a.type === "פתיחת קופה"
+    ? "track"
+    : a.type === "ניוד"
+    ? "transferTargetCompany"
+    : "keepType";
+}
 
           case "deposit":
             return a.type === "פתיחת קופה" ? "trackForOpen"
