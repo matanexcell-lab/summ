@@ -848,22 +848,25 @@
               : "keepType";
           }
 
-           case "employment": {
+   case "employment": {
   const p = resolveProduct(a);
 
-  // פנסיה עצמאי → כן שואלים הפקדה
-  if (p === "קרן פנסיה" && a.employmentType === "עצמאית") {
+  // קופת גמל להשקעה – תמיד שואלים הפקדה
+  if (p === "קופת גמל להשקעה") {
     return "deposit";
   }
 
-  // מוצרים שתמיד שואלים הפקדה
-  if (["קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"].includes(p)) {
+  // קרן השתלמות / קופת גמל / פנסיה – רק לעצמאי
+  if (
+    ["קרן השתלמות", "קופת גמל", "קרן פנסיה"].includes(p) &&
+    a.employmentType === "עצמאית"
+  ) {
     return "deposit";
   }
 
-  // אחרת ממשיכים רגיל
+  // כל שאר המצבים – לא שואלים הפקדה
   return a.type === "פתיחת קופה"
-    ? "track"
+    ? "trackForOpen"
     : a.type === "ניוד"
     ? "transferTargetCompany"
     : "keepType";
