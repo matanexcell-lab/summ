@@ -1,38 +1,107 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-<meta charset="UTF-8"/>
-<title>סיכום שיחה</title>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-
-<style>
-body{font-family:system-ui;background:#f3f4f6;margin:0;padding:20px}
-.card{background:white;border-radius:18px;padding:20px;max-width:520px;margin:auto}
-select,input{width:100%;padding:10px;margin-top:6px;border-radius:10px;border:1px solid #ccc}
-.btn{padding:12px;border:none;border-radius:999px;font-size:16px;cursor:pointer;margin-top:12px}
-.btn-primary{background:#2563eb;color:white}
-.btn-secondary{background:#ddd}
-.hidden{display:none}
-pre{background:#111;color:#fff;padding:12px;border-radius:12px;margin-top:12px;white-space:pre-wrap}
-</style>
+  <meta charset="UTF-8" />
+  <title>סיכום שיחה</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      margin: 0;
+      padding: 20px;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, 0.12);
+      padding: 24px 20px 16px;
+      max-width: 520px;
+      margin: auto;
+    }
+    h1 {
+      margin: 0 0 12px;
+      text-align: center;
+      font-size: 26px;
+      font-weight: 800;
+    }
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .field-label {
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+    select,
+    input[type="text"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      padding: 10px 11px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 15px;
+      outline: none;
+      margin-top: 6px;
+    }
+    .buttons-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .btn {
+      flex: 1;
+      border: none;
+      border-radius: 999px;
+      padding: 11px 0;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .summary-box {
+      margin-top: 18px;
+      background: #111827;
+      color: #f9fafb;
+      border-radius: 16px;
+      padding: 16px 14px;
+      white-space: pre-wrap;
+      font-size: 14px;
+    }
+  </style>
 </head>
 
 <body>
-
 <div class="card">
-<h2>סיכום שיחה</h2>
+  <h1>סיכום שיחה</h1>
+  <div id="subtitle" class="subtitle"></div>
+  <div id="form"></div>
 
-<div id="form"></div>
+  <div class="buttons-row">
+    <button class="btn btn-secondary" onclick="back()">חזרה</button>
+    <button class="btn btn-primary" onclick="next()">המשך</button>
+  </div>
 
-<button class="btn btn-primary" onclick="next()">המשך</button>
-<button class="btn btn-secondary" onclick="back()">חזרה</button>
-
-<pre id="summary" class="hidden"></pre>
+  <div id="summary" class="summary-box hidden"></div>
 </div>
 
 <script>
 /* =====================
-   הגדרות מוצרים
+   קבועים
 ===================== */
 
 const PRODUCTS = [
@@ -40,136 +109,178 @@ const PRODUCTS = [
   "קרן השתלמות",
   "קופת גמל",
   "קופת גמל להשקעה"
-]
+];
 
-const EMPLOYMENT_TYPES = ["שכירה","עצמאית"]
+const EMPLOYMENT_TYPES = ["שכירה", "עצמאית", "ללא"];
 
-/* =====================
-   State
-===================== */
-
-let step = 0
-let history = []
-let data = {}
+const DEPOSIT_TYPES = ["ללא הפקדה", "הוראת קבע", "חד פעמי", "גם וגם"];
 
 /* =====================
-   Helpers
+   סטייט
 ===================== */
 
-function shouldAskDeposit(product, employment){
-  if(product === "קופת גמל להשקעה") return true
-  if(product === "קרן פנסיה" && employment === "עצמאית") return true
-  if(["קרן השתלמות","קופת גמל"].includes(product) && employment === "עצמאית") return true
-  return false
+let step = "product";
+let history = [];
+let data = {};
+
+/* =====================
+   עזרים
+===================== */
+
+function resolveProduct(a) {
+  return a.product;
+}
+
+function shouldAskDeposit(a) {
+  const p = resolveProduct(a);
+
+  if (p === "קופת גמל להשקעה") return true;
+
+  if (
+    ["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(p) &&
+    a.employmentType === "עצמאית"
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 /* =====================
-   Render
+   רנדר
 ===================== */
 
-function render(){
-  const f = document.getElementById("form")
-  const s = document.getElementById("summary")
-  s.classList.add("hidden")
+function render() {
+  const f = document.getElementById("form");
+  const s = document.getElementById("summary");
+  s.classList.add("hidden");
+  document.getElementById("subtitle").textContent = "";
 
-  if(step === 0){
+  if (step === "product") {
     f.innerHTML = `
-      <div>בחר סוג מוצר</div>
+      <div class="field-label">בחר סוג מוצר</div>
       <select id="product">
         <option value="">בחר...</option>
-        ${PRODUCTS.map(p =>
-          `<option ${data.product===p?"selected":""}>${p}</option>`
-        ).join("")}
+        ${PRODUCTS.map(p => `<option ${data.product===p?"selected":""}>${p}</option>`).join("")}
       </select>
-    `
+    `;
   }
 
-  if(step === 1){
+  if (step === "employment") {
     f.innerHTML = `
-      <div>מצב תעסוקתי</div>
+      <div class="field-label">מצב תעסוקתי</div>
       <select id="employment">
         <option value="">בחר...</option>
-        ${EMPLOYMENT_TYPES.map(e =>
-          `<option ${data.employment===e?"selected":""}>${e}</option>`
-        ).join("")}
+        ${EMPLOYMENT_TYPES.map(e => `<option ${data.employmentType===e?"selected":""}>${e}</option>`).join("")}
       </select>
-    `
+      <input type="text" id="employer"
+        class="${data.employmentType==="שכירה"?"":"hidden"}"
+        placeholder="שם המעסיק"
+        value="${data.employerName||""}">
+    `;
+
+    const sel = document.getElementById("employment");
+    sel.onchange = () => {
+      document.getElementById("employer")
+        .classList.toggle("hidden", sel.value !== "שכירה");
+    };
   }
 
-  if(step === 2){
+  if (step === "deposit") {
+    document.getElementById("subtitle").textContent =
+      `אופי ההפקדה ב${resolveProduct(data)}`;
+
     f.innerHTML = `
-      <div>אופי ההפקדה ב${data.product}</div>
-      <select id="deposit">
-        <option>ללא הפקדה</option>
-        <option>הוראת קבע</option>
-        <option>חד פעמי</option>
-        <option>גם וגם</option>
+      <div class="field-label">אופי ההפקדה</div>
+      <select id="depositType">
+        ${DEPOSIT_TYPES.map(d => `<option ${data.depositType===d?"selected":""}>${d}</option>`).join("")}
       </select>
-    `
+
+      <input type="number" id="monthly"
+        class="${["הוראת קבע","גם וגם"].includes(data.depositType)?"":"hidden"}"
+        placeholder="סכום חודשי"
+        value="${data.monthly||""}">
+
+      <input type="number" id="oneTime"
+        class="${["חד פעמי","גם וגם"].includes(data.depositType)?"":"hidden"}"
+        placeholder="סכום חד פעמי"
+        value="${data.oneTime||""}">
+    `;
+
+    const sel = document.getElementById("depositType");
+    sel.onchange = () => {
+      document.getElementById("monthly")
+        .classList.toggle("hidden", !["הוראת קבע","גם וגם"].includes(sel.value));
+      document.getElementById("oneTime")
+        .classList.toggle("hidden", !["חד פעמי","גם וגם"].includes(sel.value));
+    };
   }
 
-  if(step === 3){
-    f.innerHTML = ""
+  if (step === "summary") {
+    f.innerHTML = "";
     s.textContent =
-`בהמשך לשיחתנו
-סוכם על הדברים הבאים:
+`סיכום:
 
 מוצר: ${data.product}
-תעסוקה: ${data.employment}
-אופי הפקדה: ${data.deposit || "ללא הפקדה"}`
-    s.classList.remove("hidden")
+מצב תעסוקתי: ${data.employmentType || "—"}
+${data.employerName ? "מעסיק: "+data.employerName : ""}
+${data.depositType ? "אופי הפקדה: "+data.depositType : ""}
+${data.monthly ? "חודשי: "+data.monthly+" ₪" : ""}
+${data.oneTime ? "חד פעמי: "+data.oneTime+" ₪" : ""}`;
+    s.classList.remove("hidden");
   }
 }
 
 /* =====================
-   Navigation
+   ניווט
 ===================== */
 
-function next(){
-
-  if(step === 0){
-    const p = document.getElementById("product").value
-    if(!p) return alert("בחר מוצר")
-    data.product = p
-    history.push(step)
-    step = 1
-    render()
-    return
+function next() {
+  if (step === "product") {
+    const p = document.getElementById("product").value;
+    if (!p) return alert("בחר מוצר");
+    data.product = p;
+    history.push(step);
+    step = "employment";
+    render();
+    return;
   }
 
-  if(step === 1){
-    const e = document.getElementById("employment").value
-    if(!e) return alert("בחר מצב תעסוקתי")
-    data.employment = e
+  if (step === "employment") {
+    const e = document.getElementById("employment").value;
+    if (!e) return alert("בחר מצב תעסוקתי");
+    data.employmentType = e;
+    data.employerName = document.getElementById("employer").value || "";
 
-    if(shouldAskDeposit(data.product, data.employment)){
-      history.push(step)
-      step = 2
+    history.push(step);
+
+    if (shouldAskDeposit(data)) {
+      step = "deposit";
     } else {
-      history.push(step)
-      step = 3
+      step = "summary";
     }
-    render()
-    return
+    render();
+    return;
   }
 
-  if(step === 2){
-    data.deposit = document.getElementById("deposit").value
-    history.push(step)
-    step = 3
-    render()
-    return
+  if (step === "deposit") {
+    data.depositType = document.getElementById("depositType").value;
+    data.monthly = document.getElementById("monthly").value;
+    data.oneTime = document.getElementById("oneTime").value;
+    history.push(step);
+    step = "summary";
+    render();
+    return;
   }
 }
 
-function back(){
-  if(!history.length) return
-  step = history.pop()
-  render()
+function back() {
+  if (!history.length) return;
+  step = history.pop();
+  render();
 }
 
-render()
+render();
 </script>
-
 </body>
 </html>
