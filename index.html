@@ -13,7 +13,7 @@ select,input{width:100%;padding:10px;margin-top:6px;border-radius:10px;border:1p
 .btn-primary{background:#2563eb;color:white}
 .btn-secondary{background:#ddd}
 .hidden{display:none}
-pre{background:#111;color:#fff;padding:12px;border-radius:12px;margin-top:12px}
+pre{background:#111;color:#fff;padding:12px;border-radius:12px;margin-top:12px;white-space:pre-wrap}
 </style>
 </head>
 
@@ -21,6 +21,7 @@ pre{background:#111;color:#fff;padding:12px;border-radius:12px;margin-top:12px}
 
 <div class="card">
 <h2>סיכום שיחה</h2>
+
 <div id="form"></div>
 
 <button class="btn btn-primary" onclick="next()">המשך</button>
@@ -34,23 +35,12 @@ pre{background:#111;color:#fff;padding:12px;border-radius:12px;margin-top:12px}
    הגדרות מוצרים
 ===================== */
 
-// מוצרי פנסיה
-const PENSION_PRODUCTS = [
-  "קרן פנסיה"
-];
-
-// מוצרי השקעה
-const INVESTMENT_PRODUCTS = [
+const PRODUCTS = [
+  "קרן פנסיה",
   "קרן השתלמות",
   "קופת גמל",
   "קופת גמל להשקעה"
-];
-
-// מוצרים שיכולים לקבל הפקדות
-const DEPOSIT_PRODUCTS = [
-  ...PENSION_PRODUCTS,
-  ...INVESTMENT_PRODUCTS
-];
+]
 
 const EMPLOYMENT_TYPES = ["שכירה","עצמאית"]
 
@@ -66,8 +56,11 @@ let data = {}
    Helpers
 ===================== */
 
-function resolveProduct(){
-  return data.product
+function shouldAskDeposit(product, employment){
+  if(product === "קופת גמל להשקעה") return true
+  if(product === "קרן פנסיה" && employment === "עצמאית") return true
+  if(["קרן השתלמות","קופת גמל"].includes(product) && employment === "עצמאית") return true
+  return false
 }
 
 /* =====================
@@ -84,9 +77,9 @@ function render(){
       <div>בחר סוג מוצר</div>
       <select id="product">
         <option value="">בחר...</option>
-        ${[...PENSION_PRODUCTS, ...INVESTMENT_PRODUCTS]
-          .map(p => `<option ${data.product===p?"selected":""}>${p}</option>`)
-          .join("")}
+        ${PRODUCTS.map(p =>
+          `<option ${data.product===p?"selected":""}>${p}</option>`
+        ).join("")}
       </select>
     `
   }
@@ -118,9 +111,12 @@ function render(){
   if(step === 3){
     f.innerHTML = ""
     s.textContent =
-`מוצר: ${data.product}
+`בהמשך לשיחתנו
+סוכם על הדברים הבאים:
+
+מוצר: ${data.product}
 תעסוקה: ${data.employment}
-אופי הפקדה: ${data.deposit}`
+אופי הפקדה: ${data.deposit || "ללא הפקדה"}`
     s.classList.remove("hidden")
   }
 }
@@ -131,7 +127,6 @@ function render(){
 
 function next(){
 
-  // שלב מוצר
   if(step === 0){
     const p = document.getElementById("product").value
     if(!p) return alert("בחר מוצר")
@@ -142,34 +137,22 @@ function next(){
     return
   }
 
-  // שלב תעסוקה
   if(step === 1){
     const e = document.getElementById("employment").value
     if(!e) return alert("בחר מצב תעסוקתי")
     data.employment = e
 
-    const p = resolveProduct()
-
-    // לוגיקה מרכזית – בדיוק לפי הבקשה שלך
-    if(
-      DEPOSIT_PRODUCTS.includes(p) &&
-      (
-        (p === "קרן פנסיה" && e === "עצמאית") ||
-        INVESTMENT_PRODUCTS.includes(p)
-      )
-    ){
+    if(shouldAskDeposit(data.product, data.employment)){
       history.push(step)
       step = 2
     } else {
       history.push(step)
       step = 3
     }
-
     render()
     return
   }
 
-  // שלב הפקדה
   if(step === 2){
     data.deposit = document.getElementById("deposit").value
     history.push(step)
