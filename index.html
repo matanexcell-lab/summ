@@ -547,12 +547,21 @@
         html += `<input type="text" id="policyNumberInput" value="${a.policyNumber || ""}" />`;
         break;
 
-   case "insuranceSum":
+case "insuranceSum":
   setSubtitle("סכום ביטוח ופרמיה");
 
-  html += `<div class="field-label">מהו סכום הביטוח (פיצוי)?</div>`;
-  html += `<input type="number" id="insuranceSumInput"
-           value="${a.insuranceSum || ""}" />`;
+  const needSum = [
+    "פוליסת חיים",
+    "פוליסת חיים משועבדת",
+    "פוליסת משכנתא",
+    "ביטוח מחלות קשות"
+  ].includes(a.privateProduct);
+
+  if (needSum) {
+    html += `<div class="field-label">מהו סכום הביטוח (פיצוי)?</div>`;
+    html += `<input type="number" id="insuranceSumInput"
+             value="${a.insuranceSum || ""}" />`;
+  }
 
   html += `<div class="field-label" style="margin-top:10px;">מה הפרמיה החודשית?</div>`;
   html += `<input type="number" id="newPolicyPremium"
@@ -586,9 +595,7 @@
            style="margin-top:6px;"
            value="${a.newPolicyCompanyOther || ""}" />`;
 
-  html += `<div class="field-label" style="margin-top:10px;">מה הפרמיה החודשית?</div>`;
-  html += `<input type="number" id="newPolicyPremium"
-           value="${a.newPolicyPremium || ""}" />`;
+
 
   break;
 
@@ -819,11 +826,19 @@
         if (!a.policyNumber) { alert("נא להזין מספר פוליסה."); return false; }
         return true;
       }
-     case "insuranceSum": {
-  a.insuranceSum = getValue("insuranceSumInput");
-  a.newPolicyPremium = getValue("newPolicyPremium");
+case "insuranceSum": {
 
-  if (!a.insuranceSum) {
+  const needSum = [
+    "פוליסת חיים",
+    "פוליסת חיים משועבדת",
+    "פוליסת משכנתא",
+    "ביטוח מחלות קשות"
+  ].includes(a.privateProduct);
+
+  a.insuranceSum = getValue("insuranceSumInput");
+  a.newPolicyPremium = getValue("newPolicyPremium");  // ← כאן בדיוק
+
+  if (needSum && !a.insuranceSum) {
     alert("נא להזין סכום ביטוח.");
     return false;
   }
@@ -852,7 +867,7 @@
 
   a.newPolicyCompany = getValue("newPolicyCompanySelect");
   a.newPolicyCompanyOther = getValue("newPolicyCompanyOther");
-  a.newPolicyPremium = getValue("newPolicyPremium");
+  
 
   if (!a.newPolicyCompany && !a.newPolicyCompanyOther) {
     alert("נא לבחור חברה חדשה או לרשום אחת.");
@@ -868,16 +883,7 @@
 }
 
 
-case "premiumOnly": {
-  a.newPolicyPremium = getValue("newPolicyPremium");
 
-  if (!a.newPolicyPremium) {
-    alert("נא להזין פרמיה חודשית.");
-    return false;
-  }
-
-  return true;
-}
         
       case "reasons": {
         const txt = getValue("reasonInput");
@@ -1010,18 +1016,7 @@ case "premiumOnly": {
   }
 
   if (a.privateAction === "הפקה") {
-
-  if ([
-    "פוליסת חיים",
-    "פוליסת חיים משועבדת",
-    "פוליסת משכנתא",
-    "ביטוח מחלות קשות"
-  ].includes(a.privateProduct)) {
-    return "insuranceSum";
-  }
-
-  // ביטוח בריאות – רק פרמיה
-  return "premiumOnly";
+  return "insuranceSum";
 }
 
   if (a.privateAction === "מינוי סוכן") return "policyNumber";
@@ -1037,23 +1032,14 @@ case "premiumOnly": {
     ? "reasons"
     : advanceActionOrFinish();
 
-     case "insuranceSum":
-  return (mode === MODE_RECOMMENDATION)
-    ? "reasons"
-    : advanceActionOrFinish();
+    case "insuranceSum":
+  return "newPolicyDetails";
 
       case "newPolicyDetails":
         return (mode === MODE_RECOMMENDATION) ? "reasons" : advanceActionOrFinish();
 
 
-case "premiumOnly":
-  setSubtitle("פרמיה חודשית");
 
-  html += `<div class="field-label">מה הפרמיה החודשית?</div>`;
-  html += `<input type="number" id="newPolicyPremium"
-           value="${a.newPolicyPremium || ""}" />`;
-
-  break;
         
       case "reasons":
         return advanceActionOrFinish();
