@@ -547,11 +547,18 @@
         html += `<input type="text" id="policyNumberInput" value="${a.policyNumber || ""}" />`;
         break;
 
-      case "insuranceSum":
-        setSubtitle("סכום ביטוח");
-        html += `<div class="field-label">מהו סכום הביטוח (פיצוי)?</div>`;
-        html += `<input type="number" id="insuranceSumInput" value="${a.insuranceSum || ""}" />`;
-    break;
+   case "insuranceSum":
+  setSubtitle("סכום ביטוח ופרמיה");
+
+  html += `<div class="field-label">מהו סכום הביטוח (פיצוי)?</div>`;
+  html += `<input type="number" id="insuranceSumInput"
+           value="${a.insuranceSum || ""}" />`;
+
+  html += `<div class="field-label" style="margin-top:10px;">מה הפרמיה החודשית?</div>`;
+  html += `<input type="number" id="newPolicyPremium"
+           value="${a.newPolicyPremium || ""}" />`;
+
+  break;
     
       
       
@@ -812,11 +819,22 @@
         if (!a.policyNumber) { alert("נא להזין מספר פוליסה."); return false; }
         return true;
       }
-      case "insuranceSum": {
-        a.insuranceSum = getValue("insuranceSumInput");
-        if (!a.insuranceSum) { alert("נא להזין סכום ביטוח."); return false; }
-        return true;
-      }
+     case "insuranceSum": {
+  a.insuranceSum = getValue("insuranceSumInput");
+  a.newPolicyPremium = getValue("newPolicyPremium");
+
+  if (!a.insuranceSum) {
+    alert("נא להזין סכום ביטוח.");
+    return false;
+  }
+
+  if (!a.newPolicyPremium) {
+    alert("נא להזין פרמיה חודשית.");
+    return false;
+  }
+
+  return true;
+}
       case "newPolicyDetails": {
 
   if (a.privateAction === "ביטול והפקה חדשה") {
