@@ -1032,7 +1032,15 @@ case "insuranceSum": {
     ? "reasons"
     : advanceActionOrFinish();
 
-    case "insuranceSum":
+   case "insuranceSum":
+
+  // בהפקה רגילה אין צורך במסך נוסף
+  if (a.privateAction === "הפקה") {
+    return (mode === MODE_RECOMMENDATION)
+      ? "reasons"
+      : advanceActionOrFinish();
+  }
+
   return "newPolicyDetails";
 
       case "newPolicyDetails":
