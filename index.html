@@ -866,7 +866,19 @@
 
   return true;
 }
-      
+
+
+case "premiumOnly": {
+  a.newPolicyPremium = getValue("newPolicyPremium");
+
+  if (!a.newPolicyPremium) {
+    alert("נא להזין פרמיה חודשית.");
+    return false;
+  }
+
+  return true;
+}
+        
       case "reasons": {
         const txt = getValue("reasonInput");
         if (txt) {
@@ -998,13 +1010,19 @@
   }
 
   if (a.privateAction === "הפקה") {
-    if (lifeTypes.includes(a.privateProduct)) {
-      return "insuranceSum";
-    }
-    return (mode === MODE_RECOMMENDATION)
-      ? "reasons"
-      : advanceActionOrFinish();
+
+  if ([
+    "פוליסת חיים",
+    "פוליסת חיים משועבדת",
+    "פוליסת משכנתא",
+    "ביטוח מחלות קשות"
+  ].includes(a.privateProduct)) {
+    return "insuranceSum";
   }
+
+  // ביטוח בריאות – רק פרמיה
+  return "premiumOnly";
+}
 
   if (a.privateAction === "מינוי סוכן") return "policyNumber";
   return null;
@@ -1019,17 +1037,24 @@
     ? "reasons"
     : advanceActionOrFinish();
 
-      case "insuranceSum":
-  if (a.privateAction === "הפקה") {
-    return (mode === MODE_RECOMMENDATION)
-      ? "reasons"
-      : advanceActionOrFinish();
-  }
-  return "newPolicyDetails";
+     case "insuranceSum":
+  return (mode === MODE_RECOMMENDATION)
+    ? "reasons"
+    : advanceActionOrFinish();
 
       case "newPolicyDetails":
         return (mode === MODE_RECOMMENDATION) ? "reasons" : advanceActionOrFinish();
 
+
+case "premiumOnly":
+  setSubtitle("פרמיה חודשית");
+
+  html += `<div class="field-label">מה הפרמיה החודשית?</div>`;
+  html += `<input type="number" id="newPolicyPremium"
+           value="${a.newPolicyPremium || ""}" />`;
+
+  break;
+        
       case "reasons":
         return advanceActionOrFinish();
 
