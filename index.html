@@ -551,25 +551,39 @@
         setSubtitle("סכום ביטוח");
         html += `<div class="field-label">מהו סכום הביטוח (פיצוי)?</div>`;
         html += `<input type="number" id="insuranceSumInput" value="${a.insuranceSum || ""}" />`;
-        break;
-
+    break;
+    
+      
+      
       case "newPolicyDetails":
-        setSubtitle("פרטי הפוליסה החדשה");
-        html += `<div class="field-label">סוג הביטוח החדש:</div>`;
-        html += createSelect("newPolicyTypeSelect", PRIVATE_PRODUCTS, a.newPolicyType);
-        html += `<input type="text" id="newPolicyTypeOther" class="${a.newPolicyType === "אחר" ? "" : "hidden"}"
-                 placeholder="סוג ביטוח (אם 'אחר')" style="margin-top:6px;"
-                 value="${a.newPolicyTypeOther || ""}" />`;
+  setSubtitle("פרטי הפוליסה החדשה");
 
-        html += `<div class="field-label" style="margin-top:10px;">באיזו חברה תופק הפוליסה החדשה?</div>`;
-        html += createSelect("newPolicyCompanySelect", INSURANCE_COMPANIES, a.newPolicyCompany);
-        html += `<input type="text" id="newPolicyCompanyOther" class="${a.newPolicyCompany === "אחר" ? "" : "hidden"}"
-                 placeholder="שם חברה (אם 'אחר')" style="margin-top:6px;"
-                 value="${a.newPolicyCompanyOther || ""}" />`;
+  // אם זו ביטול והפקה חדשה – צריך לבחור סוג חדש
+  if (a.privateAction === "ביטול והפקה חדשה") {
+    html += `<div class="field-label">סוג הביטוח החדש:</div>`;
+    html += createSelect("newPolicyTypeSelect", PRIVATE_PRODUCTS, a.newPolicyType);
 
-        html += `<div class="field-label" style="margin-top:10px;">מה הפרמיה החודשית?</div>`;
-        html += `<input type="number" id="newPolicyPremium" value="${a.newPolicyPremium || ""}" />`;
-        break;
+    html += `<input type="text" id="newPolicyTypeOther"
+             class="${a.newPolicyType === "אחר" ? "" : "hidden"}"
+             placeholder="סוג ביטוח (אם 'אחר')"
+             style="margin-top:6px;"
+             value="${a.newPolicyTypeOther || ""}" />`;
+  }
+
+  html += `<div class="field-label" style="margin-top:10px;">באיזו חברה תופק הפוליסה החדשה?</div>`;
+  html += createSelect("newPolicyCompanySelect", INSURANCE_COMPANIES, a.newPolicyCompany);
+
+  html += `<input type="text" id="newPolicyCompanyOther"
+           class="${a.newPolicyCompany === "אחר" ? "" : "hidden"}"
+           placeholder="שם חברה (אם 'אחר')"
+           style="margin-top:6px;"
+           value="${a.newPolicyCompanyOther || ""}" />`;
+
+  html += `<div class="field-label" style="margin-top:10px;">מה הפרמיה החודשית?</div>`;
+  html += `<input type="number" id="newPolicyPremium"
+           value="${a.newPolicyPremium || ""}" />`;
+
+  break;
 
       // ===== נימוקים =====
       case "reasons":
@@ -804,16 +818,36 @@
         return true;
       }
       case "newPolicyDetails": {
-        a.newPolicyType = getValue("newPolicyTypeSelect");
-        a.newPolicyTypeOther = getValue("newPolicyTypeOther");
-        a.newPolicyCompany = getValue("newPolicyCompanySelect");
-        a.newPolicyCompanyOther = getValue("newPolicyCompanyOther");
-        a.newPolicyPremium = getValue("newPolicyPremium");
 
-        if (!a.newPolicyType && !a.newPolicyTypeOther) { alert("נא לבחור סוג ביטוח חדש או לרשום אחד."); return false; }
-        if (!a.newPolicyCompany && !a.newPolicyCompanyOther) { alert("נא לבחור חברה חדשה או לרשום אחת."); return false; }
-        if (!a.newPolicyPremium) { alert("נא להזין פרמיה חודשית."); return false; }
-        return true;
+  if (a.privateAction === "ביטול והפקה חדשה") {
+    a.newPolicyType = getValue("newPolicyTypeSelect");
+    a.newPolicyTypeOther = getValue("newPolicyTypeOther");
+
+    if (!a.newPolicyType && !a.newPolicyTypeOther) {
+      alert("נא לבחור סוג ביטוח חדש או לרשום אחד.");
+      return false;
+    }
+  } else {
+    // בהפקה רגילה – משתמשים בסוג שכבר נבחר במסך הקודם
+    a.newPolicyType = a.privateProduct;
+  }
+
+  a.newPolicyCompany = getValue("newPolicyCompanySelect");
+  a.newPolicyCompanyOther = getValue("newPolicyCompanyOther");
+  a.newPolicyPremium = getValue("newPolicyPremium");
+
+  if (!a.newPolicyCompany && !a.newPolicyCompanyOther) {
+    alert("נא לבחור חברה חדשה או לרשום אחת.");
+    return false;
+  }
+
+  if (!a.newPolicyPremium) {
+    alert("נא להזין פרמיה חודשית.");
+    return false;
+  }
+
+  return true;
+}
       }
       case "reasons": {
         const txt = getValue("reasonInput");
