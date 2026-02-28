@@ -973,24 +973,41 @@
         return "privateProduct";
       case "privateProduct":
         return "privateAction";
+     
       case "privateAction":
-        if (["ביטול", "השארה", "ביטול והפקה חדשה"].includes(a.privateAction)) return "policyNumber";
-        if (a.privateAction === "הפקה") {
-          if (lifeTypes.includes(a.privateProduct)) return "insuranceSum";
-          return "newPolicyDetails";
-        }
-        if (a.privateAction === "מינוי סוכן") return "policyNumber";
-        return null;
+  if (["ביטול", "השארה", "ביטול והפקה חדשה"].includes(a.privateAction)) {
+    return "policyNumber";
+  }
+
+  if (a.privateAction === "הפקה") {
+    if (lifeTypes.includes(a.privateProduct)) {
+      return "insuranceSum";
+    }
+    return (mode === MODE_RECOMMENDATION)
+      ? "reasons"
+      : advanceActionOrFinish();
+  }
+
+  if (a.privateAction === "מינוי סוכן") return "policyNumber";
+  return null;
 
       case "policyNumber":
-        if (a.privateAction === "ביטול והפקה חדשה" || a.privateAction === "הפקה") {
-          if (lifeTypes.includes(a.privateProduct)) return "insuranceSum";
-          return "newPolicyDetails";
-        }
-        return (mode === MODE_RECOMMENDATION) ? "reasons" : advanceActionOrFinish();
+  if (a.privateAction === "ביטול והפקה חדשה") {
+    if (lifeTypes.includes(a.privateProduct)) return "insuranceSum";
+    return "newPolicyDetails";
+  }
+
+  return (mode === MODE_RECOMMENDATION)
+    ? "reasons"
+    : advanceActionOrFinish();
 
       case "insuranceSum":
-        return "newPolicyDetails";
+  if (a.privateAction === "הפקה") {
+    return (mode === MODE_RECOMMENDATION)
+      ? "reasons"
+      : advanceActionOrFinish();
+  }
+  return "newPolicyDetails";
 
       case "newPolicyDetails":
         return (mode === MODE_RECOMMENDATION) ? "reasons" : advanceActionOrFinish();
