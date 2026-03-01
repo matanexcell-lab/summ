@@ -550,12 +550,13 @@
 case "insuranceSum":
   setSubtitle("סכום ביטוח ופרמיה");
 
-  const needSum = [
-    "פוליסת חיים",
-    "פוליסת חיים משועבדת",
-    "פוליסת משכנתא",
-    "ביטוח מחלות קשות"
-  ].includes(a.privateProduct);
+const needSum = [
+  "פוליסת חיים",
+  "פוליסת חיים משועבדת",
+  "פוליסת משכנתא",
+  "ביטוח מחלות קשות",
+  "ביטוח בריאות ומחלות קשות"
+].includes(a.privateProduct);
 
   if (needSum) {
     html += `<div class="field-label">מהו סכום הביטוח (פיצוי)?</div>`;
