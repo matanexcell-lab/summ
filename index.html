@@ -970,11 +970,9 @@ case "insuranceSum": {
           }
           return "trackForOpen";
 
-        case "keepType":
-          if (a.keepType === "שינוי מסלול השקעה") return "currentTrack";
-          if (a.keepType === "מינוי סוכן") return "accountNumber"; // בלי מסלול/דמי ניהול
-          // ללא שינוי
-          return (mode === MODE_RECOMMENDATION) ? "reasons" : advanceActionOrFinish();
+case "keepType":
+  // תמיד קודם מספר קופה
+  return "accountNumber";
 
         case "currentTrack":
           return "newTrack";
