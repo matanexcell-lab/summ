@@ -963,12 +963,32 @@ case "insuranceSum": {
         case "transferTargetCompany":
           return "accountNumber";
 
-        case "accountNumber":
-          if (a.type === "ניוד") return "trackForOpen";
-          if (a.type === "השארה" && a.keepType === "מינוי סוכן") {
-            return (mode === MODE_RECOMMENDATION) ? "reasons" : advanceActionOrFinish();
-          }
-          return "trackForOpen";
+      case "accountNumber":
+
+  if (a.type === "ניוד") {
+    return "trackForOpen";
+  }
+
+  if (a.type === "השארה") {
+
+    if (a.keepType === "שינוי מסלול השקעה") {
+      return "currentTrack";
+    }
+
+    if (a.keepType === "מינוי סוכן") {
+      return (mode === MODE_RECOMMENDATION)
+        ? "reasons"
+        : advanceActionOrFinish();
+    }
+
+    if (a.keepType === "ללא שינוי") {
+      return (mode === MODE_RECOMMENDATION)
+        ? "reasons"
+        : advanceActionOrFinish();
+    }
+  }
+
+  return "trackForOpen";
 
 case "keepType":
   // תמיד קודם מספר קופה
@@ -1129,8 +1149,8 @@ case "keepType":
           if (a.keepType === "ללא שינוי") {
             line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תישאר ללא שינוי.`;
           } else if (a.keepType === "שינוי מסלול השקעה") {
-            let cur = (a.currentTrack === "אחר" ? a.currentTrackOther : a.currentTrack);
-            let nt = (a.newTrack === "אחר" ? a.newTrackOther : a.newTrack);
+           let cur = (a.currentTrack === "אחר" ? a.currentTrackOther : a.currentTrack) || "";
+          let nt = (a.newTrack === "אחר" ? a.newTrackOther : a.newTrack) || "";
             cur = formatTrack(cur || "");
             nt = formatTrack(nt || "");
             const mgmt = (a.managementFee === "אחר" ? a.managementFeeOther : a.managementFee);
