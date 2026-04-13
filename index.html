@@ -381,31 +381,15 @@
         html += createSelect("actionTypeSelect", ACTION_TYPES, a.type);
         break;
 
-      // ===== השקעות / פנסיוני ====
+      // ===== השקעות / פנסיוני =====
       case "company":
-  setSubtitle("פרטי החברה והמוצר");
-
-  html += `<div class="field-label">מה שם החברה?</div>`;
-  html += createSelect("companySelect", INVEST_COMPANIES, a.company);
-
-  html += `<input type="text" id="companyOther"
-           class="${a.company === "אחר" ? "" : "hidden"}"
-           placeholder="שם החברה (אם נבחר 'אחר')"
-           style="margin-top:6px;"
-           value="${a.companyOther || ""}" />`;
-
-  html += `<div class="field-label" style="margin-top:10px;">מה סוג המוצר?</div>`;
-  html += createSelect("productSelect", PRODUCTS, a.product);
-
-  html += `<input type="text" id="productOther"
-           class="${a.product === "אחר" ? "" : "hidden"}"
-           placeholder="סוג מוצר (אם נבחר 'אחר')"
-           style="margin-top:6px;"
-           value="${a.productOther || ""}" />`;
-
-  break;
-
-         
+        setSubtitle("פרטי החברה והמוצר");
+        html += `<div class="field-label">מה שם החברה?</div>`;
+        html += createSelect("companySelect", INVEST_COMPANIES, a.company);
+        html += `<input type="text" id="companyOther" class="${a.company === "אחר" ? "" : "hidden"}"
+                 placeholder="שם החברה (אם נבחר 'אחר')" style="margin-top:6px;"
+                 value="${a.companyOther || ""}" />`;
+        break;
 
       case "product":
         setSubtitle("פרטי החברה והמוצר");
@@ -733,41 +717,18 @@ const needSum = [
         actions.length = totalActions;
         return true;
       }
-
-
-
-    case "actionType": {
-  const t = getValue("actionTypeSelect");
-  if (!t) {
-    alert("נא לבחור סוג פעולה.");
-    return false;
-  }
-  a.type = t;
-  return true;
-}
-}
-
-
+      case "actionType": {
+        const t = getValue("actionTypeSelect");
+        if (!t) { alert("נא לבחור סוג פעולה."); return false; }
+        a.type = t;
+        return true;
+      }
       case "company": {
-  a.company = getValue("companySelect");
-  a.companyOther = getValue("companyOther");
-
-  a.product = getValue("productSelect");
-  a.productOther = getValue("productOther");
-
-  if (!a.company && !a.companyOther) {
-    alert("נא לבחור חברה או לכתוב שם חברה.");
-    return false;
-  }
-
-  if (!a.product && !a.productOther) {
-    alert("נא לבחור סוג מוצר או לכתוב אותו.");
-    return false;
-  }
-
-  return true;
-}
-
+        a.company = getValue("companySelect");
+        a.companyOther = getValue("companyOther");
+        if (!a.company && !a.companyOther) { alert("נא לבחור חברה או לכתוב שם חברה."); return false; }
+        return true;
+      }
       case "product": {
         a.product = getValue("productSelect");
         a.productOther = getValue("productOther");
@@ -958,24 +919,8 @@ case "insuranceSum": {
     // ----- פנסיוני / השקעות -----
     if (a.type !== "פרט") {
       switch (currentStep) {
-
-
-        case "company": {
-  const p = resolveProduct(a);
-
-  if (p === "קופת גמל להשקעה") return "deposit";
-
-  if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(p)) {
-    return "employment";
-  }
-
-  return a.type === "פתיחת קופה"
-    ? "trackForOpen"
-    : a.type === "ניוד"
-    ? "transferTargetCompany"
-    : "keepType";
-}
-
+        case "company":
+          return "product";
 
         case "product": {
           const p = resolveProduct(a);
@@ -1193,7 +1138,7 @@ case "keepType":
 
         if (a.type === "ניוד") {
           const target = formatCompanyWithOther(a.targetCompany, a.targetCompanyOther);
-     let track = (a.openTrack === "אחר" ? a.openTrackOther : a.openTrack);
+          let track = (a.openTrack === "אחר" ? a.openTrackOther : a.openTrack);
           track = formatTrack(track || "");
           const mgmt = (a.managementFee === "אחר" ? a.managementFeeOther : a.managementFee);
 
@@ -1317,5 +1262,4 @@ case "keepType":
   render();
 </script>
 </body>
-</html>     
-                       
+</html>
