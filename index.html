@@ -722,13 +722,27 @@ const needSum = [
         if (!t) { alert("נא לבחור סוג פעולה."); return false; }
         a.type = t;
         return true;
-      }
+
       case "company": {
-        a.company = getValue("companySelect");
-        a.companyOther = getValue("companyOther");
-        if (!a.company && !a.companyOther) { alert("נא לבחור חברה או לכתוב שם חברה."); return false; }
-        return true;
-      }
+  a.company = getValue("companySelect");
+  a.companyOther = getValue("companyOther");
+
+  a.product = getValue("productSelect");
+  a.productOther = getValue("productOther");
+
+  if (!a.company && !a.companyOther) {
+    alert("נא לבחור חברה או לכתוב שם חברה.");
+    return false;
+  }
+
+  if (!a.product && !a.productOther) {
+    alert("נא לבחור סוג מוצר או לכתוב אותו.");
+    return false;
+  }
+
+  return true;
+}
+
       case "product": {
         a.product = getValue("productSelect");
         a.productOther = getValue("productOther");
@@ -1149,117 +1163,4 @@ case "keepType":
           if (a.keepType === "ללא שינוי") {
             line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תישאר ללא שינוי.`;
           } else if (a.keepType === "שינוי מסלול השקעה") {
-           let cur = (a.currentTrack === "אחר" ? a.currentTrackOther : a.currentTrack) || "";
-          let nt = (a.newTrack === "אחר" ? a.newTrackOther : a.newTrack) || "";
-            cur = formatTrack(cur || "");
-            nt = formatTrack(nt || "");
-            const mgmt = (a.managementFee === "אחר" ? a.managementFeeOther : a.managementFee);
-
-            line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תישאר באותה חברה כאשר יתבצע שינוי מסלול מ${cur} ל${nt} בדמי ניהול ${mgmt}${depositPart}.`;
-          } else if (a.keepType === "מינוי סוכן") {
-            line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - יתבצע מינוי סוכן בקופה זו.`;
-          }
-        }
-      } else {
-        const company = formatCompanyWithOther(a.privateCompany, a.privateCompanyOther);
-        const product = (a.privateProduct === "אחר" ? a.privateProductOther : a.privateProduct);
-
-        if (a.privateAction === "ביטול") {
-          line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber} - תבוטל.`;
-        } else if (a.privateAction === "השארה") {
-          line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber} - תישאר ללא שינוי.`;
-        } else if (a.privateAction === "מינוי סוכן") {
-          line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber} - יתבצע מינוי סוכן בפוליסה זו.`;
-        } else if (a.privateAction === "הפקה") {
-          let newType = (a.newPolicyType === "אחר" ? a.newPolicyTypeOther : (a.newPolicyType || product));
-          let newComp = formatCompanyWithOther(a.newPolicyCompany, a.newPolicyCompanyOther);
-
-          let sumPart = "";
-          const lifeTypes2 = [
-            "פוליסת חיים",
-            "פוליסת חיים משועבדת",
-            "ביטוח בריאות",
-            "ביטוח בריאות ומחלות קשות",
-            "ביטוח מחלות קשות"
-          ];
-          if (lifeTypes2.includes(product) && a.insuranceSum) sumPart = ` עם פיצוי של ${a.insuranceSum} ₪`;
-
-          if (mode === MODE_RECOMMENDATION) {
-            line += `פתיחת פוליסה של ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
-          } else {
-            line += `תופק פוליסה חדשה של ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
-          }
-        } else if (a.privateAction === "ביטול והפקה חדשה") {
-          let newType = (a.newPolicyType === "אחר" ? a.newPolicyTypeOther : a.newPolicyType);
-          let newComp = formatCompanyWithOther(a.newPolicyCompany, a.newPolicyCompanyOther);
-
-          let sumPart = "";
-          const lifeTypes2 = [
-            "פוליסת חיים",
-            "פוליסת חיים משועבדת",
-            "ביטוח בריאות",
-            "ביטוח בריאות ומחלות קשות",
-            "ביטוח מחלות קשות"
-          ];
-          if (lifeTypes2.includes(product) && a.insuranceSum) sumPart = ` עם פיצוי של ${a.insuranceSum} ₪`;
-
-          line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber} - פוליסה זו תתבטל ובמקום זה תופק פוליסת ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
-        }
-      }
-
-      if (mode === MODE_RECOMMENDATION && a.reasons && a.reasons.length) {
-        line += "\nלהלן הסיבות להמלצה זאת:\n";
-        if (a.reasons.length === 1) {
-          line += a.reasons[0];
-        } else {
-          a.reasons.forEach((r, i) => {
-            const letter = HEBREW_LETTERS[i] || "";
-            line += `${letter}. ${r}\n`;
-          });
-          line = line.trimEnd();
-        }
-      }
-
-      lines.push(line);
-      lines.push("");
-    });
-
-    box.textContent = lines.join("\n").trim();
-    box.classList.remove("hidden");
-    copyBtn.classList.remove("hidden");
-
-    copyBtn.onclick = () => {
-      try {
-        navigator.clipboard.writeText(box.textContent || "");
-        alert("הסיכום הועתק ללוח");
-      } catch (e) {
-        alert("לא הצלחתי להעתיק, תסמן ותעתיק ידנית 🙂");
-      }
-    };
-  }
-
-  // =====================
-  // Navigation buttons
-  // =====================
-
-  document.getElementById("nextBtn").addEventListener("click", () => {
-    if (!saveCurrentStep()) return;
-    history.push(currentStep);
-    const next = computeNextStep();
-    if (next) {
-      currentStep = next;
-      render();
-    }
-  });
-
-  document.getElementById("backBtn").addEventListener("click", () => {
-    if (!history.length) return;
-    currentStep = history.pop();
-    render();
-  });
-
-  // start
-  render();
-</script>
-</body>
-</html>
+           let cur =
