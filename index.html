@@ -733,11 +733,20 @@ const needSum = [
         actions.length = totalActions;
         return true;
       }
-      case "actionType": {
-        const t = getValue("actionTypeSelect");
-        if (!t) { alert("נא לבחור סוג פעולה."); return false; }
-        a.type = t;
-        return true;
+
+
+
+    case "actionType": {
+  const t = getValue("actionTypeSelect");
+  if (!t) {
+    alert("נא לבחור סוג פעולה.");
+    return false;
+  }
+  a.type = t;
+  return true;
+}
+
+
 
       case "company": {
   a.company = getValue("companySelect");
@@ -1184,4 +1193,4 @@ case "keepType":
 
         if (a.type === "ניוד") {
           const target = formatCompanyWithOther(a.targetCompany, a.targetCompanyOther);
-          let track = (a.openTrack 
+          let track = (a.openTrack === "אח
