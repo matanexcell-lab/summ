@@ -381,15 +381,31 @@
         html += createSelect("actionTypeSelect", ACTION_TYPES, a.type);
         break;
 
-      // ===== השקעות / פנסיוני =====
+      // ===== השקעות / פנסיוני ====
       case "company":
-        setSubtitle("פרטי החברה והמוצר");
-        html += `<div class="field-label">מה שם החברה?</div>`;
-        html += createSelect("companySelect", INVEST_COMPANIES, a.company);
-        html += `<input type="text" id="companyOther" class="${a.company === "אחר" ? "" : "hidden"}"
-                 placeholder="שם החברה (אם נבחר 'אחר')" style="margin-top:6px;"
-                 value="${a.companyOther || ""}" />`;
-        break;
+  setSubtitle("פרטי החברה והמוצר");
+
+  html += `<div class="field-label">מה שם החברה?</div>`;
+  html += createSelect("companySelect", INVEST_COMPANIES, a.company);
+
+  html += `<input type="text" id="companyOther"
+           class="${a.company === "אחר" ? "" : "hidden"}"
+           placeholder="שם החברה (אם נבחר 'אחר')"
+           style="margin-top:6px;"
+           value="${a.companyOther || ""}" />`;
+
+  html += `<div class="field-label" style="margin-top:10px;">מה סוג המוצר?</div>`;
+  html += createSelect("productSelect", PRODUCTS, a.product);
+
+  html += `<input type="text" id="productOther"
+           class="${a.product === "אחר" ? "" : "hidden"}"
+           placeholder="סוג מוצר (אם נבחר 'אחר')"
+           style="margin-top:6px;"
+           value="${a.productOther || ""}" />`;
+
+  break;
+
+         
 
       case "product":
         setSubtitle("פרטי החברה והמוצר");
@@ -933,8 +949,24 @@ case "insuranceSum": {
     // ----- פנסיוני / השקעות -----
     if (a.type !== "פרט") {
       switch (currentStep) {
-        case "company":
-          return "product";
+
+
+        case "company": {
+  const p = resolveProduct(a);
+
+  if (p === "קופת גמל להשקעה") return "deposit";
+
+  if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(p)) {
+    return "employment";
+  }
+
+  return a.type === "פתיחת קופה"
+    ? "trackForOpen"
+    : a.type === "ניוד"
+    ? "transferTargetCompany"
+    : "keepType";
+}
+
 
         case "product": {
           const p = resolveProduct(a);
@@ -1152,15 +1184,4 @@ case "keepType":
 
         if (a.type === "ניוד") {
           const target = formatCompanyWithOther(a.targetCompany, a.targetCompanyOther);
-          let track = (a.openTrack === "אחר" ? a.openTrackOther : a.openTrack);
-          track = formatTrack(track || "");
-          const mgmt = (a.managementFee === "אחר" ? a.managementFeeOther : a.managementFee);
-
-          line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תנויד לחברת ${target} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${mgmt}${depositPart}.`;
-        }
-
-        if (a.type === "השארה") {
-          if (a.keepType === "ללא שינוי") {
-            line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תישאר ללא שינוי.`;
-          } else if (a.keepType === "שינוי מסלול השקעה") {
-           let cur =
+          let track = (a.openTrack 
