@@ -733,11 +733,20 @@ const needSum = [
         actions.length = totalActions;
         return true;
       }
-      case "actionType": {
-        const t = getValue("actionTypeSelect");
-        if (!t) { alert("נא לבחור סוג פעולה."); return false; }
-        a.type = t;
-        return true;
+
+
+
+    case "actionType": {
+  const t = getValue("actionTypeSelect");
+  if (!t) {
+    alert("נא לבחור סוג פעולה.");
+    return false;
+  }
+  a.type = t;
+  return true;
+}
+}
+
 
       case "company": {
   a.company = getValue("companySelect");
@@ -1184,7 +1193,7 @@ case "keepType":
 
         if (a.type === "ניוד") {
           const target = formatCompanyWithOther(a.targetCompany, a.targetCompanyOther);
-          let track = (a.openTrack === "אחר" ? a.openTrackOther : a.openTrack);
+     let track = (a.openTrack === "אחר" ? a.openTrackOther : a.openTrack);
           track = formatTrack(track || "");
           const mgmt = (a.managementFee === "אחר" ? a.managementFeeOther : a.managementFee);
 
@@ -1308,4 +1317,5 @@ case "keepType":
   render();
 </script>
 </body>
-</html>
+</html>     
+                       
