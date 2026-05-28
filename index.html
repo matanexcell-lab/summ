@@ -1248,29 +1248,27 @@ setTimeout(() => {
     // =====================
     // מוצרים פנסיוניים
     // =====================
+if (a.type !== "פרט") {
 
-    if (a.type !== "פרט") {
+  const company = formatCompanyWithOther(a.company, a.companyOther);
 
-      const company = formatCompanyWithOther(a.company, a.companyOther);
+  const product = resolveProduct(a);
 
-      const product = resolveProduct(a);
+  line += `${a.type} ${product} ב-${company}`;
 
-      line += `${a.type} ${product} ב-${company}`;
+  if (a.accountNumber) {
+    line += ` מספר ${a.accountNumber}`;
+  }
 
-      if (a.accountNumber) {
-        line += ` מספר ${a.accountNumber}`;
-      }
+  if (a.keepType && a.keepType !== "ללא שינוי") {
+    line += ` | ${a.keepType}`;
+  }
 
-      if (a.keepType && a.keepType !== "ללא שינוי") {
-  line += ` | ${a.keepType}`;
+  if (a.managementFee) {
+    line += ` | דמי ניהול ${a.managementFee}`;
+  }
+
 }
-      }
-
-      if (a.managementFee) {
-        line += ` | דמי ניהול ${a.managementFee}`;
-      }
-
-    }
 
     // =====================
     // פרט / ביטוחים
