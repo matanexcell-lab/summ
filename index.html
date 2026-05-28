@@ -1352,6 +1352,28 @@ document.getElementById("backBtn").addEventListener("click", () => {
 render();
 
 
+// 👇 להוסיף כאן
+document.getElementById("copyBtn").addEventListener("click", async () => {
+
+  const text = document.getElementById("summaryBox").textContent;
+
+  try {
+
+    await navigator.clipboard.writeText(text);
+
+    alert("הסיכום הועתק");
+
+  } catch (err) {
+
+    alert("העתקה נכשלה");
+
+  }
+
+});
+
+
+
+
   </script>
 </body>
 </html>
