@@ -1099,15 +1099,18 @@ case "keepType":
     }
   }
 
-  function advanceActionOrFinish() {
-    if (currentActionIndex + 1 < totalActions) {
-      currentActionIndex++;
-      return "actionType";
-    } else {
-      showSummary();
-      return null;
-    }
+function advanceActionOrFinish() {
+
+  if (currentActionIndex + 1 < totalActions) {
+
+    currentActionIndex++;
+
+    return "actionType";
+
   }
+
+  return null;
+}
 
   // =====================
   // Summary
@@ -1337,13 +1340,19 @@ document.getElementById("nextBtn").addEventListener("click", () => {
 
   const next = computeNextStep();
 
-  if (next) {
+  if (next !== null) {
+
     currentStep = next;
+
     render();
+
+  } else {
+
+    showSummary();
+
   }
 
 });
-
 document.getElementById("backBtn").addEventListener("click", () => {
 
   if (!history.length) return;
