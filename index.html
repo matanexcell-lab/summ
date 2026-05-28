@@ -1171,7 +1171,7 @@ let match;
 
 while ((match = accountRegex.exec(text)) !== null) {
 
-  accounts.push(match[1]);
+  accounts.push(match[1].trim());
 
 }
 
@@ -1261,8 +1261,9 @@ setTimeout(() => {
         line += ` מספר ${a.accountNumber}`;
       }
 
-      if (a.keepType) {
-        line += ` | ${a.keepType}`;
+      if (a.keepType && a.keepType !== "ללא שינוי") {
+  line += ` | ${a.keepType}`;
+}
       }
 
       if (a.managementFee) {
