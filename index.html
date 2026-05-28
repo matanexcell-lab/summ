@@ -1245,3 +1245,51 @@ setTimeout(() => {
         }
 
         //
+
+
+        }
+    });
+
+  } // סוף showSummary
+
+
+
+// =====================
+// Buttons
+// =====================
+
+document.getElementById("nextBtn").addEventListener("click", () => {
+
+  const isValid = saveCurrentStep();
+
+  if (!isValid) return;
+
+  history.push(currentStep);
+
+  const next = computeNextStep();
+
+  if (next) {
+    currentStep = next;
+    render();
+  }
+
+});
+
+document.getElementById("backBtn").addEventListener("click", () => {
+
+  if (!history.length) return;
+
+  currentStep = history.pop();
+
+  render();
+
+});
+
+
+// רינדור ראשוני
+render();
+
+
+  </script>
+</body>
+</html>
