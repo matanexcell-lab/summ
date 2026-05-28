@@ -1191,13 +1191,26 @@ function parsePdfData(text) {
 
   totalActions = actions.length;
 
+currentActionIndex = 0;
+
+currentStep = "keepType";
+
+alert(`נטענו ${actions.length} קופות מה-PDF`);
+
+render();
+
+document.getElementById("nextBtn").onclick();
+
   currentActionIndex = 0;
 
   currentStep = "keepType";
 
-  render();
+alert(`נטענו ${actions.length} קופות מה-PDF`);
 
-  alert(`נטענו ${actions.length} קופות מה-PDF`);
+
+
+
+render();
 }
 
 
@@ -1231,6 +1244,4 @@ function parsePdfData(text) {
           else if (a.employmentType === "עצמאית") empPart = " עצמאית";
         }
 
-        // deposit text (רק אם נשאל בפועל)
-        let depositPart = "";
-        if (shouldAskDeposit(a) && a.depositType && a.depositType !== "ללא הפקדה") {
+        //
