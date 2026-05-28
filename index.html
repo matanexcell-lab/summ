@@ -1163,9 +1163,17 @@ function parsePdfData(text) {
     "קופת גמל להשקעה"
   ];
 
-  const accountRegex = /\b\d{6,10}\b/g;
+ const accountRegex = /מספר\s+תוכנית[:\s]+([\d-]+)/g;
 
-  const accounts = text.match(accountRegex) || [];
+const accounts = [];
+
+let match;
+
+while ((match = accountRegex.exec(text)) !== null) {
+
+  accounts.push(match[1]);
+
+}
 
   actions.length = 0;
 
