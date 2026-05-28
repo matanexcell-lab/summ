@@ -1189,7 +1189,7 @@ function parsePdfData(text) {
     });
   });
 
-  totalActions = actions.length;
+ totalActions = actions.length;
 
 currentActionIndex = 0;
 
@@ -1198,6 +1198,17 @@ currentStep = "keepType";
 alert(`נטענו ${actions.length} קופות מה-PDF`);
 
 render();
+
+// מעבר אוטומטי לשלב הבא
+setTimeout(() => {
+
+  history.push("keepType");
+
+  currentStep = computeNextStep();
+
+  render();
+
+}, 100);
 
 document.getElementById("nextBtn").onclick();
 
