@@ -1215,42 +1215,104 @@ setTimeout(() => {
 
 
   function showSummary() {
-    const box = document.getElementById("summaryBox");
-    const copyBtn = document.getElementById("copyBtn");
-    const lines = [];
 
-    if (mode === MODE_SUMMARY) {
-      lines.push("בהמשך לשיחתנו");
-      lines.push("סוכם על הדברים הבאים:");
-      lines.push("");
-    } else {
-      lines.push("בהמשך לשיחתנו");
-      lines.push("להלן ההמלצות שנאמרו בשיחה:");
-      lines.push("");
+  const box = document.getElementById("summaryBox");
+  const copyBtn = document.getElementById("copyBtn");
+
+  const lines = [];
+
+  if (mode === MODE_SUMMARY) {
+    lines.push("בהמשך לשיחתנו");
+    lines.push("סוכם על הדברים הבאים:");
+    lines.push("");
+  } else {
+    lines.push("בהמשך לשיחתנו");
+    lines.push("להלן ההמלצות שנאמרו בשיחה:");
+    lines.push("");
+  }
+
+  actions.forEach((a, idx) => {
+
+    if (!a || !a.type) return;
+
+    let line = `${idx + 1}. `;
+
+    // =====================
+    // מוצרים פנסיוניים
+    // =====================
+
+    if (a.type !== "פרט") {
+
+      const company = formatCompanyWithOther(a.company, a.companyOther);
+
+      const product = resolveProduct(a);
+
+      line += `${a.type} ${product} ב-${company}`;
+
+      if (a.accountNumber) {
+        line += ` מספר ${a.accountNumber}`;
+      }
+
+      if (a.keepType) {
+        line += ` | ${a.keepType}`;
+      }
+
+      if (a.managementFee) {
+        line += ` | דמי ניהול ${a.managementFee}`;
+      }
+
     }
 
-    actions.forEach((a, idx) => {
-      if (!a || !a.type) return;
+    // =====================
+    // פרט / ביטוחים
+    // =====================
 
-      let line = `${idx + 1}. `;
+    else {
 
-      if (a.type !== "פרט") {
-        const company = formatCompanyWithOther(a.company, a.companyOther);
-        const product = resolveProduct(a);
-        let empPart = "";
+      const company = formatCompanyWithOther(
+        a.privateCompany,
+        a.privateCompanyOther
+      );
 
-        if (["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(product)) {
-          if (a.employmentType === "שכירה" && a.employerName) empPart = ` שכירה תחת המעסיק ${a.employerName}`;
-          else if (a.employmentType === "עצמאית") empPart = " עצמאית";
-        }
+      line += `${a.privateAction} ${a.privateProduct} ב-${company}`;
 
-        //
+      if (a.policyNumber) {
+        line += ` מספר ${a.policyNumber}`;
+      }
 
+    }
 
-        }
-    });
+    // =====================
+    // נימוקים
+    // =====================
 
-  } // סוף showSummary
+    if (a.reasons && a.reasons.length) {
+
+      line += "\n";
+
+      a.reasons.forEach((r, i) => {
+
+        const letter =
+          a.reasons.length > 1
+            ? `${HEBREW_LETTERS[i]}. `
+            : "- ";
+
+        line += `\n${letter}${r}`;
+
+      });
+    }
+
+    lines.push(line);
+
+  });
+
+  box.textContent = lines.join("\n\n");
+
+  box.classList.remove("hidden");
+
+  copyBtn.classList.remove("hidden");
+
+}
 
 
 
