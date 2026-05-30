@@ -1144,79 +1144,99 @@ document.getElementById("pdfUpload").addEventListener("change", async (e) => {
 
 function parsePdfData(text) {
 
-  const companyMatches = [
-    "מגדל",
-    "הראל",
-    "הפניקס",
-    "מנורה",
-    "כלל",
-    "מור",
-    "מיטב",
-    "אלטשולר שחם"
-  ];
-
-  const productMatches = [
-    "קרן פנסיה",
-    "קרן השתלמות",
-    "קופת גמל",
-    "קופת גמל להשקעה"
-  ];
-
- const accountRegex = /מספר\s+תוכנית[:\s]+([\d-]+)/g;
-
-const accounts = [];
-
-let match;
-
-while ((match = accountRegex.exec(text)) !== null) {
-
-  accounts.push(match[1].trim());
-
-}
-
   actions.length = 0;
 
-  accounts.forEach((accountNumber, index) => {
+  // מפצל כל תוכנית בנפרד
+  const sections = text.split(/(?=מספר תוכנית:)/);
 
-    const company =
-      companyMatches.find(c => text.includes(c)) || "";
+  sections.forEach((section, index) => {
 
-    const product =
-      productMatches.find(p => text.includes(p)) || "";
+    const accountMatch = section.match(/מספר תוכנית:\s*([\d-]+)/);
+
+    if (!accountMatch) return;
+
+    const accountNumber = accountMatch[1].trim();
+
+    let company = "";
+    let product = "";
+
+    // ===== חברה =====
+
+    if (section.includes("הראל")) company = "הראל";
+    else if (section.includes("הפניקס")) company = "הפניקס";
+    else if (section.includes("מגדל")) company = "מגדל";
+    else if (section.includes("מיטב")) company = "מיטב";
+    else if (section.includes("מור")) company = "מור";
+    else if (section.includes("אלטשולר")) company = "אלטשולר שחם";
+    else if (section.includes("אנליסט")) company = "אנליסט";
+    else if (section.includes("ילין")) company = "ילין לפידות";
+    else if (section.includes("מנורה")) company = "מנורה";
+    else if (section.includes("כלל")) company = "כלל";
+
+    // ===== מוצר =====
+
+    if (section.includes("גמל להשקעה")) {
+      product = "קופת גמל להשקעה";
+    }
+    else if (section.includes("קרן פנסיה") ||
+             section.includes("מקפת אישית") ||
+             section.includes("פנסיה")) {
+      product = "קרן פנסיה";
+    }
+    else if (section.includes("השתלמות")) {
+      product = "קרן השתלמות";
+    }
+    else if (section.includes("קופת גמל")) {
+      product = "קופת גמל";
+    }
+
+    // ===== דמי ניהול =====
+
+    let managementFee = "";
+
+    const feeMatch = section.match(/ד\.ניהול מצבירה:\s*([\d.]+%)/);
+
+    if (feeMatch) {
+      managementFee = feeMatch[1];
+    }
+
+    // ===== מסלול =====
+
+    let currentTrack = "";
+
+    const trackMatch = section.match(/מסלול:\s*(.*?)\s+נכסים:/s);
+
+    if (trackMatch) {
+      currentTrack = trackMatch[1]
+        .replace(/\d+/g, "")
+        .trim();
+    }
 
     actions.push({
-      index,
+      index: actions.length,
       type: "השארה",
 
       company,
       product,
       accountNumber,
 
+      currentTrack,
+      managementFee,
+
       reasons: []
     });
+
   });
 
- totalActions = actions.length;
+  totalActions = actions.length;
 
-currentActionIndex = 0;
+  currentActionIndex = 0;
 
-currentStep = "keepType";
+  currentStep = "keepType";
 
-alert(`נטענו ${actions.length} קופות מה-PDF`);
-
-render();
-
-// מעבר אוטומטי לשלב הבא
-setTimeout(() => {
-
-  history.push("keepType");
-
-  currentStep = computeNextStep();
+  alert(`נטענו ${actions.length} קופות מה-PDF`);
 
   render();
-
-}, 100);
-
 
 }
 
