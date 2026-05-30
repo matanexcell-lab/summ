@@ -1212,20 +1212,18 @@ function parsePdfData(text) {
         .trim();
     }
 
-    actions.push({
-      index: actions.length,
-      type: "השארה",
+   actions.push({
+  index: actions.length,
+  type: null,
 
-      company,
-      product,
-      accountNumber,
+  company,
+  product,
+  accountNumber,
 
-      currentTrack,
-      managementFee,
+  currentTrack,
+  managementFee,
 
-      reasons: []
-    });
-
+  reasons: []
   });
 
   totalActions = actions.length;
