@@ -1178,9 +1178,11 @@ function parsePdfData(text) {
     if (section.includes("גמל להשקעה")) {
       product = "קופת גמל להשקעה";
     }
-    else if (section.includes("קרן פנסיה") ||
-             section.includes("מקפת אישית") ||
-             section.includes("פנסיה")) {
+    else if (
+      section.includes("קרן פנסיה") ||
+      section.includes("מקפת אישית") ||
+      section.includes("פנסיה")
+    ) {
       product = "קרן פנסיה";
     }
     else if (section.includes("השתלמות")) {
@@ -1194,7 +1196,9 @@ function parsePdfData(text) {
 
     let managementFee = "";
 
-    const feeMatch = section.match(/ד\.ניהול מצבירה:\s*([\d.]+%)/);
+    const feeMatch = section.match(
+      /ד\.ניהול מצבירה:\s*([\d.]+%)/
+    );
 
     if (feeMatch) {
       managementFee = feeMatch[1];
@@ -1204,7 +1208,9 @@ function parsePdfData(text) {
 
     let currentTrack = "";
 
-    const trackMatch = section.match(/מסלול:\s*(.*?)\s+נכסים:/s);
+    const trackMatch = section.match(
+      /מסלול:\s*(.*?)\s+נכסים:/s
+    );
 
     if (trackMatch) {
       currentTrack = trackMatch[1]
@@ -1212,23 +1218,29 @@ function parsePdfData(text) {
         .trim();
     }
 
-   actions.push({
-  index: actions.length,
-  type: null,
+    actions.push({
+      index: actions.length,
 
-  company,
-  product,
-  accountNumber,
+      // חשוב - שלא יבחר אוטומטית השארה
+      type: null,
 
-  currentTrack,
-  managementFee,
+      company,
+      product,
+      accountNumber,
 
-  reasons: []
-  });
+      currentTrack,
+      managementFee,
+
+      reasons: []
+    });
+
+  }); // סוף forEach
 
   totalActions = actions.length;
 
   currentActionIndex = 0;
+
+  history = [];
 
   currentStep = "actionType";
 
@@ -1236,10 +1248,7 @@ function parsePdfData(text) {
 
   render();
 
-}
-
-
-  
+} // סוף parsePdfData
 function showSummary() {
     const box = document.getElementById("summaryBox");
     const copyBtn = document.getElementById("copyBtn");
