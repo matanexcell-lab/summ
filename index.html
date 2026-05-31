@@ -736,12 +736,42 @@ const needSum = [
         actions.length = totalActions;
         return true;
       }
-      case "actionType": {
-        const t = getValue("actionTypeSelect");
-        if (!t) { alert("נא לבחור סוג פעולה."); return false; }
-        a.type = t;
-        return true;
-      }
+   case "actionType":
+  setSubtitle("בחר את סוג הפעולה");
+  html += `<div class="question-title">מה סוג הפעולה?</div>`;
+  html += createSelect("actionTypeSelect", ACTION_TYPES, a.type);
+  break;
+
+case "fundPreview":
+
+  html += `
+    <div class="question-title">
+      פרטי הקופה שנקראו מהמסלקה
+    </div>
+
+    <div class="summary-box" style="
+      background:#f3f4f6;
+      color:black;
+      margin-top:10px;
+    ">
+      חברה: ${a.company || "-"}<br>
+      מוצר: ${a.product || "-"}<br>
+      מספר קופה: ${a.accountNumber || "-"}<br>
+      מסלול: ${a.currentTrack || "-"}<br>
+      דמי ניהול: ${a.managementFee || "-"}
+    </div>
+
+    <div class="field-label" style="margin-top:15px;">
+      מה לעשות עם הקופה?
+    </div>
+
+    ${createSelect(
+      "actionTypeSelect",
+      ACTION_TYPES,
+      a.type
+    )}
+  `;
+  break;
       case "company": {
         a.company = getValue("companySelect");
         a.companyOther = getValue("companyOther");
@@ -927,9 +957,9 @@ case "insuranceSum": {
 
     if (currentStep === "mode") return "totalActions";
     if (currentStep === "totalActions") {
-      currentActionIndex = 0;
-      return "actionType";
-    }
+  currentActionIndex = 0;
+  return "fundPreview";
+}
 
     if (currentStep === "actionType") {
       return (a.type === "פרט") ? "privateCompany" : "company";
@@ -1242,7 +1272,7 @@ function parsePdfData(text) {
 
   history = [];
 
-  currentStep = "actionType";
+  currentStep = "fundPreview";
 
   alert(`נטענו ${actions.length} קופות מה-PDF`);
 
