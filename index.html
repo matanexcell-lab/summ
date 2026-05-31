@@ -979,10 +979,30 @@ case "insuranceSum": {
 }
 
 
-  if (currentStep === "fundPreview") {
-  return (a.type === "פרט")
-    ? "privateCompany"
-    : "company";
+if (currentStep === "fundPreview") {
+
+  if (a.type === "פרט") {
+    return "privateCompany";
+  }
+
+  // אם הגיע מהמסלקה ויש כבר חברה ומוצר
+  if (a.company && a.product) {
+
+    if (a.product === "קופת גמל להשקעה") {
+      return "deposit";
+    }
+
+    if (
+      ["קרן פנסיה","קרן השתלמות","קופת גמל"]
+      .includes(a.product)
+    ) {
+      return "employment";
+    }
+
+    return "trackForOpen";
+  }
+
+  return "company";
 }
 
     // ----- פנסיוני / השקעות -----
