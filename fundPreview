@@ -394,11 +394,38 @@
         html += `<div class="helper-text">אפשר לשנות אחר כך אם צריך.</div>`;
         break;
 
-      case "actionType":
-        setSubtitle("בחר את סוג הפעולה");
-        html += `<div class="question-title">מה סוג הפעולה?</div>`;
-        html += createSelect("actionTypeSelect", ACTION_TYPES, a.type);
-        break;
+   case "fundPreview":
+
+  setSubtitle("פרטי הקופה");
+
+  html += `
+    <div class="question-title">
+      פרטי הקופה שנקראו מהמסלקה
+    </div>
+
+    <div class="summary-box" style="
+      background:#f3f4f6;
+      color:black;
+      margin-top:10px;
+    ">
+      חברה: ${a.company || "-"}<br>
+      מוצר: ${a.product || "-"}<br>
+      מספר קופה: ${a.accountNumber || "-"}<br>
+      מסלול: ${a.currentTrack || "-"}<br>
+      דמי ניהול: ${a.managementFee || "-"}
+    </div>
+
+    <div class="field-label" style="margin-top:15px;">
+      מה לעשות עם הקופה?
+    </div>
+
+    ${createSelect(
+      "actionTypeSelect",
+      ACTION_TYPES,
+      a.type
+    )}
+  `;
+  break;
 
       // ===== השקעות / פנסיוני =====
       case "company":
@@ -736,42 +763,17 @@ const needSum = [
         actions.length = totalActions;
         return true;
       }
-   case "actionType":
-  setSubtitle("בחר את סוג הפעולה");
-  html += `<div class="question-title">מה סוג הפעולה?</div>`;
-  html += createSelect("actionTypeSelect", ACTION_TYPES, a.type);
-  break;
+case "fundPreview": {
 
-case "fundPreview":
+  a.type = getValue("actionTypeSelect");
 
-  html += `
-    <div class="question-title">
-      פרטי הקופה שנקראו מהמסלקה
-    </div>
+  if (!a.type) {
+    alert("נא לבחור סוג פעולה");
+    return false;
+  }
 
-    <div class="summary-box" style="
-      background:#f3f4f6;
-      color:black;
-      margin-top:10px;
-    ">
-      חברה: ${a.company || "-"}<br>
-      מוצר: ${a.product || "-"}<br>
-      מספר קופה: ${a.accountNumber || "-"}<br>
-      מסלול: ${a.currentTrack || "-"}<br>
-      דמי ניהול: ${a.managementFee || "-"}
-    </div>
-
-    <div class="field-label" style="margin-top:15px;">
-      מה לעשות עם הקופה?
-    </div>
-
-    ${createSelect(
-      "actionTypeSelect",
-      ACTION_TYPES,
-      a.type
-    )}
-  `;
-  break;
+  return true;
+}
       case "company": {
         a.company = getValue("companySelect");
         a.companyOther = getValue("companyOther");
@@ -956,14 +958,32 @@ case "insuranceSum": {
     const a = getCurrentAction();
 
     if (currentStep === "mode") return "totalActions";
-    if (currentStep === "totalActions") {
+  if (currentStep === "totalActions") {
+
   currentActionIndex = 0;
-  return "fundPreview";
+
+  const firstFund = actions[0];
+
+  if (
+    firstFund &&
+    (
+      firstFund.company ||
+      firstFund.product ||
+      firstFund.accountNumber
+    )
+  ) {
+    return "fundPreview";
+  }
+
+  return "actionType";
 }
 
-    if (currentStep === "actionType") {
-      return (a.type === "פרט") ? "privateCompany" : "company";
-    }
+
+  if (currentStep === "fundPreview") {
+  return (a.type === "פרט")
+    ? "privateCompany"
+    : "company";
+}
 
     // ----- פנסיוני / השקעות -----
     if (a.type !== "פרט") {
@@ -1131,7 +1151,7 @@ function advanceActionOrFinish() {
 
     currentActionIndex++;
 
-    return "actionType";
+    return "fundPreview";
 
   }
 
