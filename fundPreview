@@ -975,7 +975,7 @@ case "insuranceSum": {
     return "fundPreview";
   }
 
-  return "actionType";
+  return "company";
 }
 
 
