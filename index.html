@@ -992,12 +992,26 @@ if (currentStep === "fundPreview") {
       return "deposit";
     }
 
-    if (
-      ["קרן פנסיה","קרן השתלמות","קופת גמל"]
-      .includes(a.product)
-    ) {
-      return "employment";
+ if (
+  ["קרן פנסיה","קרן השתלמות","קופת גמל"]
+  .includes(a.product)
+) {
+
+  if (a.employmentType) {
+
+    if (shouldAskDeposit(a)) {
+      return "deposit";
     }
+
+    return a.type === "פתיחת קופה"
+      ? "trackForOpen"
+      : a.type === "ניוד"
+      ? "transferTargetCompany"
+      : "keepType";
+  }
+
+  return "employment";
+}
 
     return "trackForOpen";
   }
@@ -1316,7 +1330,9 @@ const employerMatch = section.match(
 );
 
 if (employerMatch) {
-  employerName = employerMatch[1].trim();
+  employerName = employerMatch[1]
+    .replace(/בעמ/g, 'בע"מ')
+    .trim();
 }
 
 // ===== מעמד =====
