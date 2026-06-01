@@ -1307,6 +1307,19 @@ function parsePdfData(text) {
       managementFee = feeMatch[1];
     }
 
+// ===== מעסיק =====
+
+let employerName = "";
+
+const employerMatch = section.match(
+  /מעסיק נוכחי:\s*([^\n\r]+)/i
+);
+
+if (employerMatch) {
+  employerName = employerMatch[1].trim();
+}
+
+    
     // ===== מסלול =====
 
     let currentTrack = "";
@@ -1321,21 +1334,22 @@ function parsePdfData(text) {
         .trim();
     }
 
-    actions.push({
-      index: actions.length,
+actions.push({
+  index: actions.length,
+  type: null,
 
-      // חשוב - שלא יבחר אוטומטית השארה
-      type: null,
+  company,
+  product,
+  accountNumber,
 
-      company,
-      product,
-      accountNumber,
+  currentTrack,
+  managementFee,
 
-      currentTrack,
-      managementFee,
+  employmentType,
+  employerName,
 
-      reasons: []
-    });
+  reasons: []
+});
 
   }); // סוף forEach
 
