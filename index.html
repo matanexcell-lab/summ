@@ -1088,13 +1088,19 @@ if (currentStep === "fundPreview") {
   }
 
   return "trackForOpen";
-  return "trackForOpen";
+  
 
 case "keepType":
 
   if (a.accountNumber) {
 
     if (a.keepType === "שינוי מסלול השקעה") {
+
+      // אם המסלול כבר הגיע מהמסלקה
+      if (a.currentTrack) {
+        return "newTrack";
+      }
+
       return "currentTrack";
     }
 
