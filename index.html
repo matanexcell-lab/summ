@@ -1277,7 +1277,7 @@ function parsePdfData(text) {
     let company = "";
     let product = "";
 
-   // ===== חברה =====
+ ===== חברה =====
 
     if (section.includes("הראל")) company = "הראל";
     else if (section.includes("הפניקס")) company = "הפניקס";
@@ -1362,6 +1362,14 @@ if (employerName) {
         .replace(/\d+/g, "")
         .trim();
     }
+
+console.log(
+  "ACCOUNT:",
+  accountNumber,
+  "PRODUCT:",
+  product
+);
+
 
 actions.push({
   index: actions.length,
@@ -1612,4 +1620,3 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
   </script>
 </body>
 </html>
- 
