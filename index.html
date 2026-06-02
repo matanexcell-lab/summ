@@ -1277,7 +1277,7 @@ function parsePdfData(text) {
     let company = "";
     let product = "";
 
-    // ===== חברה =====
+   / ===== חברה =====
 
     if (section.includes("הראל")) company = "הראל";
     else if (section.includes("הפניקס")) company = "הפניקס";
@@ -1326,13 +1326,18 @@ function parsePdfData(text) {
 let employerName = "";
 
 const employerMatch = section.match(
-  /מעסיק נוכחי:\s*([^\n\r]+)/i
+  /מעסיק נוכחי:\s*(.*?)(?:קיים|השיקול|מספר קופה|מספר תוכנית|תאריך|$)/i
 );
 
 if (employerMatch) {
+
   employerName = employerMatch[1]
-    .replace(/בעמ/g, 'בע"מ')
+    .replace(/\s+/g, " ")
     .trim();
+
+  if (employerName.endsWith("בע")) {
+    employerName += '"מ';
+  }
 }
 
 // ===== מעמד =====
@@ -1607,3 +1612,4 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
   </script>
 </body>
 </html>
+ 
