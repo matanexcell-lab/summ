@@ -2548,7 +2548,11 @@ actions.push({
 } // סוף parsePdfData
 
 function showSummary() {
-
+    actions.forEach(a => {
+  if (!a.type) {
+    a.type = "השארה";
+  }
+});
     console.log("ACTIONS:", actions);
     const box = document.getElementById("summaryBox");
   alert(JSON.stringify(actions, null, 2));
