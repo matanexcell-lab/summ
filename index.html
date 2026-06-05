@@ -2384,36 +2384,22 @@ let product = "";
 
     // ===== מוצר =====
 
-const sectionStart = section.substring(0, 1200);
+const first300 = section.substring(0, 300);
 
-if (sectionStart.includes("גמל להשקעה")) {
-
+if (first300.includes("גמל להשקעה")) {
   product = "קופת גמל להשקעה";
-
 }
-
-else if (sectionStart.includes("השתלמות")) {
-
+else if (first300.includes("השתלמות")) {
   product = "קרן השתלמות";
-
 }
-
 else if (
-
-  sectionStart.includes("מקפת") ||
-
-  sectionStart.includes("פנסיה")
-
+  first300.includes("מקפת") ||
+  first300.includes("פנסיה")
 ) {
-
   product = "קרן פנסיה";
-
 }
-
-else if (sectionStart.includes("גמל")) {
-
+else if (first300.includes("גמל")) {
   product = "קופת גמל";
-
 }
 console.log(
   "ACCOUNT:",
