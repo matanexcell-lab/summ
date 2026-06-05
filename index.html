@@ -2375,25 +2375,15 @@ let product = "";
 
     // ===== מוצר =====
 
-    const planNameMatch = section.match(
+const sectionStart = section.substring(0, 1200);
 
-  /שם תוכנית:\s*([^:]+?)\s*(?:מספר תוכנית|מסלול|מספר קופה|$)/i
-
-);
-
-const planName = planNameMatch
-
-  ? planNameMatch[1].trim()
-
-  : "";
-
-if (planName.includes("גמל להשקעה")) {
+if (sectionStart.includes("גמל להשקעה")) {
 
   product = "קופת גמל להשקעה";
 
 }
 
-else if (planName.includes("השתלמות")) {
+else if (sectionStart.includes("השתלמות")) {
 
   product = "קרן השתלמות";
 
@@ -2401,9 +2391,9 @@ else if (planName.includes("השתלמות")) {
 
 else if (
 
-  planName.includes("מקפת") ||
+  sectionStart.includes("מקפת") ||
 
-  planName.includes("פנסיה")
+  sectionStart.includes("פנסיה")
 
 ) {
 
@@ -2411,7 +2401,7 @@ else if (
 
 }
 
-else if (planName.includes("גמל")) {
+else if (sectionStart.includes("גמל")) {
 
   product = "קופת גמל";
 
