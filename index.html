@@ -2458,11 +2458,22 @@ if (employerMatch) {
 
 let employmentType = "";
 
-if (employerName) {
+const statusMatch = section.match(
+  /מעמד:\s*(עצמאי|שכיר)/i
+);
 
-  employmentType = "שכירה";
+if (statusMatch) {
 
+  if (statusMatch[1] === "שכיר") {
+    employmentType = "שכירה";
+  }
+
+  if (statusMatch[1] === "עצמאי") {
+    employmentType = "עצמאית";
+  }
 }
+
+
 
    
 
