@@ -2548,7 +2548,7 @@ actions.push({
 } // סוף parsePdfData
 
 function showSummary() {
-  alert("showSummary");
+  alert(JSON.stringify(actions, null, 2));
     actions.forEach(a => {
   if (!a.type) {
     a.type = "השארה";
