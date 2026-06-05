@@ -2386,19 +2386,19 @@ let product = "";
 
 const first300 = section.substring(0, 300);
 
-if (first300.includes("גמל להשקעה")) {
+if (section.includes("גמל להשקעה")) {
   product = "קופת גמל להשקעה";
 }
-else if (first300.includes("השתלמות")) {
-  product = "קרן השתלמות";
-}
-else if (
-  first300.includes("מקפת") ||
-  first300.includes("פנסיה")
-) {
+else if (section.includes("מקפת")) {
   product = "קרן פנסיה";
 }
-else if (first300.includes("גמל")) {
+else if (section.includes("פנסיה")) {
+  product = "קרן פנסיה";
+}
+else if (section.includes("השתלמות")) {
+  product = "קרן השתלמות";
+}
+else if (section.includes("גמל")) {
   product = "קופת גמל";
 }
 console.log(
