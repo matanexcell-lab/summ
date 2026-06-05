@@ -2324,6 +2324,15 @@ function parsePdfData(text) {
   // מפצל כל תוכנית בנפרד
 
   const sections = text.split(/(?=מספר תוכנית:)/);
+  console.log("TOTAL SECTIONS:", sections.length);
+
+sections.forEach((s, i) => {
+  console.log(
+    "SECTION",
+    i,
+    s.substring(0, 300)
+  );
+});
 
 
   sections.forEach((section, index) => {
