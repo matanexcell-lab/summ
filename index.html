@@ -2337,10 +2337,15 @@ function parsePdfData(text) {
 
     const accountNumber = accountMatch[1].trim();
 
+console.log(
+  "ACCOUNT:",
+  accountNumber,
+  "\nSECTION:\n",
+  section.substring(0, 1500)
+);
 
-    let company = "";
-
-    let product = "";
+let company = "";
+let product = "";
 
 
 // ===== חברה =====
