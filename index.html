@@ -2548,11 +2548,29 @@ actions.push({
 } // סוף parsePdfData
 function showSummary() {
 
-  const box = document.getElementById("summaryBox");
+  try {
 
-  box.textContent = "בדיקה";
+    const box = document.getElementById("summaryBox");
 
-  box.classList.remove("hidden");
+    const lines = [];
+
+    actions.forEach((a, idx) => {
+
+      lines.push("שורה " + idx);
+
+    });
+
+    box.textContent = lines.join("\n");
+
+    box.classList.remove("hidden");
+
+  }
+
+  catch (e) {
+
+    alert("ERROR: " + e.message);
+
+  }
 
 }
 
