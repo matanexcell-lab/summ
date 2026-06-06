@@ -2548,29 +2548,33 @@ actions.push({
 } // סוף parsePdfData
 function showSummary() {
 
-  console.log("FINAL ACTIONS:", actions);
-
-  actions.forEach((a, i) => {
-    console.log(
-      "ACTION",
-      i,
-      "TYPE=",
-      a.type,
-      "KEEP=",
-      a.keepType
-    );
-  });
-
   const box = document.getElementById("summaryBox");
 
-  box.textContent =
-    "מספר פעולות: " + actions.length +
-    "\n\n" +
-    JSON.stringify(actions, null, 2);
+  let text = "בהמשך לשיחתנו סוכם על הדברים הבאים:\n\n";
 
+  actions.forEach(a => {
+
+    if (a.type === "השארה") {
+
+      text +=
+        `${a.company} ${a.product} מספר קופה ${a.accountNumber} – `;
+
+      if (a.keepType === "ללא שינוי") {
+        text += "תישאר באותה חברה ללא שינוי.";
+      }
+
+      if (a.keepType === "מינוי סוכן") {
+        text += "תישאר באותה חברה ויתבצע מינוי סוכן.";
+      }
+
+      text += "\n\n";
+    }
+
+  });
+
+  box.textContent = text;
   box.classList.remove("hidden");
 }
-
 
 // Buttons
 
