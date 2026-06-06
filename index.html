@@ -2550,30 +2550,15 @@ function showSummary() {
 
   const box = document.getElementById("summaryBox");
 
-  const lines = [];
-
-  actions.forEach((a) => {
-
-    lines.push(JSON.stringify(a, null, 2));
-
-  });
-
-  box.textContent = lines.join("\n\n");
+  box.textContent =
+    "מספר פעולות: " + actions.length +
+    "\n\n" +
+    JSON.stringify(actions, null, 2);
 
   box.classList.remove("hidden");
 
 }
-  catch (e) {
 
-    alert("ERROR: " + e.message);
-
-  }
-
-}
-
-
-
-// =====================
 
 // Buttons
 
