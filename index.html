@@ -2548,24 +2548,21 @@ actions.push({
 } // סוף parsePdfData
 function showSummary() {
 
-  try {
+  const box = document.getElementById("summaryBox");
 
-    const box = document.getElementById("summaryBox");
+  const lines = [];
 
-    const lines = [];
+  actions.forEach((a) => {
 
-    actions.forEach((a, idx) => {
+    lines.push(JSON.stringify(a, null, 2));
 
-      lines.push("שורה " + idx);
+  });
 
-    });
+  box.textContent = lines.join("\n\n");
 
-    box.textContent = lines.join("\n");
+  box.classList.remove("hidden");
 
-    box.classList.remove("hidden");
-
-  }
-
+}
   catch (e) {
 
     alert("ERROR: " + e.message);
