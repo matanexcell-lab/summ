@@ -797,7 +797,45 @@
 
       a.type
 
+      
+
     )}
+
+    if (a.type === "ניוד") {
+
+  html += `
+    <div class="field-label">לאיזו חברה תנויד הקופה?</div>
+    ${createSelect(
+      "targetCompanySelect",
+      INVEST_COMPANIES,
+      a.targetCompany
+    )}
+  `;
+
+  if (a.targetCompany) {
+
+    html += `
+      <div class="field-label">באיזה מסלול יושקע הכסף?</div>
+      ${createSelect(
+        "openTrackSelect",
+        BASE_TRACKS,
+        a.openTrack
+      )}
+    `;
+  }
+
+  if (a.openTrack) {
+
+    html += `
+      <div class="field-label">דמי ניהול</div>
+      ${createSelect(
+        "mgmtSelect",
+        ["0.6%","0.7%","0.8%"],
+        a.managementFee
+      )}
+    `;
+  }
+}
 
   `;
 
@@ -1346,6 +1384,8 @@ const needSum = [
 
     });
 
+    
+
 
     // employment -> employer
 
@@ -1396,11 +1436,37 @@ const needSum = [
 
       depSel.addEventListener("change", updateDep);
 
-      updateDep();
+  updateDep();
 
-    }
+}
 
-  }
+[
+  "actionTypeSelect",
+  "targetCompanySelect",
+  "openTrackSelect",
+  "mgmtSelect"
+].forEach(id => {
+
+  const el = document.getElementById(id);
+
+  if (!el) return;
+
+  el.addEventListener("change", () => {
+
+    const a = getCurrentAction();
+
+    a.type = getValue("actionTypeSelect");
+    a.targetCompany = getValue("targetCompanySelect");
+    a.openTrack = getValue("openTrackSelect");
+    a.managementFee = getValue("mgmtSelect");
+
+    render();
+
+  });
+
+});
+
+}
 
 
   // =====================
