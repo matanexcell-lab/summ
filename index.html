@@ -839,7 +839,21 @@
 
         break;
 
+    case "actionType":
 
+  setSubtitle("סוג פעולה");
+
+  html += `<div class="field-label">מה סוג הפעולה?</div>`;
+
+  html += createSelect(
+    "actionTypeSelect",
+    ACTION_TYPES,
+    a.type
+  );
+
+  break;
+
+        
       case "employment":
 
         setSubtitle("מצב תעסוקתי");
@@ -1434,7 +1448,6 @@ case "fundPreview": {
   a.type = getValue("actionTypeSelect");
   console.log("SAVED TYPE:", a.type);
 
-  alert("TYPE = " + a.type);
 
   if (!a.type) {
     alert("נא לבחור סוג פעולה");
@@ -1468,6 +1481,19 @@ case "fundPreview": {
 
       }
 
+
+  case "actionType": {
+
+  a.type = getValue("actionTypeSelect");
+
+  if (!a.type) {
+    alert("נא לבחור סוג פעולה");
+    return false;
+  }
+
+  return true;
+}
+        
       case "employment": {
 
         a.employmentType = getValue("employmentSelect");
@@ -1911,34 +1937,28 @@ if (
           return "product";
 
 
-        case "product": {
+case "product":
+  return "actionType";
 
-          const p = resolveProduct(a);
+case "actionType": {
 
+  const p = resolveProduct(a);
 
-          // קג"ש: ישר למסך הפקדה (תמיד)
+  if (p === "קופת גמל להשקעה")
+    return "deposit";
 
-          if (p === "קופת גמל להשקעה") return "deposit";
+  if (
+    ["קרן פנסיה","קרן השתלמות","קופת גמל"]
+      .includes(p)
+  )
+    return "employment";
 
+  return "trackForOpen";
+}
 
-          // האחרים: קודם תעסוקה (כדי לדעת אם לשאול הפקדות)
+         
 
-          if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(p)) return "employment";
-
-
-          // fallback
-
-          return a.type === "פתיחת קופה"
-
-            ? "trackForOpen"
-
-            : a.type === "ניוד"
-
-            ? "transferTargetCompany"
-
-            : "keepType";
-
-        }
+        
 
 
         case "employment": {
