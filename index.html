@@ -1550,13 +1550,17 @@ case "fundPreview": {
 
       case "keepType": {
 
-        a.keepType = getValue("keepTypeSelect");
+  a.type = "השארה";
 
-        if (!a.keepType) { alert("נא לבחור מה יקרה בקופה."); return false; }
+  a.keepType = getValue("keepTypeSelect");
 
-        return true;
+  if (!a.keepType) {
+    alert("נא לבחור מה יקרה בקופה.");
+    return false;
+  }
 
-      }
+  return true;
+}
 
       case "currentTrack": {
 
