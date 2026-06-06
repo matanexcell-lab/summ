@@ -746,101 +746,82 @@
 
    case "fundPreview":
 
-
   setSubtitle("פרטי הקופה");
 
-
   html += `
-
     <div class="question-title">
-
       פרטי הקופה שנקראו מהמסלקה
-
     </div>
-
 
     <div class="summary-box" style="
-
       background:#f3f4f6;
-
       color:black;
-
       margin-top:10px;
-
     ">
-
       חברה: ${a.company || "-"}<br>
-
       מוצר: ${a.product || "-"}<br>
-
       מספר קופה: ${a.accountNumber || "-"}<br>
-
       מסלול: ${a.currentTrack || "-"}<br>
-
       דמי ניהול: ${a.managementFee || "-"}
-
     </div>
-
 
     <div class="field-label" style="margin-top:15px;">
-
       מה לעשות עם הקופה?
-
     </div>
+  `;
 
+  html += createSelect(
+    "actionTypeSelect",
+    ACTION_TYPES,
+    a.type
+  );
 
-    ${createSelect(
+  if (a.type === "ניוד") {
 
-      "actionTypeSelect",
+    html += `
+      <div class="field-label">
+        לאיזו חברה תנויד הקופה?
+      </div>
+    `;
 
-      ACTION_TYPES,
-
-      a.type
-
-      
-
-    )}
-
-    if (a.type === "ניוד") {
-
-  html += `
-    <div class="field-label">לאיזו חברה תנויד הקופה?</div>
-    ${createSelect(
+    html += createSelect(
       "targetCompanySelect",
       INVEST_COMPANIES,
       a.targetCompany
-    )}
-  `;
+    );
 
-  if (a.targetCompany) {
+    if (a.targetCompany) {
 
-    html += `
-      <div class="field-label">באיזה מסלול יושקע הכסף?</div>
-      ${createSelect(
+      html += `
+        <div class="field-label">
+          באיזה מסלול יושקע הכסף?
+        </div>
+      `;
+
+      html += createSelect(
         "openTrackSelect",
         BASE_TRACKS,
         a.openTrack
-      )}
-    `;
-  }
+      );
+    }
 
-  if (a.openTrack) {
+    if (a.openTrack) {
 
-    html += `
-      <div class="field-label">דמי ניהול</div>
-      ${createSelect(
+      html += `
+        <div class="field-label">
+          דמי ניהול
+        </div>
+      `;
+
+      html += createSelect(
         "mgmtSelect",
         ["0.6%","0.7%","0.8%"],
         a.managementFee
-      )}
-    `;
+      );
+    }
   }
-}
-
-  `;
 
   break;
-
 
       // ===== השקעות / פנסיוני =====
 
