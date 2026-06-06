@@ -883,11 +883,26 @@
 
   html += `<div class="field-label">מה סוג הפעולה?</div>`;
 
+ html += createSelect(
+  "actionTypeSelect",
+  ACTION_TYPES,
+  a.type
+);
+
+if (a.type === "ניוד") {
+
+  html += `
+    <div class="field-label">
+      לאיזו חברה תנויד הקופה?
+    </div>
+  `;
+
   html += createSelect(
-    "actionTypeSelect",
-    ACTION_TYPES,
-    a.type
+    "targetCompanySelect",
+    INVEST_COMPANIES,
+    a.targetCompany
   );
+}
 
   break;
 
