@@ -776,21 +776,9 @@
     a.type
   );
 
-  if (a.type === "ניוד") {
 
-    html += `
-      <div class="field-label">
-        לאיזו חברה תנויד הקופה?
-      </div>
-    `;
 
-    html += createSelect(
-      "targetCompanySelect",
-      INVEST_COMPANIES,
-      a.targetCompany
-    );
-
-    if (a.type === "ניוד") {
+if (a.type === "ניוד") {
 
   html += `
     <div class="field-label">
@@ -803,8 +791,46 @@
     INVEST_COMPANIES,
     a.targetCompany
   );
-}
+
+  if (a.targetCompany) {
+
+    html += `
+      <div class="field-label">
+        באיזה מסלול יושקע הכסף?
+      </div>
+    `;
+
+    html += createSelect(
+      "openTrackSelect",
+      BASE_TRACKS,
+      a.openTrack
+    );
   }
+
+  if (a.openTrack) {
+
+    const mgmtOptions =
+      a.product === "קרן פנסיה"
+        ? [
+            "0.1% מצבירה ועוד 1.5% מהפקדה",
+            "0.15% מצבירה ועוד 1.5% מהפקדה"
+          ]
+        : ["0.6%","0.7%","0.8%"];
+
+    html += `
+      <div class="field-label">
+        דמי ניהול
+      </div>
+    `;
+
+    html += createSelect(
+      "mgmtSelect",
+      mgmtOptions,
+      a.managementFee
+    );
+  }
+}
+  
 
   break;
       // ===== השקעות / פנסיוני =====
@@ -1520,19 +1546,33 @@ const needSum = [
       }
 
 case "fundPreview": {
-
   a.type = getValue("actionTypeSelect");
-  console.log("SAVED TYPE:", a.type);
-
+  a.targetCompany = getValue("targetCompanySelect");
+  a.openTrack = getValue("openTrackSelect");
+  a.managementFee = getValue("mgmtSelect");
 
   if (!a.type) {
     alert("נא לבחור סוג פעולה");
     return false;
   }
 
+  if (a.type === "ניוד") {
+    if (!a.targetCompany) {
+      alert("נא לבחור חברה יעד");
+      return false;
+    }
+    if (!a.openTrack) {
+      alert("נא לבחור מסלול");
+      return false;
+    }
+    if (!a.managementFee) {
+      alert("נא לבחור דמי ניהול");
+      return false;
+    }
+  }
+
   return true;
 }
-
       case "company": {
 
         a.company = getValue("companySelect");
