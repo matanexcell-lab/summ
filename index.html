@@ -1542,19 +1542,38 @@ case "fundPreview": {
 
       }
 
-
-  case "actionType": {
+case "actionType": {
 
   a.type = getValue("actionTypeSelect");
+  a.targetCompany = getValue("targetCompanySelect");
+  a.openTrack = getValue("openTrackSelect");
+  a.managementFee = getValue("mgmtSelect");
 
   if (!a.type) {
     alert("נא לבחור סוג פעולה");
     return false;
   }
 
+  if (a.type === "ניוד") {
+
+    if (!a.targetCompany) {
+      alert("נא לבחור חברה יעד");
+      return false;
+    }
+
+    if (!a.openTrack) {
+      alert("נא לבחור מסלול");
+      return false;
+    }
+
+    if (!a.managementFee) {
+      alert("נא לבחור דמי ניהול");
+      return false;
+    }
+  }
+
   return true;
 }
-        
       case "employment": {
 
         a.employmentType = getValue("employmentSelect");
