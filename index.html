@@ -813,11 +813,19 @@
         </div>
       `;
 
-      html += createSelect(
-        "mgmtSelect",
-        ["0.6%","0.7%","0.8%"],
-        a.managementFee
-      );
+    const mgmtOptions =
+  a.product === "קרן פנסיה"
+    ? [
+        "0.1% מצבירה ועוד 1.5% מהפקדה",
+        "0.15% מצבירה ועוד 1.5% מהפקדה"
+      ]
+    : ["0.6%","0.7%","0.8%"];
+
+html += createSelect(
+  "mgmtSelect",
+  mgmtOptions,
+  a.managementFee
+);
     }
   }
 
@@ -2045,14 +2053,19 @@ return a.type === "פתיחת קופה"
 
 case "product":
   return "actionType";
-
 case "actionType": {
 
+  const p = resolveProduct(a);
+
   if (a.type === "ניוד") {
+
+    // בזרימה ידנית
+    if (!a.accountNumber) {
+      return "accountNumber";
+    }
+
     return advanceActionOrFinish();
   }
-
-  const p = resolveProduct(a);
 
   if (p === "קופת גמל להשקעה")
     return "deposit";
@@ -2750,7 +2763,11 @@ function showSummary() {
 
           const mgmt = (a.managementFee === "אחר" ? a.managementFeeOther : a.managementFee);
 
-          line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תנויד לחברת ${target} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${mgmt}${depositPart}.`;
+          const accountPart = a.accountNumber
+  ? ` מספר קופה ${a.accountNumber}`
+  : "";
+
+line += `${company} ${product}${empPart}${accountPart} - תנויד לחברת ${target} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${mgmt}${depositPart}.`;
 
         }
 
