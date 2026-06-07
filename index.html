@@ -882,6 +882,36 @@ if (a.type === "ניוד") {
     INVEST_COMPANIES,
     a.targetCompany
   );
+
+  if (a.targetCompany) {
+
+    html += `
+      <div class="field-label">
+        באיזה מסלול יושקע הכסף?
+      </div>
+    `;
+
+    html += createSelect(
+      "openTrackSelect",
+      BASE_TRACKS,
+      a.openTrack
+    );
+  }
+
+  if (a.openTrack) {
+
+    html += `
+      <div class="field-label">
+        דמי ניהול
+      </div>
+    `;
+
+    html += createSelect(
+      "mgmtSelect",
+      ["0.6%","0.7%","0.8%"],
+      a.managementFee
+    );
+  }
 }
 
   break;
@@ -2017,6 +2047,10 @@ case "product":
   return "actionType";
 
 case "actionType": {
+
+  if (a.type === "ניוד") {
+    return advanceActionOrFinish();
+  }
 
   const p = resolveProduct(a);
 
