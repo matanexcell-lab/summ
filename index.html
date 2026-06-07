@@ -1959,15 +1959,11 @@ if (
     }
 
 
-    return a.type === "פתיחת קופה"
-
-      ? "trackForOpen"
-
-      : a.type === "ניוד"
-
-      ? "transferTargetCompany"
-
-      : "keepType";
+return a.type === "פתיחת קופה"
+  ? "trackForOpen"
+  : a.type === "ניוד"
+  ? advanceActionOrFinish()
+  : "keepType";
 
   }
 
@@ -2031,15 +2027,11 @@ case "actionType": {
 
           // אחרת ממשיכים
 
-          return a.type === "פתיחת קופה"
-
-            ? "trackForOpen"
-
-            : a.type === "ניוד"
-
-            ? "transferTargetCompany"
-
-            : "keepType";
+         return a.type === "פתיחת קופה"
+  ? "trackForOpen"
+  : a.type === "ניוד"
+  ? advanceActionOrFinish()
+  : "keepType";
 
         }
 
@@ -2048,15 +2040,11 @@ case "actionType": {
 
           // אחרי הפקדה - ממשיכים לפי סוג פעולה
 
-          return a.type === "פתיחת קופה"
-
-            ? "trackForOpen"
-
-            : a.type === "ניוד"
-
-            ? "transferTargetCompany"
-
-            : "keepType";
+return a.type === "פתיחת קופה"
+  ? "trackForOpen"
+  : a.type === "ניוד"
+  ? advanceActionOrFinish()
+  : "keepType";
 
         }
 
