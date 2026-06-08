@@ -917,11 +917,19 @@ if (a.type === "ניוד") {
       </div>
     `;
 
-    html += createSelect(
-      "mgmtSelect",
-      ["0.6%","0.7%","0.8%"],
-      a.managementFee
-    );
+ const mgmtOptions =
+  a.product === "קרן פנסיה"
+    ? [
+        "0.1% מצבירה ועוד 1.5% מהפקדה",
+        "0.15% מצבירה ועוד 1.5% מהפקדה"
+      ]
+    : ["0.6%","0.7%","0.8%"];
+
+html += createSelect(
+  "mgmtSelect",
+  mgmtOptions,
+  a.managementFee
+);
   }
 }
 
@@ -1950,7 +1958,12 @@ case "insuranceSum": {
 
 
   function computeNextStep() {
-
+  console.log(
+  "CURRENT STEP:",
+  currentStep,
+  "TYPE:",
+  a.type
+);
     const a = getCurrentAction();
 
 
@@ -2147,11 +2160,11 @@ return a.type === "פתיחת קופה"
     case "accountNumber":
 
 
-  if (a.type === "ניוד") {
-
-    return "trackForOpen";
-
-  }
+if (a.type === "ניוד") {
+  return mode === MODE_RECOMMENDATION
+    ? "reasons"
+    : advanceActionOrFinish();
+}
 
 
   if (a.type === "השארה") {
