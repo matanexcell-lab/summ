@@ -828,6 +828,16 @@ if (a.type === "ניוד") {
       mgmtOptions,
       a.managementFee
     );
+    html += `
+<input
+  type="text"
+  id="mgmtOther"
+  class="${a.managementFee === "אחר" ? "" : "hidden"}"
+  placeholder="דמי ניהול אחרים"
+  style="margin-top:6px;"
+  value="${a.managementFeeOther || ""}"
+/>
+`;
   }
 }
   
@@ -917,13 +927,19 @@ if (a.type === "ניוד") {
       </div>
     `;
 
- const mgmtOptions =
+const mgmtOptions =
   a.product === "קרן פנסיה"
     ? [
         "0.1% מצבירה ועוד 1.5% מהפקדה",
-        "0.15% מצבירה ועוד 1.5% מהפקדה"
+        "0.15% מצבירה ועוד 1.5% מהפקדה",
+        "אחר"
       ]
-    : ["0.6%","0.7%","0.8%"];
+    : [
+        "0.6%",
+        "0.7%",
+        "0.8%",
+        "אחר"
+      ];
 
 html += createSelect(
   "mgmtSelect",
@@ -1558,6 +1574,8 @@ case "fundPreview": {
   a.targetCompany = getValue("targetCompanySelect");
   a.openTrack = getValue("openTrackSelect");
   a.managementFee = getValue("mgmtSelect");
+a.managementFeeOther = getValue("mgmtOther");
+  
 
   if (!a.type) {
     alert("נא לבחור סוג פעולה");
