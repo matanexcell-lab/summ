@@ -1956,14 +1956,16 @@ case "insuranceSum": {
 
   // =====================
 
+function computeNextStep() {
 
-  function computeNextStep() {
+  const a = getCurrentAction();
+
   console.log(
-  "CURRENT STEP:",
-  currentStep,
-  "TYPE:",
-  a.type
-);
+    "CURRENT STEP:",
+    currentStep,
+    "TYPE:",
+    a.type
+  );
     const a = getCurrentAction();
 
 
