@@ -947,6 +947,7 @@ html += createSelect(
   a.managementFee
 
 );
+
 html += `
   <input
     type="text"
@@ -956,11 +957,13 @@ html += `
     style="margin-top:6px;"
     value="${a.managementFeeOther || ""}"
   />
+`;
 
 }
 }
 break;
-        
+
+
       case "employment":
 
         setSubtitle("מצב תעסוקתי");
