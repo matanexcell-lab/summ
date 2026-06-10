@@ -2566,6 +2566,9 @@ function showSummary() {
     }
 
     actions.forEach((a, idx) => {
+      alert(
+  actions.map(x => x.type).join(" | ")
+);
 
       if (!a || !a.type) return;
 
