@@ -2539,8 +2539,12 @@ actions.push({
 
 } // סוף parsePdfData
 
-function showSummary() {
+function showSummary() {    
+    console.log("ACTIONS", actions);
 
+alert(
+  JSON.stringify(actions, null, 2)
+);
     const box = document.getElementById("summaryBox");
 
     const copyBtn = document.getElementById("copyBtn");
@@ -2564,7 +2568,8 @@ function showSummary() {
       lines.push("");
 
     }
-
+    console.log(actions);
+alert(JSON.stringify(actions));
     actions.forEach((a, idx) => {
       alert(
   actions.map(x => x.type).join(" | ")
