@@ -734,7 +734,16 @@
       case "totalActions":
 
         setSubtitle("");
+case "actionType": {
+  a.type = getValue("actionTypeSelect");
 
+  if (!a.type) {
+    alert("נא לבחור סוג פעולה");
+    return false;
+  }
+
+  return true;
+}
         html += `<div class="question-title">כמה פעולות אתה רוצה לרשום?</div>`;
 
         html += `<input type="number" id="actionsCount" min="1" max="20" value="${totalActions}" />`;
@@ -1397,7 +1406,8 @@ const needSum = [
 
 
   function saveCurrentStep() {
-
+console.log("STEP=", currentStep);
+alert("STEP=" + currentStep);
     const a = getCurrentAction();
 
 
@@ -2875,5 +2885,7 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
 </body>
 
 </html>
+
+
 
 
