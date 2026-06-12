@@ -1498,7 +1498,7 @@ case "fundPreview": {
 
         if (a.employmentType === "שכירה" && !a.employerName) {
 
-          alert("נא לרשום שם מעסיק.");
+          
 
           return false;
 
@@ -1522,7 +1522,7 @@ case "fundPreview": {
 
         if ((a.depositType === "הוראת קבע" || a.depositType === "גם וגם") && !a.depositMonthly) {
 
-          alert("נא להזין סכום הוראת קבע חודשית.");
+          
 
           return false;
 
@@ -1530,7 +1530,7 @@ case "fundPreview": {
 
         if ((a.depositType === "חד פעמי" || a.depositType === "גם וגם") && !a.depositOneTime) {
 
-          alert("נא להזין סכום הפקדה חד פעמית.");
+          
 
           return false;
 
@@ -1548,7 +1548,7 @@ case "fundPreview": {
 
         if (!a.targetCompany && !a.targetCompanyOther) {
 
-          alert("נא לבחור חברה אליה תנויד הקופה או לכתוב שם חברה.");
+          
 
           return false;
 
@@ -1693,7 +1693,7 @@ case "insuranceSum": {
 
   if (needSum && !a.insuranceSum) {
 
-    alert("נא להזין סכום ביטוח.");
+    
 
     return false;
 
@@ -1702,7 +1702,7 @@ case "insuranceSum": {
 
   if (!a.newPolicyPremium) {
 
-    alert("נא להזין פרמיה חודשית.");
+    
 
     return false;
 
@@ -1725,7 +1725,7 @@ case "insuranceSum": {
 
     if (!a.newPolicyType && !a.newPolicyTypeOther) {
 
-      alert("נא לבחור סוג ביטוח חדש או לרשום אחד.");
+     
 
       return false;
 
@@ -1749,7 +1749,7 @@ case "insuranceSum": {
 
   if (!a.newPolicyCompany && !a.newPolicyCompanyOther) {
 
-    alert("נא לבחור חברה חדשה או לרשום אחת.");
+    
 
     return false;
 
@@ -1758,7 +1758,7 @@ case "insuranceSum": {
 
   if (!a.newPolicyPremium) {
 
-    alert("נא להזין פרמיה חודשית.");
+    
 
     return false;
 
@@ -2536,7 +2536,7 @@ actions.push({
 
   currentStep = "fundPreview";
 
-  alert(`נטענו ${actions.length} קופות מה-PDF`);
+ 
 
   render();
 
@@ -2545,9 +2545,6 @@ actions.push({
 function showSummary() {    
     console.log("ACTIONS", actions);
 
-alert(
-  JSON.stringify(actions, null, 2)
-);
     const box = document.getElementById("summaryBox");
 
     const copyBtn = document.getElementById("copyBtn");
