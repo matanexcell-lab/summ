@@ -731,18 +731,17 @@
         break;
 
 
-      case "totalActions":
+     case "totalActions":
 
-        setSubtitle("");
-;
-}
-        html += `<div class="question-title">כמה פעולות אתה רוצה לרשום?</div>`;
+  setSubtitle("");
 
-        html += `<input type="number" id="actionsCount" min="1" max="20" value="${totalActions}" />`;
+  html += `<div class="question-title">כמה פעולות אתה רוצה לרשום?</div>`;
 
-        html += `<div class="helper-text">אפשר לשנות אחר כך אם צריך.</div>`;
+  html += `<input type="number" id="actionsCount" min="1" max="20" value="${totalActions}" />`;
 
-        break;
+  html += `<div class="helper-text">אפשר לשנות אחר כך אם צריך.</div>`;
+
+  break;
 
 
    case "fundPreview":
@@ -2838,7 +2837,9 @@ document.getElementById("backBtn").addEventListener("click", () => {
 });
 
 
-// רינדור ראשוני
+// רינדור ראשוניי
+
+alert("script loaded");
 
 render();
 
