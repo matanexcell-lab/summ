@@ -1424,7 +1424,7 @@ const a = getCurrentAction();
   let n = parseInt(getValue("actionsCount"), 10);
 
   if (!n || n < 1) {
-    alert("נא להזין מספר פעולות תקין.");
+    
     return false;
   }
 
@@ -2529,16 +2529,11 @@ actions.push({
   }); // סוף forEach
 
   totalActions = actions.length;
+currentActionIndex = 0;
+history = [];
+currentStep = "fundPreview";
 
-  currentActionIndex = 0;
-
-  history = [];
-
-  
-
- 
-
-  render();
+render();
 
 } // סוף parsePdfData
 
@@ -2569,11 +2564,9 @@ function showSummary() {
 
     }
     console.log(actions);
-alert(JSON.stringify(actions));
+
     actions.forEach((a, idx) => {
-      alert(
-  actions.map(x => x.type).join(" | ")
-);
+      
 
       if (!a || !a.type) return;
 
@@ -2813,7 +2806,7 @@ document.getElementById("nextBtn").addEventListener("click", () => {
 
   const isValid = saveCurrentStep();
 
-  alert("isValid = " + isValid);
+  
 
   if (!isValid) return;
 
@@ -2821,7 +2814,7 @@ document.getElementById("nextBtn").addEventListener("click", () => {
 
   const next = computeNextStep();
 
-  alert("next = " + next);
+  
 
   if (next !== null) {
     currentStep = next;
