@@ -1438,7 +1438,7 @@ const needSum = [
 
       }
 
-case "fundPreview":
+
 case "fundPreview": {
 
   if (a.company === "לא זוהה") {
@@ -2415,13 +2415,11 @@ else {
 );
 
 const planName = planNameMatch
+  ? planNameMatch[1].trim()
+  : "";
 
 console.log("PLAN NAME:", planName);
 console.log("ACCOUNT:", accountNumber);
-
-  ? planNameMatch[1].trim()
-
-  : "";
 
 if (planName.includes("גמל להשקעה")) {
 
