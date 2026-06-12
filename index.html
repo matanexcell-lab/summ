@@ -769,8 +769,17 @@
 
     ">
 
-      חברה: ${a.company || "-"}<br>
+      
+חברה: ${a.company || "-"}<br>
 
+${a.company === "לא זוהה" ? `
+<input
+  type="text"
+  id="manualCompany"
+  placeholder="הקלד את שם החברה"
+  style="margin-top:10px;width:100%;"
+/>
+` : ""}
       מוצר: ${a.product || "-"}<br>
 
       מספר קופה: ${a.accountNumber || "-"}<br>
@@ -1429,23 +1438,29 @@ const needSum = [
 
       }
 
+case "fundPreview":
 case "fundPreview": {
 
+  if (a.company === "לא זוהה") {
+
+    const manualCompany = getValue("manualCompany");
+
+    if (!manualCompany) {
+      alert("נא להזין שם חברה");
+      return false;
+    }
+
+    a.company = manualCompany;
+  }
 
   a.type = getValue("actionTypeSelect");
 
-
   if (!a.type) {
-
     alert("נא לבחור סוג פעולה");
-
     return false;
-
   }
 
-
   return true;
-
 }
 
       case "company": {
@@ -2366,6 +2381,10 @@ else if (section.includes("הראל")) company = "הראל";
     else if (section.includes("מנורה")) company = "מנורה";
 
     else if (section.includes("כלל")) company = "כלל";
+
+if (!company) {
+  company = "לא זוהה";
+}
 
     // ===== מוצר =====
 
