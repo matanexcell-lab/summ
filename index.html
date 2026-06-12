@@ -2380,30 +2380,30 @@ function parsePdfData(text) {
 );
 
 // ===== מוצר =====
+const sectionStart = section.slice(0, 2000);
 
-const sectionStart = section.slice(0, 1200);
-
-if (
-  sectionStart.includes("קרנות השתלמות")
-) {
-  product = "קרן השתלמות";
-}
-else if (
-  sectionStart.includes("קרן פנסיה")
-) {
-  product = "קרן פנסיה";
-}
-else if (
-  sectionStart.includes("קופת גמל")
-) {
-  product = "קופת גמל";
-}
-
-// תיקון לגמל להשקעה
 if (
   section.includes("גמל להשקעה")
 ) {
   product = "קופת גמל להשקעה";
+}
+else if (
+  section.includes("קרנות השתלמות") ||
+  section.includes("השתלמות אקסלנס") ||
+  section.includes("הפניקס השתלמות")
+) {
+  product = "קרן השתלמות";
+}
+else if (
+  section.includes("מקפת") ||
+  section.includes("קרן פנסיה")
+) {
+  product = "קרן פנסיה";
+}
+else if (
+  section.includes("קופת גמל")
+) {
+  product = "קופת גמל";
 }
 
     // ===== דמי ניהול =====
