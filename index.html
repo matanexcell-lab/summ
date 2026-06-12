@@ -734,15 +734,7 @@
       case "totalActions":
 
         setSubtitle("");
-case "actionType": {
-  a.type = getValue("actionTypeSelect");
-
-  if (!a.type) {
-    alert("נא לבחור סוג פעולה");
-    return false;
-  }
-
-  return true;
+;
 }
         html += `<div class="question-title">כמה פעולות אתה רוצה לרשום?</div>`;
 
@@ -1406,9 +1398,7 @@ const needSum = [
 
 
   function saveCurrentStep() {
-console.log("STEP=", currentStep);
-alert("STEP=" + currentStep);
-    const a = getCurrentAction();
+
 
 
     switch (currentStep) {
@@ -1442,21 +1432,7 @@ alert("STEP=" + currentStep);
 case "fundPreview": {
 
 
-  a.type = getValue("actionTypeSelect");
-
-
-  if (!a.type) {
-
-    alert("נא לבחור סוג פעולה");
-
-    return false;
-
-  }
-
-
-  return true;
-
-}
+  
 
       case "company": {
 
