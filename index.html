@@ -2343,11 +2343,12 @@ function parsePdfData(text) {
 
   sections.forEach((section, index) => {
 
+  console.log("========== SECTION ==========");
+  console.log(section.substring(0, 3000));
 
-    const accountMatch = section.match(/מספר תוכנית:\s*([\d-]+)/);
+  const accountMatch = section.match(/מספר תוכנית:\s*([\d-]+)/);
 
-
-    if (!accountMatch) return;
+  if (!accountMatch) return;
 
 
     const accountNumber = accountMatch[1].trim();
@@ -2359,32 +2360,51 @@ function parsePdfData(text) {
 
 
 // ===== חברה =====
+// ===== חברה =====
 
+const normalized = section.replace(/\s+/g, " ");
 
-   if (section.includes("קרן השתלמות לעובדי הרשויות")) company = "קרן השתלמות לעובדי הרשויות";
-else if (section.includes("הראל")) company = "הראל";
-
-    else if (section.includes("הפניקס")) company = "הפניקס";
-
-    else if (section.includes("מגדל")) company = "מגדל";
-
-    else if (section.includes("מיטב")) company = "מיטב";
-
-    else if (section.includes("מור")) company = "מור";
-
-    else if (section.includes("אלטשולר")) company = "אלטשולר שחם";
-
-    else if (section.includes("אנליסט")) company = "אנליסט";
-
-    else if (section.includes("ילין")) company = "ילין לפידות";
-
-    else if (section.includes("מנורה")) company = "מנורה";
-
-    else if (section.includes("כלל")) company = "כלל";
-
-if (!company) {
+if (
+  normalized.includes("עובדי הרשויות") ||
+  normalized.includes("קרן השתלמות לעובדי הרשויות")
+) {
+  company = "עובדי רשויות";
+}
+else if (normalized.includes("אלטשולר")) {
+  company = "אלטשולר שחם";
+}
+else if (normalized.includes("הראל")) {
+  company = "הראל";
+}
+else if (normalized.includes("הפניקס")) {
+  company = "הפניקס";
+}
+else if (normalized.includes("מגדל")) {
+  company = "מגדל";
+}
+else if (normalized.includes("מיטב")) {
+  company = "מיטב";
+}
+else if (normalized.includes("מור")) {
+  company = "מור";
+}
+else if (normalized.includes("אנליסט")) {
+  company = "אנליסט";
+}
+else if (normalized.includes("ילין")) {
+  company = "ילין לפידות";
+}
+else if (normalized.includes("מנורה")) {
+  company = "מנורה";
+}
+else if (normalized.includes("כלל")) {
+  company = "כלל";
+}
+else {
   company = "לא זוהה";
 }
+
+   
 
     // ===== מוצר =====
 
@@ -2395,6 +2415,9 @@ if (!company) {
 );
 
 const planName = planNameMatch
+
+console.log("PLAN NAME:", planName);
+console.log("ACCOUNT:", accountNumber);
 
   ? planNameMatch[1].trim()
 
