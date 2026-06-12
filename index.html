@@ -2379,40 +2379,31 @@ function parsePdfData(text) {
 
 );
 
-const planName = planNameMatch
+// ===== מוצר =====
 
-  ? planNameMatch[1].trim()
+const sectionStart = section.slice(0, 1200);
 
-  : "";
-
-if (planName.includes("גמל להשקעה")) {
-
-  product = "קופת גמל להשקעה";
-
-}
-
-else if (planName.includes("השתלמות")) {
-
-  product = "קרן השתלמות";
-
-}
-
-else if (
-
-  planName.includes("מקפת") ||
-
-  planName.includes("פנסיה")
-
+if (
+  sectionStart.includes("קרנות השתלמות")
 ) {
-
+  product = "קרן השתלמות";
+}
+else if (
+  sectionStart.includes("קרן פנסיה")
+) {
   product = "קרן פנסיה";
-
+}
+else if (
+  sectionStart.includes("קופת גמל")
+) {
+  product = "קופת גמל";
 }
 
-else if (planName.includes("גמל")) {
-
-  product = "קופת גמל";
-
+// תיקון לגמל להשקעה
+if (
+  section.includes("גמל להשקעה")
+) {
+  product = "קופת גמל להשקעה";
 }
 
     // ===== דמי ניהול =====
