@@ -398,7 +398,7 @@
 
 <script>
 
-alert("script start");
+
   // =====================
 
   // קבועים
@@ -743,7 +743,19 @@ alert("script start");
   html += `<div class="helper-text">אפשר לשנות אחר כך אם צריך.</div>`;
 
   break;
+case "actionType":
 
+  setSubtitle("סוג פעולה");
+
+  html += `<div class="field-label">מה סוג הפעולה?</div>`;
+
+  html += createSelect("actionTypeSelect", ACTION_TYPES, a.type);
+
+  break;
+
+case "fundPreview":
+
+  setSubtitle("פרטי הקופה");
 
    case "fundPreview":
 
@@ -1417,17 +1429,34 @@ const a = getCurrentAction();
 
       case "totalActions": {
 
-        let n = parseInt(getValue("actionsCount"), 10);
+  let n = parseInt(getValue("actionsCount"), 10);
 
-        if (!n || n < 1) { alert("נא להזין מספר פעולות תקין."); return false; }
+  if (!n || n < 1) {
+    alert("נא להזין מספר פעולות תקין.");
+    return false;
+  }
 
-        totalActions = n;
+  totalActions = n;
 
-        actions.length = totalActions;
+  actions.length = totalActions;
 
-        return true;
+  return true;
+}
 
-      }
+case "actionType": {
+
+  a.type = getValue("actionTypeSelect");
+
+  if (!a.type) {
+
+    alert("נא לבחור סוג פעולה");
+
+    return false;
+
+  }
+
+  return true;
+}
 
 case "fundPreview": {
   a.type = getValue("actionTypeSelect");
@@ -1908,34 +1937,21 @@ if (
           return "product";
 
 
-        case "product": {
+        case "product":
+  return "actionType";
 
-          const p = resolveProduct(a);
+case "actionType": {
+  const p = resolveProduct(a);
 
+  if (p === "קופת גמל להשקעה") return "deposit";
+  if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(p)) return "employment";
 
-          // קג"ש: ישר למסך הפקדה (תמיד)
-
-          if (p === "קופת גמל להשקעה") return "deposit";
-
-
-          // האחרים: קודם תעסוקה (כדי לדעת אם לשאול הפקדות)
-
-          if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(p)) return "employment";
-
-
-          // fallback
-
-          return a.type === "פתיחת קופה"
-
-            ? "trackForOpen"
-
-            : a.type === "ניוד"
-
-            ? "transferTargetCompany"
-
-            : "keepType";
-
-        }
+  return a.type === "פתיחת קופה"
+    ? "trackForOpen"
+    : a.type === "ניוד"
+    ? "transferTargetCompany"
+    : "keepType";
+}
 
 
         case "employment": {
@@ -2840,7 +2856,7 @@ document.getElementById("backBtn").addEventListener("click", () => {
 
 // רינדור ראשוניי
 
-alert("script loaded");
+
 
 render();
 
