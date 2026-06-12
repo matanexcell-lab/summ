@@ -2347,29 +2347,32 @@ function parsePdfData(text) {
 
 
 // ===== חברה =====
+if (section.includes("הראל")) company = "הראל";
+else if (section.includes("הפניקס")) company = "הפניקס";
+else if (section.includes("מגדל")) company = "מגדל";
+else if (section.includes("מיטב")) company = "מיטב";
+else if (section.includes("מור")) company = "מור";
+else if (section.includes("אלטשולר")) company = "אלטשולר שחם";
+else if (section.includes("אנליסט")) company = "אנליסט";
+else if (section.includes("ילין")) company = "ילין לפידות";
+else if (section.includes("מנורה")) company = "מנורה";
+else if (section.includes("כלל")) company = "כלל";
+else {
 
+  const companyMatch = section.match(
+    /שם תוכנית:\s*(.*?)\s*מספר תוכנית:/s
+  );
+
+  if (companyMatch) {
+    company = companyMatch[1]
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+}
 
    
 
-    if (section.includes("הראל")) company = "הראל";
-
-    else if (section.includes("הפניקס")) company = "הפניקס";
-
-    else if (section.includes("מגדל")) company = "מגדל";
-
-    else if (section.includes("מיטב")) company = "מיטב";
-
-    else if (section.includes("מור")) company = "מור";
-
-    else if (section.includes("אלטשולר")) company = "אלטשולר שחם";
-
-    else if (section.includes("אנליסט")) company = "אנליסט";
-
-    else if (section.includes("ילין")) company = "ילין לפידות";
-
-    else if (section.includes("מנורה")) company = "מנורה";
-
-    else if (section.includes("כלל")) company = "כלל";
+    
 
     // ===== מוצר =====
 
