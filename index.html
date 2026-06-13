@@ -2350,6 +2350,7 @@ sections.forEach((s,i)=>{
   sections.forEach((section, index) => {
 
   console.log("========== SECTION ==========");
+    console.log(section.substring(0, 5000));
   console.log(section.substring(0, 3000));
 
   const accountMatch = section.match(/מספר תוכנית:\s*([\d-]+)/);
