@@ -2366,7 +2366,8 @@ console.log(section.substring(0,1500));
 
     let product = "";
 
-
+const sourceText = (planName + " " + section)
+  .replace(/\s+/g, " ");
 
 // ===== חברה =====
 // ===== שם תוכנית =====
@@ -2392,60 +2393,65 @@ console.log("SECTION END");
     
 
 // ===== חברה =====
+const sourceText = (planName + " " + section)
+  .replace(/\s+/g, " ");
 
-if (planName.includes("אלטשולר")) {
+// ===== חברה =====
+
+if (sourceText.includes("אלטשולר")) {
   company = "אלטשולר שחם";
 }
-else if (planName.includes("הראל")) {
+else if (sourceText.includes("הראל")) {
   company = "הראל";
 }
-else if (planName.includes("הפניקס")) {
+else if (sourceText.includes("הפניקס")) {
   company = "הפניקס";
 }
 else if (
-  planName.includes("מגדל") ||
-  planName.includes("מקפת")
+  sourceText.includes("מגדל") ||
+  sourceText.includes("מקפת")
 ) {
   company = "מגדל";
 }
-else if (planName.includes("מיטב")) {
+else if (sourceText.includes("מיטב")) {
   company = "מיטב";
 }
-else if (planName.includes("מור")) {
+else if (sourceText.includes("מור")) {
   company = "מור";
 }
-else if (planName.includes("אנליסט")) {
+else if (sourceText.includes("אנליסט")) {
   company = "אנליסט";
 }
-else if (planName.includes("ילין")) {
+else if (sourceText.includes("ילין")) {
   company = "ילין לפידות";
 }
-else if (planName.includes("מנורה")) {
+else if (sourceText.includes("מנורה")) {
   company = "מנורה";
 }
-else if (planName.includes("כלל")) {
+else if (sourceText.includes("כלל")) {
   company = "כלל";
 }
 else {
   company = "לא זוהה";
 }
 
+
 // ===== מוצר =====
 
-if (planName.includes("גמל להשקעה")) {
+if (sourceText.includes("גמל להשקעה")) {
   product = "קופת גמל להשקעה";
 }
-else if (planName.includes("השתלמות")) {
+else if (sourceText.includes("השתלמות")) {
   product = "קרן השתלמות";
 }
 else if (
-  planName.includes("פנסיה") ||
-  planName.includes("מקיפה") ||
-  planName.includes("מקפת")
+  sourceText.includes("פנסיה") ||
+  sourceText.includes("מקיפה") ||
+  sourceText.includes("מקפת")
 ) {
   product = "קרן פנסיה";
 }
-else if (planName.includes("גמל")) {
+else if (sourceText.includes("גמל")) {
   product = "קופת גמל";
 }
    
