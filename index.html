@@ -2416,14 +2416,6 @@ else {
 
 // ===== מוצר =====
 
-const cleanSection = section.replace(/\s+/g, " ");
-
-const planNameMatch = cleanSection.match(
-  /שם תוכנית:\s*(.*?)\s*מספר תוכנית:/i
-);
-
-
-const normalized = section.replace(/\s+/g, " ");
 
 if (
     normalized.includes("גמל להשקעה")
