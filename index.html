@@ -2371,11 +2371,12 @@ sections.forEach((s,i)=>{
 const normalized = section.replace(/\s+/g, " ");
 
 if (
-  normalized.includes("עובדי הרשויות") ||
-  normalized.includes("קרן השתלמות לעובדי הרשויות")
+  normalized.includes("הרשויות המקומיות") ||
+  normalized.includes("עובדי הרשויות")
 ) {
   company = "עובדי רשויות";
 }
+  
 else if (normalized.includes("אלטשולר")) {
   company = "אלטשולר שחם";
 }
@@ -2414,10 +2415,13 @@ else {
 
     // ===== מוצר =====
 
-    const planNameMatch = section.match(
+    const cleanSection = section.replace(/\s+/g, " ");
+    
 
-  /שם תוכנית:\s*([^:]+?)\s*(?:מספר תוכנית|מסלול|מספר קופה|$)/i
+);
 
+const planNameMatch = cleanSection.match(
+  /שם תוכנית:\s*(.*?)\s*מספר תוכנית:/i
 );
 
 const planName = planNameMatch
