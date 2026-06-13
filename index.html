@@ -2366,10 +2366,8 @@ console.log(section.substring(0,1500));
 
     let product = "";
 
-const sourceText = (planName + " " + section)
-  .replace(/\s+/g, " ");
 
-// ===== חברה =====
+
 // ===== שם תוכנית =====
 
 let planName = "";
@@ -2384,6 +2382,8 @@ if (planMatch) {
     .trim();
 }
 
+    const sourceText = (planName + " " + section)
+  .replace(/\s+/g, " ");
 console.log("PLAN NAME:", planName);
 
 console.log("SECTION START:");
@@ -2393,10 +2393,7 @@ console.log("SECTION END");
     
 
 // ===== חברה =====
-const sourceText = (planName + " " + section)
-  .replace(/\s+/g, " ");
 
-// ===== חברה =====
 
 if (sourceText.includes("אלטשולר")) {
   company = "אלטשולר שחם";
