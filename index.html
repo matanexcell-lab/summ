@@ -2347,16 +2347,21 @@ sections.forEach((s,i)=>{
 });
 
 
-  sections.forEach((section, index) => {
-
-  console.log("========== SECTION ==========");
-    if (accountNumber === "60143323") {
-    console.log("FULL SECTION");
-    console.log(section);
-}
-  console.log(section.substring(0, 3000));
+ sections.forEach((section, index) => {
 
   const accountMatch = section.match(/מספר תוכנית:\s*([\d-]+)/);
+
+  if (!accountMatch) return;
+
+  const accountNumber = accountMatch[1].trim();
+
+  if (accountNumber === "60143323") {
+    console.log("FULL SECTION");
+    console.log(section);
+  }
+
+  console.log(section.substring(0, 3000));
+   
     console.log("SECTION RAW:");
 console.log(section.substring(0,1500));
 
