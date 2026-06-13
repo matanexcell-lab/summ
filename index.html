@@ -2353,6 +2353,8 @@ sections.forEach((s,i)=>{
   console.log(section.substring(0, 3000));
 
   const accountMatch = section.match(/מספר תוכנית:\s*([\d-]+)/);
+    console.log("SECTION RAW:");
+console.log(section.substring(0,1500));
 
   if (!accountMatch) return;
 
