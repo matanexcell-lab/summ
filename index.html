@@ -2350,7 +2350,10 @@ sections.forEach((s,i)=>{
   sections.forEach((section, index) => {
 
   console.log("========== SECTION ==========");
-    console.log(section.substring(0, 5000));
+    if (accountNumber === "60143323") {
+    console.log("FULL SECTION");
+    console.log(section);
+}
   console.log(section.substring(0, 3000));
 
   const accountMatch = section.match(/מספר תוכנית:\s*([\d-]+)/);
@@ -2388,6 +2391,7 @@ if (planMatch) {
 console.log("PLAN NAME:", planName);
 
 console.log("SECTION START:");
+    
 console.log(section.substring(0, 3000));
 console.log("SECTION END");
 
