@@ -2367,77 +2367,87 @@ console.log(section.substring(0,1500));
     let product = "";
 
 
-// ===== חברה =====
-// ===== חברה =====
 
-const normalized = section.replace(/\s+/g, " ");
+// ===== חברה =====
+// ===== שם תוכנית =====
 
-if (
-  normalized.includes("עובדי הרשויות")
-) {
-  company = "עובדי רשויות";
+let planName = "";
+
+const planMatch = section.match(
+  /שם תוכנית:\s*([\s\S]*?)\s*מספר תוכנית:/i
+);
+
+if (planMatch) {
+  planName = planMatch[1]
+    .replace(/\s+/g, " ")
+    .trim();
 }
-  
-else if (normalized.includes("אלטשולר")) {
+
+console.log("PLAN NAME:", planName);
+
+// ===== חברה =====
+
+if (planName.includes("אלטשולר")) {
   company = "אלטשולר שחם";
 }
-else if (normalized.includes("הראל")) {
+else if (planName.includes("הראל")) {
   company = "הראל";
 }
-else if (normalized.includes("הפניקס")) {
+else if (planName.includes("הפניקס")) {
   company = "הפניקס";
 }
-else if (normalized.includes("מגדל")) {
+else if (
+  planName.includes("מגדל") ||
+  planName.includes("מקפת")
+) {
   company = "מגדל";
 }
-else if (normalized.includes("מיטב")) {
+else if (planName.includes("מיטב")) {
   company = "מיטב";
 }
-else if (normalized.includes("מור")) {
+else if (planName.includes("מור")) {
   company = "מור";
 }
-else if (normalized.includes("אנליסט")) {
+else if (planName.includes("אנליסט")) {
   company = "אנליסט";
 }
-else if (normalized.includes("ילין")) {
+else if (planName.includes("ילין")) {
   company = "ילין לפידות";
 }
-else if (normalized.includes("מנורה")) {
+else if (planName.includes("מנורה")) {
   company = "מנורה";
 }
-else if (normalized.includes("כלל")) {
+else if (planName.includes("כלל")) {
   company = "כלל";
 }
 else {
   company = "לא זוהה";
 }
 
+// ===== מוצר =====
+
+if (planName.includes("גמל להשקעה")) {
+  product = "קופת גמל להשקעה";
+}
+else if (planName.includes("השתלמות")) {
+  product = "קרן השתלמות";
+}
+else if (
+  planName.includes("פנסיה") ||
+  planName.includes("מקיפה") ||
+  planName.includes("מקפת")
+) {
+  product = "קרן פנסיה";
+}
+else if (planName.includes("גמל")) {
+  product = "קופת גמל";
+}
    
 
 // ===== מוצר =====
 
 
-if (
-    normalized.includes("גמל להשקעה")
-) {
-    product = "קופת גמל להשקעה";
-}
-else if (
-    normalized.includes("השתלמות")
-) {
-    product = "קרן השתלמות";
-}
-else if (
-    normalized.includes("פנסיה") ||
-    normalized.includes("מקפת")
-) {
-    product = "קרן פנסיה";
-}
-else if (
-    normalized.includes("גמל")
-) {
-    product = "קופת גמל";
-}
+
     // ===== דמי ניהול =====
 
     let managementFee = "";
