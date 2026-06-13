@@ -2422,47 +2422,30 @@ const planNameMatch = cleanSection.match(
   /שם תוכנית:\s*(.*?)\s*מספר תוכנית:/i
 );
 
-const planName = planNameMatch
-  ? planNameMatch[1].trim()
-  : "";
 
-console.log("PLAN NAME:", planName);
-console.log("ACCOUNT:", accountNumber);
-console.log("CLEAN SECTION:");
-console.log(cleanSection.substring(0,1000));
-console.log("FULL SECTION:");
-console.log(section);
+const normalized = section.replace(/\s+/g, " ");
 
-if (planName.includes("גמל להשקעה")) {
-
-  product = "קופת גמל להשקעה";
-
-}
-
-else if (planName.includes("השתלמות")) {
-
-  product = "קרן השתלמות";
-
-}
-
-else if (
-
-  planName.includes("מקפת") ||
-
-  planName.includes("פנסיה")
-
+if (
+    normalized.includes("גמל להשקעה")
 ) {
-
-  product = "קרן פנסיה";
-
+    product = "קופת גמל להשקעה";
 }
-
-else if (planName.includes("גמל")) {
-
-  product = "קופת גמל";
-
+else if (
+    normalized.includes("השתלמות")
+) {
+    product = "קרן השתלמות";
 }
-
+else if (
+    normalized.includes("פנסיה") ||
+    normalized.includes("מקפת")
+) {
+    product = "קרן פנסיה";
+}
+else if (
+    normalized.includes("גמל")
+) {
+    product = "קופת גמל";
+}
     // ===== דמי ניהול =====
 
     let managementFee = "";
