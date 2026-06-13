@@ -2402,14 +2402,14 @@ console.log("SECTION END");
     
 
 // ===== חברה =====
+
 if (
   sourceText.includes("עובדי הרשויות") ||
   sourceText.includes("הרשויות המקומיות")
 ) {
   company = "עובדי הרשויות";
 }
-
-if (sourceText.includes("אלטשולר")) {
+else if (sourceText.includes("אלטשולר")) {
   company = "אלטשולר שחם";
 }
 else if (sourceText.includes("הראל")) {
@@ -2439,7 +2439,10 @@ else if (sourceText.includes("ילין")) {
 else if (sourceText.includes("מנורה")) {
   company = "מנורה";
 }
-else if (sourceText.includes("כלל")) {
+else if (
+  sourceText.includes("כלל פנסיה") ||
+  sourceText.includes("כלל ביטוח")
+) {
   company = "כלל";
 }
 else {
