@@ -1435,30 +1435,18 @@ const a = getCurrentAction();
   return true;
 }
 
-case "totalActions": {
-  let n = parseInt(getValue("actionsCount"), 10);
 
-  if (!n || n < 1) {
-    alert("נא להזין מספר פעולות תקין.");
+ 
+case "actionType": {
+  a.type = getValue("actionTypeSelect");
+
+  if (!a.type) {
+    alert("נא לבחור סוג פעולה");
     return false;
-  }
-
-  totalActions = n;
-
-  actions.length = 0;
-
-  for (let i = 0; i < totalActions; i++) {
-    actions.push({
-      index: i,
-      type: null,
-      reasons: []
-    });
   }
 
   return true;
 }
- 
-
 
 
 
