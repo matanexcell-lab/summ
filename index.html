@@ -398,6 +398,7 @@
 
 <script>
 
+
   // =====================
 
   // קבועים
@@ -410,14 +411,14 @@
 
   const INVEST_COMPANIES = [
 
-    "מגדל","כלל","הראל","אלטשולר שחם","ילין לפידות","אנליסט","מיטב","מור","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר", "עובדי הרשויות"
+    "מגדל","כלל","הראל","אלטשולר שחם","ילין לפידות","אנליסט","מיטב","מור","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר"
 
   ];
 
 
   const INSURANCE_COMPANIES = [
 
-    "מגדל","כלל","הראל","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר", "עובדי הרשויות"
+    "מגדל","כלל","הראל","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר"
 
   ];
 
@@ -731,24 +732,28 @@
         break;
 
 
-      case "totalActions":
+     case "totalActions":
 
-        setSubtitle("");
+  setSubtitle("");
 
-        html += `<div class="question-title">כמה פעולות אתה רוצה לרשום?</div>`;
+  html += `<div class="question-title">כמה פעולות אתה רוצה לרשום?</div>`;
 
-        html += `<input type="number" id="actionsCount" min="1" max="20" value="${totalActions}" />`;
+  html += `<input type="number" id="actionsCount" min="1" max="20" value="${totalActions}" />`;
 
-        html += `<div class="helper-text">אפשר לשנות אחר כך אם צריך.</div>`;
+  html += `<div class="helper-text">אפשר לשנות אחר כך אם צריך.</div>`;
 
-        break;
+  break;
+case "actionType":
 
+  setSubtitle("סוג פעולה");
+
+  html += `<div class="field-label">מה סוג הפעולה?</div>`;
+
+  html += createSelect("actionTypeSelect", ACTION_TYPES, a.type);
+
+  break;
 
    case "fundPreview":
-
-
-  setSubtitle("פרטי הקופה");
-
 
   html += `
 
@@ -769,17 +774,8 @@
 
     ">
 
-      
-חברה: ${a.company || "-"}<br>
+      חברה: ${a.company || "-"}<br>
 
-${a.company === "לא זוהה" ? `
-<input
-  type="text"
-  id="manualCompany"
-  placeholder="הקלד את שם החברה"
-  style="margin-top:10px;width:100%;"
-/>
-` : ""}
       מוצר: ${a.product || "-"}<br>
 
       מספר קופה: ${a.accountNumber || "-"}<br>
@@ -1406,8 +1402,7 @@ const needSum = [
 
 
   function saveCurrentStep() {
-
-    const a = getCurrentAction();
+const a = getCurrentAction();
 
 
     switch (currentStep) {
@@ -1426,33 +1421,48 @@ const needSum = [
 
       case "totalActions": {
 
-        let n = parseInt(getValue("actionsCount"), 10);
+  let n = parseInt(getValue("actionsCount"), 10);
 
-        if (!n || n < 1) { alert("נא להזין מספר פעולות תקין."); return false; }
+  if (!n || n < 1) {
+    
+    return false;
+  }
 
-        totalActions = n;
+  totalActions = n;
 
-        actions.length = totalActions;
+  actions.length = totalActions;
 
-        return true;
+  return true;
+}
 
-      }
+case "totalActions": {
+  let n = parseInt(getValue("actionsCount"), 10);
+
+  if (!n || n < 1) {
+    alert("נא להזין מספר פעולות תקין.");
+    return false;
+  }
+
+  totalActions = n;
+
+  actions.length = 0;
+
+  for (let i = 0; i < totalActions; i++) {
+    actions.push({
+      index: i,
+      type: null,
+      reasons: []
+    });
+  }
+
+  return true;
+}
+ 
+
+
 
 
 case "fundPreview": {
-
-  if (a.company === "לא זוהה") {
-
-    const manualCompany = getValue("manualCompany");
-
-    if (!manualCompany) {
-      alert("נא להזין שם חברה");
-      return false;
-    }
-
-    a.company = manualCompany;
-  }
-
   a.type = getValue("actionTypeSelect");
 
   if (!a.type) {
@@ -1462,6 +1472,9 @@ case "fundPreview": {
 
   return true;
 }
+
+
+  
 
       case "company": {
 
@@ -1497,7 +1510,7 @@ case "fundPreview": {
 
         if (a.employmentType === "שכירה" && !a.employerName) {
 
-          alert("נא לרשום שם מעסיק.");
+          
 
           return false;
 
@@ -1521,7 +1534,7 @@ case "fundPreview": {
 
         if ((a.depositType === "הוראת קבע" || a.depositType === "גם וגם") && !a.depositMonthly) {
 
-          alert("נא להזין סכום הוראת קבע חודשית.");
+          
 
           return false;
 
@@ -1529,7 +1542,7 @@ case "fundPreview": {
 
         if ((a.depositType === "חד פעמי" || a.depositType === "גם וגם") && !a.depositOneTime) {
 
-          alert("נא להזין סכום הפקדה חד פעמית.");
+          
 
           return false;
 
@@ -1547,7 +1560,7 @@ case "fundPreview": {
 
         if (!a.targetCompany && !a.targetCompanyOther) {
 
-          alert("נא לבחור חברה אליה תנויד הקופה או לכתוב שם חברה.");
+          
 
           return false;
 
@@ -1692,7 +1705,7 @@ case "insuranceSum": {
 
   if (needSum && !a.insuranceSum) {
 
-    alert("נא להזין סכום ביטוח.");
+    
 
     return false;
 
@@ -1701,7 +1714,7 @@ case "insuranceSum": {
 
   if (!a.newPolicyPremium) {
 
-    alert("נא להזין פרמיה חודשית.");
+    
 
     return false;
 
@@ -1724,7 +1737,7 @@ case "insuranceSum": {
 
     if (!a.newPolicyType && !a.newPolicyTypeOther) {
 
-      alert("נא לבחור סוג ביטוח חדש או לרשום אחד.");
+     
 
       return false;
 
@@ -1748,7 +1761,7 @@ case "insuranceSum": {
 
   if (!a.newPolicyCompany && !a.newPolicyCompanyOther) {
 
-    alert("נא לבחור חברה חדשה או לרשום אחת.");
+    
 
     return false;
 
@@ -1757,7 +1770,7 @@ case "insuranceSum": {
 
   if (!a.newPolicyPremium) {
 
-    alert("נא להזין פרמיה חודשית.");
+    
 
     return false;
 
@@ -1928,34 +1941,21 @@ if (
           return "product";
 
 
-        case "product": {
+        case "product":
+  return "actionType";
 
-          const p = resolveProduct(a);
+case "actionType": {
+  const p = resolveProduct(a);
 
+  if (p === "קופת גמל להשקעה") return "deposit";
+  if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(p)) return "employment";
 
-          // קג"ש: ישר למסך הפקדה (תמיד)
-
-          if (p === "קופת גמל להשקעה") return "deposit";
-
-
-          // האחרים: קודם תעסוקה (כדי לדעת אם לשאול הפקדות)
-
-          if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(p)) return "employment";
-
-
-          // fallback
-
-          return a.type === "פתיחת קופה"
-
-            ? "trackForOpen"
-
-            : a.type === "ניוד"
-
-            ? "transferTargetCompany"
-
-            : "keepType";
-
-        }
+  return a.type === "פתיחת קופה"
+    ? "trackForOpen"
+    : a.type === "ניוד"
+    ? "transferTargetCompany"
+    : "keepType";
+}
 
 
         case "employment": {
@@ -2338,36 +2338,19 @@ function parsePdfData(text) {
 
   // מפצל כל תוכנית בנפרד
 
-  const sections = text.split(/(?=\s\d+\s+(?:קרן פנסיה|קרנות השתלמות|קופת גמל|קופת גמל להשקעה)\s+-)/);
-  console.log("SECTIONS:", sections.length);
-
-sections.forEach((s,i)=>{
-  console.log("========== SECTION " + i + " ==========");
-  console.log(s.substring(0,2000));
-});
+  const sections = text.split(/(?=מספר תוכנית:)/);
 
 
- sections.forEach((section, index) => {
-
-  const accountMatch = section.match(/מספר תוכנית:\s*([\d-]+)/);
-
-  if (!accountMatch) return;
-
-  const accountNumber = accountMatch[1].trim();
-
-  if (accountNumber === "60143323") {
-    console.log("FULL SECTION");
-    console.log(section);
-  }
-
-  console.log(section.substring(0, 3000));
-   
-    console.log("SECTION RAW:");
-console.log(section.substring(0,1500));
+  sections.forEach((section, index) => {
 
 
+    const accountMatch = section.match(/מספר תוכנית:\s*([\d-]+)/);
 
-   
+
+    if (!accountMatch) return;
+
+
+    const accountNumber = accountMatch[1].trim();
 
 
     let company = "";
@@ -2375,112 +2358,68 @@ console.log(section.substring(0,1500));
     let product = "";
 
 
+// ===== חברה =====
+if (section.includes("הראל")) company = "הראל";
+else if (section.includes("הפניקס")) company = "הפניקס";
+else if (section.includes("מגדל")) company = "מגדל";
+else if (section.includes("מיטב")) company = "מיטב";
+else if (section.includes("מור")) company = "מור";
+else if (section.includes("אלטשולר")) company = "אלטשולר שחם";
+else if (section.includes("אנליסט")) company = "אנליסט";
+else if (section.includes("ילין")) company = "ילין לפידות";
+else if (section.includes("מנורה")) company = "מנורה";
+else if (section.includes("כלל")) company = "כלל";
+else {
 
-// ===== שם תוכנית =====
+  const companyMatch = section.match(
+    /שם תוכנית:\s*(.*?)\s*מספר תוכנית:/s
+  );
 
-let planName = "";
+  if (companyMatch) {
+    company = companyMatch[1]
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+}
 
-const planMatch = section.match(
-  /שם תוכנית:\s*([\s\S]*?)\s*מספר תוכנית:/i
+   
+
+    
+
+    // ===== מוצר =====
+
+    const planNameMatch = section.match(
+
+  /שם תוכנית:\s*([^:]+?)\s*(?:מספר תוכנית|מסלול|מספר קופה|$)/i
+
 );
 
-if (planMatch) {
-  planName = planMatch[1]
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-    const sourceText = (planName + " " + section)
-  .replace(/\s+/g, " ");
-console.log("PLAN NAME:", planName);
-
-console.log("SECTION START:");
-    
-console.log(section.substring(0, 3000));
-console.log("SECTION END");
-
-    
-
-// ===== חברה =====
+// ===== מוצר =====
+const sectionStart = section.slice(0, 2000);
 
 if (
-  sourceText.includes("עובדי הרשויות") ||
-  sourceText.includes("הרשויות המקומיות")
+  section.includes("גמל להשקעה")
 ) {
-  company = "עובדי הרשויות";
-}
-else if (sourceText.includes("אלטשולר")) {
-  company = "אלטשולר שחם";
-}
-else if (sourceText.includes("הראל")) {
-  company = "הראל";
-}
-else if (sourceText.includes("הפניקס")) {
-  company = "הפניקס";
-}
-else if (
-  sourceText.includes("מגדל") ||
-  sourceText.includes("מקפת")
-) {
-  company = "מגדל";
-}
-else if (sourceText.includes("מיטב")) {
-  company = "מיטב";
-}
-else if (sourceText.includes("מור")) {
-  company = "מור";
-}
-else if (sourceText.includes("אנליסט")) {
-  company = "אנליסט";
-}
-else if (sourceText.includes("ילין")) {
-  company = "ילין לפידות";
-}
-else if (sourceText.includes("מנורה")) {
-  company = "מנורה";
-}
-else if (
-  sourceText.includes("כלל פנסיה") ||
-  sourceText.includes("כלל ביטוח") ||
-   sourceText.includes("כלל השתלמות")
-) {
-  company = "כלל";
-}
-else {
-  company = "לא זוהה";
-}
-
-
-
-
-// ===== מוצר =====
-
-if (sourceText.includes("גמל להשקעה")) {
   product = "קופת גמל להשקעה";
 }
 else if (
-  sourceText.includes("קרן השתלמות") ||
-  sourceText.includes("קרנות השתלמות") ||
-  sourceText.includes("השתלמות") ||
-  sourceText.includes('קה"ש')
+  section.includes("קרנות השתלמות") ||
+  section.includes("השתלמות אקסלנס") ||
+  section.includes("הפניקס השתלמות")
 ) {
   product = "קרן השתלמות";
 }
 else if (
-  sourceText.includes("פנסיה") ||
-  sourceText.includes("מקיפה") ||
-  sourceText.includes("מקפת")
+  section.includes("מקפת") ||
+  section.includes("קרן פנסיה")
 ) {
   product = "קרן פנסיה";
 }
-else if (sourceText.includes("גמל")) {
+else if (
+  section.includes("קופת גמל")
+) {
   product = "קופת גמל";
 }
-   
-
-// ===== מוצר =====
-
-
 
     // ===== דמי ניהול =====
 
@@ -2547,8 +2486,6 @@ if (employerName) {
     );
 
     if (trackMatch) {
-      console.log("TRACK RAW:");
-console.log(trackMatch[1]);
 
       currentTrack = trackMatch[1]
 
@@ -2570,19 +2507,7 @@ console.log(
 
 );
 
-console.log("================================");
-console.log("ACCOUNT:", accountNumber);
-console.log(section);
-console.log("================================");
 
-
-console.log("========== RESULT ==========");
-console.log("PLAN NAME:", planName);
-console.log("COMPANY:", company);
-console.log("PRODUCT:", product);
-console.log("ACCOUNT:", accountNumber);
-console.log("============================");
-    
 actions.push({
 
   index: actions.length,
@@ -2610,20 +2535,16 @@ actions.push({
   }); // סוף forEach
 
   totalActions = actions.length;
+currentActionIndex = 0;
+history = [];
+currentStep = "fundPreview";
 
-  currentActionIndex = 0;
-
-  history = [];
-
-  currentStep = "fundPreview";
-
-  alert(`נטענו ${actions.length} קופות מה-PDF`);
-
-  render();
+render();
 
 } // סוף parsePdfData
 
-function showSummary() {
+function showSummary() {    
+    console.log("ACTIONS", actions);
 
     const box = document.getElementById("summaryBox");
 
@@ -2648,8 +2569,10 @@ function showSummary() {
       lines.push("");
 
     }
+    console.log(actions);
 
     actions.forEach((a, idx) => {
+      
 
       if (!a || !a.type) return;
 
@@ -2885,7 +2808,11 @@ function showSummary() {
 
 document.getElementById("nextBtn").addEventListener("click", () => {
 
+  
+
   const isValid = saveCurrentStep();
+
+  
 
   if (!isValid) return;
 
@@ -2893,19 +2820,16 @@ document.getElementById("nextBtn").addEventListener("click", () => {
 
   const next = computeNextStep();
 
+  
+
   if (next !== null) {
-
     currentStep = next;
-
     render();
-
   } else {
-
     showSummary();
-
   }
-
 });
+    
 
 document.getElementById("backBtn").addEventListener("click", () => {
 
@@ -2918,7 +2842,9 @@ document.getElementById("backBtn").addEventListener("click", () => {
 });
 
 
-// רינדור ראשוני
+// רינדור ראשוניי
+
+
 
 render();
 
@@ -2951,5 +2877,7 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
 </body>
 
 </html>
+
+
 
 
