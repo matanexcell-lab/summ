@@ -2319,215 +2319,95 @@ document.getElementById("pdfUpload").addEventListener("change", async (e) => {
 
 
 function parsePdfData(text) {
-
-
   actions.length = 0;
 
+  const sections = text.split(
+    /(?=\s\d+\s+(?:קרן פנסיה|קרנות השתלמות|קופת גמל|קופת גמל להשקעה)\s+-)/
+  );
 
-  // מפצל כל תוכנית בנפרד
-
-  const sections = text.split(/(?=מספר תוכנית:)/);
-
-
-  sections.forEach((section, index) => {
-
-
+  sections.forEach((section) => {
     const accountMatch = section.match(/מספר תוכנית:\s*([\d-]+)/);
-
-
     if (!accountMatch) return;
-
 
     const accountNumber = accountMatch[1].trim();
 
-
     let company = "";
-
     let product = "";
-
-
-// ===== חברה =====
-if (section.includes("הראל")) company = "הראל";
-else if (section.includes("הפניקס")) company = "הפניקס";
-else if (section.includes("מגדל")) company = "מגדל";
-else if (section.includes("מיטב")) company = "מיטב";
-else if (section.includes("מור")) company = "מור";
-else if (section.includes("אלטשולר")) company = "אלטשולר שחם";
-else if (section.includes("אנליסט")) company = "אנליסט";
-else if (section.includes("ילין")) company = "ילין לפידות";
-else if (section.includes("מנורה")) company = "מנורה";
-else if (section.includes("כלל")) company = "כלל";
-else {
-
-  const companyMatch = section.match(
-    /שם תוכנית:\s*(.*?)\s*מספר תוכנית:/s
-  );
-
-  if (companyMatch) {
-    company = companyMatch[1]
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-}
-
-   
-
-    
-
-    // ===== מוצר =====
-
-    const planNameMatch = section.match(
-
-  /שם תוכנית:\s*([^:]+?)\s*(?:מספר תוכנית|מסלול|מספר קופה|$)/i
-
-);
-
-// ===== מוצר =====
-const sectionStart = section.slice(0, 2000);
-
-if (
-  section.includes("גמל להשקעה")
-) {
-  product = "קופת גמל להשקעה";
-}
-else if (
-  section.includes("קרנות השתלמות") ||
-  section.includes("השתלמות אקסלנס") ||
-  section.includes("הפניקס השתלמות")
-) {
-  product = "קרן השתלמות";
-}
-else if (
-  section.includes("מקפת") ||
-  section.includes("קרן פנסיה")
-) {
-  product = "קרן פנסיה";
-}
-else if (
-  section.includes("קופת גמל")
-) {
-  product = "קופת גמל";
-}
-
-    // ===== דמי ניהול =====
-
-    let managementFee = "";
-
-    const feeMatch = section.match(
-
-      /ד\.ניהול מצבירה:\s*([\d.]+%)/
-
-    );
-
-    if (feeMatch) {
-
-      managementFee = feeMatch[1];
-
-    }
-
-// ===== מעסיק =====
-
-let employerName = "";
-
-const employerMatch = section.match(
-
-  /מעסיק נוכחי:\s*(.*?)(?:קיים|השיקול|מספר קופה|מספר תוכנית|תאריך|$)/i
-
-);
-
-if (employerMatch) {
-
-  employerName = employerMatch[1]
-
-    .replace(/\s+/g, " ")
-
-    .trim();
-
-  if (employerName.endsWith("בע")) {
-
-    employerName += '"מ';
-
-  }
-
-}
-
-// ===== מעמד =====
-
-let employmentType = "";
-
-if (employerName) {
-
-  employmentType = "שכירה";
-
-}
-
-   
-
-    // ===== מסלול =====
-
     let currentTrack = "";
 
-    const trackMatch = section.match(
+    const header = section.slice(0, 500);
 
-      /מסלול:\s*(.*?)\s+נכסים:/s
+    // חברה
+    if (header.includes("עובדי הרשויות") || header.includes("הרשויות המקומיות")) company = "עובדי הרשויות";
+    else if (header.includes("הראל")) company = "הראל";
+    else if (header.includes("הפניקס")) company = "הפניקס";
+    else if (header.includes("אלטשולר")) company = "אלטשולר שחם";
+    else if (header.includes("כלל")) company = "כלל";
+    else if (header.includes("מיטב")) company = "מיטב";
+    else if (header.includes("מגדל")) company = "מגדל";
+    else if (header.includes("מנורה")) company = "מנורה";
+    else if (header.includes("מור")) company = "מור";
+    else if (header.includes("אנליסט")) company = "אנליסט";
+    else if (header.includes("ילין")) company = "ילין לפידות";
+    else company = "לא זוהה";
 
-    );
+    // מוצר
+    if (header.includes("גמל להשקעה")) product = "קופת גמל להשקעה";
+    else if (header.includes("קרנות השתלמות") || header.includes("השתלמות") || header.includes('קה"ש')) product = "קרן השתלמות";
+    else if (header.includes("קרן פנסיה") || header.includes("פנסיה") || header.includes("מקיפה")) product = "קרן פנסיה";
+    else if (header.includes("קופת גמל")) product = "קופת גמל";
 
+    // מסלול
+    const trackMatch = section.match(/מסלול:\s*(.*?)\s+נכסים:/s);
     if (trackMatch) {
-
       currentTrack = trackMatch[1]
-
-        .replace(/\d+/g, "")
-
+        .replace(/\b\d+\b/g, "")
+        .replace(/מסלול:/g, "")
+        .replace(/\s+/g, " ")
         .trim();
-
     }
 
-console.log(
+    // fallback למסלול אם אין טקסט אחרי "מסלול:"
+    if (!currentTrack) {
+      const headerTrackMatch = header.match(/(?:מקומיות|מקיפה|פנסיה)\s+(.+?)\s+שם תוכנית:/);
+      if (headerTrackMatch) {
+        currentTrack = headerTrackMatch[1].replace(/\s+/g, " ").trim();
+      }
+    }
 
-  "ACCOUNT:",
+    let managementFee = "";
+    const feeMatch = section.match(/ד\.ניהול מצבירה:\s*([\d.]+%)/);
+    if (feeMatch) managementFee = feeMatch[1];
 
-  accountNumber,
+    let employerName = "";
+    const employerMatch = section.match(/מעסיק נוכחי:\s*(.*?)(?:קיים|השיקול|מספר תוכנית|תאריך|$)/i);
+    if (employerMatch) {
+      employerName = employerMatch[1].replace(/\s+/g, " ").trim();
+      if (employerName.endsWith("בע")) employerName += '"מ';
+    }
 
-  "PRODUCT:",
+    const employmentType = employerName ? "שכירה" : "";
 
-  product
-
-);
-
-
-actions.push({
-
-  index: actions.length,
-
-  type: null,
-
-  company,
-
-  product,
-
-  accountNumber,
-
-  currentTrack,
-
-  managementFee,
-
-  employmentType,
-
-  employerName,
-
-  reasons: []
-
-});
-
-  }); // סוף forEach
+    actions.push({
+      index: actions.length,
+      type: null,
+      company,
+      product,
+      accountNumber,
+      currentTrack,
+      managementFee,
+      employmentType,
+      employerName,
+      reasons: []
+    });
+  });
 
   totalActions = actions.length;
-currentActionIndex = 0;
-history = [];
-currentStep = "fundPreview";
-
-render();
+  currentActionIndex = 0;
+  history = [];
+  currentStep = "fundPreview";
+  render();
+}
 
 } // סוף parsePdfData
 
