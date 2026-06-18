@@ -1277,7 +1277,10 @@ const needSum = [
 
 
     wireDynamicVisibility();
-
+autoSaveAndRender("companySelect", "company");
+autoSaveAndRender("productSelect", "product");
+autoSaveAndRender("actionTypeSelect", "type");
+autoSaveAndRender("keepTypeSelect", "keepType");
 
     // back disable on first
 
@@ -1323,6 +1326,16 @@ const needSum = [
 
       if (!sel || !inp) return;
 
+function autoSaveAndRender(selectId, fieldName) {
+  const el = document.getElementById(selectId);
+  if (!el) return;
+
+  el.addEventListener("change", () => {
+    const a = getCurrentAction();
+    a[fieldName] = el.value;
+    render();
+  });
+}
       function update() {
 
         if (sel.value === "אחר") inp.classList.remove("hidden");
