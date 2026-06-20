@@ -1578,7 +1578,17 @@ function renderNextFieldsForAction(a) {
       updateDep();
 
     }
-["actionTypeSelect", "targetCompanySelect", "keepTypeSelect", "openTrackSelect", "depositType"].forEach(id => {
+[
+  "actionTypeSelect",
+  "targetCompanySelect",
+  "keepTypeSelect",
+  "openTrackSelect",
+  "depositType",
+  "employmentSelect",
+  "newTrackSelect",
+  "currentTrackSelect",
+  "mgmtSelect"
+].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
 
@@ -1594,54 +1604,11 @@ function renderNextFieldsForAction(a) {
     render();
   });
 });
+}
 
-  el.addEventListener("change", () => {
-
-    const a = getCurrentAction();
-
-    switch(id) {
-
-      case "actionTypeSelect":
-        a.type = el.value;
-        break;
-
-      case "targetCompanySelect":
-        a.targetCompany = el.value;
-        break;
-
-      case "keepTypeSelect":
-        a.keepType = el.value;
-        break;
-
-      case "openTrackSelect":
-        a.openTrack = el.value;
-        break;
-
-      case "employmentSelect":
-        a.employmentType = el.value;
-        break;
-
-      case "depositType":
-        a.depositType = el.value;
-        break;
-
-      case "currentTrackSelect":
-        a.currentTrack = el.value;
-        break;
-
-      case "newTrackSelect":
-        a.newTrack = el.value;
-        break;
-
-      case "mgmtSelect":
-        a.managementFee = el.value;
-        break;
-    }
    
-    render();
-  });
-});
-  }
+   
+
 
 
   // =====================
