@@ -1313,28 +1313,160 @@ const needSum = [
 }
 
 function renderNextFieldsForAction(a) {
+
+  let html = "";
+
+  // מצב תעסוקתי
+  if (["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product)) {
+
+    html += `
+      <div class="field-label">האם הלקוח שכיר, עצמאי או ללא?</div>
+      ${createSelect("employmentSelect", EMPLOYMENT_TYPES, a.employmentType)}
+    `;
+
+    if (a.employmentType === "שכירה") {
+      html += `
+        <input
+          type="text"
+          id="employerName"
+          placeholder="שם המעסיק"
+          value="${a.employerName || ""}"
+          style="margin-top:6px;"
+        />
+      `;
+    }
+  }
+
+  // הפקדות
+  if (
+    a.product === "קופת גמל להשקעה" ||
+    (a.employmentType === "עצמאית" &&
+     ["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product))
+  ) {
+
+    html += `
+      <div class="field-label">אופי הפקדה</div>
+      ${createSelect(
+        "depositType",
+        ["ללא הפקדה","הוראת קבע","חד פעמי","גם וגם"],
+        a.depositType
+      )}
+    `;
+
+    if (
+      a.depositType === "הוראת קבע" ||
+      a.depositType === "גם וגם"
+    ) {
+      html += `
+        <input
+          type="number"
+          id="depositMonthly"
+          placeholder="הוראת קבע חודשית"
+          value="${a.depositMonthly || ""}"
+          style="margin-top:6px;"
+        />
+      `;
+    }
+
+    if (
+      a.depositType === "חד פעמי" ||
+      a.depositType === "גם וגם"
+    ) {
+      html += `
+        <input
+          type="number"
+          id="depositOneTime"
+          placeholder="הפקדה חד פעמית"
+          value="${a.depositOneTime || ""}"
+          style="margin-top:6px;"
+        />
+      `;
+    }
+  }
+
+  // ניוד
   if (a.type === "ניוד") {
-    return `
+
+    html += `
       <div class="field-label">לאיזו חברה תנויד הקופה?</div>
-      ${createSelect("targetCompanySelect", INVEST_COMPANIES, a.targetCompany)}
+      ${createSelect(
+        "targetCompanySelect",
+        INVEST_COMPANIES,
+        a.targetCompany
+      )}
+
+      <div class="field-label" style="margin-top:12px;">
+        מסלול השקעה
+      </div>
+
+      ${createSelect(
+        "openTrackSelect",
+        BASE_TRACKS,
+        a.openTrack
+      )}
     `;
   }
 
+  // השארה
   if (a.type === "השארה") {
-    return `
-      <div class="field-label">כאשר הקופה נשארת – מה יקרה?</div>
-      ${createSelect("keepTypeSelect", ["ללא שינוי", "שינוי מסלול השקעה", "מינוי סוכן"], a.keepType)}
+
+    html += `
+      <div class="field-label">מה יקרה בקופה?</div>
+
+      ${createSelect(
+        "keepTypeSelect",
+        ["ללא שינוי","שינוי מסלול השקעה","מינוי סוכן"],
+        a.keepType
+      )}
     `;
+
+    if (a.keepType === "שינוי מסלול השקעה") {
+
+      html += `
+        <div class="field-label" style="margin-top:12px;">
+          מסלול חדש
+        </div>
+
+        ${createSelect(
+          "newTrackSelect",
+          BASE_TRACKS,
+          a.newTrack
+        )}
+      `;
+    }
   }
 
+  // פתיחת קופה
   if (a.type === "פתיחת קופה") {
-    return `
-      <div class="field-label">באיזה מסלול יושקע הכסף?</div>
-      ${createSelect("openTrackSelect", BASE_TRACKS, a.openTrack)}
+
+    html += `
+      <div class="field-label">מסלול השקעה</div>
+
+      ${createSelect(
+        "openTrackSelect",
+        BASE_TRACKS,
+        a.openTrack
+      )}
     `;
   }
 
-  return "";
+  // דמי ניהול
+  if (a.type && a.type !== "פרט") {
+
+    html += `
+      <div class="field-label" style="margin-top:12px;">
+        דמי ניהול
+      </div>
+
+      <input
+        type="text"
+        id="mgmtSelect"
+        value="${a.managementFee || ""}"
+      />
+    `;
+  }
+
+  return html;
 }
   
   function wireDynamicVisibility() {
@@ -1442,18 +1574,64 @@ function renderNextFieldsForAction(a) {
       updateDep();
 
     }
-  ["actionTypeSelect", "targetCompanySelect", "keepTypeSelect", "openTrackSelect"].forEach(id => {
+ [
+  "actionTypeSelect",
+  "targetCompanySelect",
+  "keepTypeSelect",
+  "openTrackSelect",
+  "employmentSelect",
+  "depositType",
+  "currentTrackSelect",
+  "newTrackSelect",
+  "mgmtSelect"
+].forEach(id => {
+
   const el = document.getElementById(id);
   if (!el) return;
 
   el.addEventListener("change", () => {
+
     const a = getCurrentAction();
 
-    if (id === "actionTypeSelect") a.type = el.value;
-    if (id === "targetCompanySelect") a.targetCompany = el.value;
-    if (id === "keepTypeSelect") a.keepType = el.value;
-    if (id === "openTrackSelect") a.openTrack = el.value;
+    switch(id) {
 
+      case "actionTypeSelect":
+        a.type = el.value;
+        break;
+
+      case "targetCompanySelect":
+        a.targetCompany = el.value;
+        break;
+
+      case "keepTypeSelect":
+        a.keepType = el.value;
+        break;
+
+      case "openTrackSelect":
+        a.openTrack = el.value;
+        break;
+
+      case "employmentSelect":
+        a.employmentType = el.value;
+        break;
+
+      case "depositType":
+        a.depositType = el.value;
+        break;
+
+      case "currentTrackSelect":
+        a.currentTrack = el.value;
+        break;
+
+      case "newTrackSelect":
+        a.newTrack = el.value;
+        break;
+
+      case "mgmtSelect":
+        a.managementFee = el.value;
+        break;
+    }
+   
     render();
   });
 });
