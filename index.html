@@ -1317,7 +1317,11 @@ function renderNextFieldsForAction(a) {
   let html = "";
 
   // מצב תעסוקתי
-  if (["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product)) {
+  if (
+  ["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product)
+  &&
+  !a.employmentType
+) {
 
     html += `
       <div class="field-label">האם הלקוח שכיר, עצמאי או ללא?</div>
@@ -1695,6 +1699,7 @@ case "actionType": {
 
 
 case "fundPreview": {
+
   a.type = getValue("actionTypeSelect");
 
   if (!a.type) {
@@ -1702,9 +1707,58 @@ case "fundPreview": {
     return false;
   }
 
+  // תעסוקה
+  if (document.getElementById("employmentSelect")) {
+    a.employmentType = getValue("employmentSelect");
+  }
+
+  if (document.getElementById("employerName")) {
+    a.employerName = getValue("employerName");
+  }
+
+  // הפקדות
+  if (document.getElementById("depositType")) {
+    a.depositType = getValue("depositType");
+  }
+
+  if (document.getElementById("depositMonthly")) {
+    a.depositMonthly = getValue("depositMonthly");
+  }
+
+  if (document.getElementById("depositOneTime")) {
+    a.depositOneTime = getValue("depositOneTime");
+  }
+
+  // ניוד
+  if (document.getElementById("targetCompanySelect")) {
+    a.targetCompany = getValue("targetCompanySelect");
+  }
+
+  // השארה
+  if (document.getElementById("keepTypeSelect")) {
+    a.keepType = getValue("keepTypeSelect");
+  }
+
+  // מסלולים
+  if (document.getElementById("currentTrackSelect")) {
+    a.currentTrack = getValue("currentTrackSelect");
+  }
+
+  if (document.getElementById("newTrackSelect")) {
+    a.newTrack = getValue("newTrackSelect");
+  }
+
+  if (document.getElementById("openTrackSelect")) {
+    a.openTrack = getValue("openTrackSelect");
+  }
+
+  // דמי ניהול
+  if (document.getElementById("mgmtSelect")) {
+    a.managementFee = getValue("mgmtSelect");
+  }
+
   return true;
 }
-
 
   
 
@@ -2092,73 +2146,13 @@ case "insuranceSum": {
 }
 
 
-
 if (currentStep === "fundPreview") {
 
-
-  if (a.type === "פרט") {
-
-    return "privateCompany";
-
+  if (mode === MODE_RECOMMENDATION) {
+    return "reasons";
   }
 
-
-  // אם הגיע מהמסלקה ויש כבר חברה ומוצר
-
-  if (a.company && a.product) {
-
-
-    if (a.product === "קופת גמל להשקעה") {
-
-      return "deposit";
-
-    }
-
-
-if (
-
-  ["קרן פנסיה","קרן השתלמות","קופת גמל"]
-
-  .includes(a.product)
-
-) {
-
-
-  if (a.employmentType) {
-
-
-    if (shouldAskDeposit(a)) {
-
-      return "deposit";
-
-    }
-
-
-    return a.type === "פתיחת קופה"
-
-      ? "trackForOpen"
-
-      : a.type === "ניוד"
-
-      ? "transferTargetCompany"
-
-      : "keepType";
-
-  }
-
-
-  return "employment";
-
-}
-
-
-    return "trackForOpen";
-
-  }
-
-
-  return "company";
-
+  return advanceActionOrFinish();
 }
 
 
