@@ -1578,20 +1578,22 @@ function renderNextFieldsForAction(a) {
       updateDep();
 
     }
- [
-  "actionTypeSelect",
-  "targetCompanySelect",
-  "keepTypeSelect",
-  "openTrackSelect",
-  "employmentSelect",
-  "depositType",
-  "currentTrackSelect",
-  "newTrackSelect",
-  "mgmtSelect"
-].forEach(id => {
-
+["actionTypeSelect", "targetCompanySelect", "keepTypeSelect", "openTrackSelect", "depositType"].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
+
+  el.addEventListener("change", () => {
+    const a = getCurrentAction();
+
+    if (id === "actionTypeSelect") a.type = el.value;
+    if (id === "targetCompanySelect") a.targetCompany = el.value;
+    if (id === "keepTypeSelect") a.keepType = el.value;
+    if (id === "openTrackSelect") a.openTrack = el.value;
+    if (id === "depositType") a.depositType = el.value;
+
+    render();
+  });
+});
 
   el.addEventListener("change", () => {
 
