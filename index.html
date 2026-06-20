@@ -692,7 +692,7 @@
 
 
   function render() {
-
+    
     const container = document.getElementById("formContainer");
 
     const summaryBox = document.getElementById("summaryBox");
@@ -715,6 +715,17 @@
     const a = getCurrentAction();
 
     let html = "";
+    if (currentStep === "fundPreview") {
+  html += renderFundPreview(a);
+
+  if (a.type) {
+    html += renderNextFieldsForAction(a);
+  }
+
+  container.innerHTML = html;
+  wireDynamicVisibility();
+  return;
+}
 
 
     switch (currentStep) {
@@ -1277,18 +1288,55 @@ const needSum = [
 
 
     wireDynamicVisibility();
-autoSaveAndRender("companySelect", "company");
-autoSaveAndRender("productSelect", "product");
-autoSaveAndRender("actionTypeSelect", "type");
-autoSaveAndRender("keepTypeSelect", "keepType");
+
 
     // back disable on first
 
     document.getElementById("backBtn").disabled = (history.length === 0 && currentStep === "mode");
 
   }
+  function renderFundPreview(a) {
+  return `
+    <div class="question-title">פרטי הקופה שנקראו מהמסלקה</div>
 
+    <div class="summary-box" style="background:#f3f4f6;color:black;margin-top:10px;">
+      חברה: ${a.company || "-"}<br>
+      מוצר: ${a.product || "-"}<br>
+      מספר קופה: ${a.accountNumber || "-"}<br>
+      מסלול: ${a.currentTrack || "-"}<br>
+      דמי ניהול: ${a.managementFee || "-"}
+    </div>
 
+    <div class="field-label" style="margin-top:15px;">מה לעשות עם הקופה?</div>
+    ${createSelect("actionTypeSelect", ACTION_TYPES, a.type)}
+  `;
+}
+
+function renderNextFieldsForAction(a) {
+  if (a.type === "ניוד") {
+    return `
+      <div class="field-label">לאיזו חברה תנויד הקופה?</div>
+      ${createSelect("targetCompanySelect", INVEST_COMPANIES, a.targetCompany)}
+    `;
+  }
+
+  if (a.type === "השארה") {
+    return `
+      <div class="field-label">כאשר הקופה נשארת – מה יקרה?</div>
+      ${createSelect("keepTypeSelect", ["ללא שינוי", "שינוי מסלול השקעה", "מינוי סוכן"], a.keepType)}
+    `;
+  }
+
+  if (a.type === "פתיחת קופה") {
+    return `
+      <div class="field-label">באיזה מסלול יושקע הכסף?</div>
+      ${createSelect("openTrackSelect", BASE_TRACKS, a.openTrack)}
+    `;
+  }
+
+  return "";
+}
+  
   function wireDynamicVisibility() {
 
     const pairs = [
@@ -1326,16 +1374,7 @@ autoSaveAndRender("keepTypeSelect", "keepType");
 
       if (!sel || !inp) return;
 
-function autoSaveAndRender(selectId, fieldName) {
-  const el = document.getElementById(selectId);
-  if (!el) return;
 
-  el.addEventListener("change", () => {
-    const a = getCurrentAction();
-    a[fieldName] = el.value;
-    render();
-  });
-}
       function update() {
 
         if (sel.value === "אחר") inp.classList.remove("hidden");
@@ -1403,7 +1442,21 @@ function autoSaveAndRender(selectId, fieldName) {
       updateDep();
 
     }
+  ["actionTypeSelect", "targetCompanySelect", "keepTypeSelect", "openTrackSelect"].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
 
+  el.addEventListener("change", () => {
+    const a = getCurrentAction();
+
+    if (id === "actionTypeSelect") a.type = el.value;
+    if (id === "targetCompanySelect") a.targetCompany = el.value;
+    if (id === "keepTypeSelect") a.keepType = el.value;
+    if (id === "openTrackSelect") a.openTrack = el.value;
+
+    render();
+  });
+});
   }
 
 
