@@ -1456,18 +1456,30 @@ function renderNextFieldsForAction(a) {
 
   // דמי ניהול
 if (a.type && a.type !== "פרט") {
-
   html += `
     <div class="field-label" style="margin-top:12px;">
       דמי ניהול
     </div>
-
-    <input
-      type="text"
-      id="mgmtSelect"
-      value="${a.managementFee || ""}"
-    />
   `;
+
+  if (a.product === "קרן פנסיה") {
+    html += createSelect(
+      "mgmtSelect",
+      [
+        "0.1% מצבירה ועוד 1.5% מהפקדה",
+        "0.15% מצבירה ועוד 1.5% מהפקדה"
+      ],
+      a.managementFee
+    );
+  } else {
+    html += `
+      <input
+        type="text"
+        id="mgmtSelect"
+        value="${a.managementFee || ""}"
+      />
+    `;
+  }
 }
 
   return html;
