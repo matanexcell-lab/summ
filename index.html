@@ -2722,7 +2722,11 @@ function showSummary() {
 
           track = formatTrack(track || "");
 
-          const mgmt = (a.managementFee === "אחר" ? a.managementFeeOther : a.managementFee);
+          const mgmt =
+  (a.managementFee === "אחר"
+    ? (a.managementFeeOther || "")
+    : (a.managementFee || ""));
+
 
           line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תנויד לחברת ${target} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${mgmt}${depositPart}.`;
 
