@@ -1455,20 +1455,20 @@ function renderNextFieldsForAction(a) {
   }
 
   // דמי ניהול
-  if (a.type && a.type !== "פרט") {
+if (a.type && a.type !== "פרט") {
 
-    html += `
-      <div class="field-label" style="margin-top:12px;">
-        דמי ניהול
-      </div>
+  html += `
+    <div class="field-label" style="margin-top:12px;">
+      דמי ניהול
+    </div>
 
-      <input
-        type="text"
-        id="mgmtSelect"
-        value="${a.managementFee || ""}"
-      />
-    `;
-  }
+    <input
+      type="text"
+      id="mgmtSelect"
+      value="${a.managementFee || ""}"
+    />
+  `;
+}
 
   return html;
 }
@@ -2959,6 +2959,7 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
 </body>
 
 </html>
+
 
 
 
