@@ -1456,45 +1456,30 @@ function renderNextFieldsForAction(a) {
 
   // דמי ניהול
 if (a.type && a.type !== "פרט") {
-  html += 
+  html += `
     <div class="field-label" style="margin-top:12px;">
-    //  דמי ניהול
+      דמי ניהול
     </div>
   `;
-if (a.product === "קרן פנסיה") {
 
-  html += createSelect(
-    "mgmtSelect",
-    [
-      "0.1% מצבירה ועוד 1.5% מהפקדה",
-      "0.15% מצבירה ועוד 1.5% מהפקדה",
-      "אחר"
-    ],
-    a.managementFee
-  );
-
-  html += `
-    <input
-      type="text"
-      id="mgmtOther"
-      class="${a.managementFee === "אחר" ? "" : "hidden"}"
-      placeholder="דמי ניהול אחרים"
-      value="${a.managementFeeOther || ""}"
-      style="margin-top:6px;"
-    />
-  `;
-
-} else {
-
-  html += `
-    <input
-      type="text"
-      id="mgmtSelect"
-      value="${a.managementFee || ""}"
-    />
-  `;
-
-}
+  if (a.product === "קרן פנסיה") {
+    html += createSelect(
+      "mgmtSelect",
+      [
+        "0.1% מצבירה ועוד 1.5% מהפקדה",
+        "0.15% מצבירה ועוד 1.5% מהפקדה"
+      ],
+      a.managementFee
+    );
+  } else {
+    html += `
+      <input
+        type="text"
+        id="mgmtSelect"
+        value="${a.managementFee || ""}"
+      />
+    `;
+  }
 }
 
   return html;
@@ -1619,26 +1604,21 @@ if (a.product === "קרן פנסיה") {
   const el = document.getElementById(id);
   if (!el) return;
 
+  el.addEventListener("change", () => {
+    const a = getCurrentAction();
 
-el.addEventListener("change", () => {
-  const a = getCurrentAction();
-
-  if (id === "actionTypeSelect") a.type = el.value;
-  if (id === "targetCompanySelect") a.targetCompany = el.value;
-  if (id === "keepTypeSelect") a.keepType = el.value;
-  if (id === "openTrackSelect") a.openTrack = el.value;
-  if (id === "depositType") a.depositType = el.value;
-  if (id === "employmentSelect") a.employmentType = el.value;
-  if (id === "newTrackSelect") a.newTrack = el.value;
-  if (id === "currentTrackSelect") a.currentTrack = el.value;
-
-  if (id === "mgmtSelect") {
-    a.managementFee = el.value;
-  }
-
-  render();
-});
-
+    if (id === "actionTypeSelect") a.type = el.value;
+    if (id === "targetCompanySelect") a.targetCompany = el.value;
+    if (id === "keepTypeSelect") a.keepType = el.value;
+    if (id === "openTrackSelect") a.openTrack = el.value;
+    if (id === "depositType") a.depositType = el.value;
+    if (id === "employmentSelect") a.employmentType = el.value;
+    if (id === "newTrackSelect") a.newTrack = el.value;
+    if (id === "currentTrackSelect") a.currentTrack = el.value;
+    if (id === "mgmtSelect") a.managementFee = el.value;
+  
+    render();
+  });
 });
 }
 
@@ -1758,13 +1738,9 @@ case "fundPreview": {
   }
 
   // דמי ניהול
-if (document.getElementById("mgmtSelect")) {
-  a.managementFee = getValue("mgmtSelect");
-}
-
-if (document.getElementById("mgmtOther")) {
-  a.managementFeeOther = getValue("mgmtOther");
-}
+  if (document.getElementById("mgmtSelect")) {
+    a.managementFee = getValue("mgmtSelect");
+  }
 
   return true;
 }
@@ -2747,9 +2723,9 @@ function showSummary() {
           track = formatTrack(track || "");
 
           const mgmt =
-  a.managementFee === "אחר"
-    ? (a.managementFeeOther || "אחר")
-    : (a.managementFee || "לא הוגדר");
+  (a.managementFee === "אחר"
+    ? (a.managementFeeOther || "")
+    : (a.managementFee || ""));
 
 
           line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תנויד לחברת ${target} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${mgmt}${depositPart}.`;
@@ -2999,10 +2975,3 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
 </body>
 
 </html>
-
-
-
-
-
-
-
