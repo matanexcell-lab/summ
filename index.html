@@ -1514,28 +1514,23 @@ if (a.type && a.type !== "פרט") {
     ];
 
 
-    pairs.forEach(([selId, inputId]) => {
+pairs.forEach(([selId, inputId]) => {
+  const sel = document.getElementById(selId);
+  const inp = document.getElementById(inputId);
 
-      const sel = document.getElementById(selId);
+  if (!sel || !inp) return;
 
-      const inp = document.getElementById(inputId);
+  function update() {
+    if (sel.value === "אחר") {
+      inp.classList.remove("hidden");
+    } else {
+      inp.classList.add("hidden");
+    }
+  }
 
-      if (!sel || !inp) return;
-}
-
-      function update() {
-
-        if (sel.value === "אחר") inp.classList.remove("hidden");
-
-        else inp.classList.add("hidden");
-
-      }
-
-      sel.addEventListener("change", update);
-
-      update();
-
-    });
+  sel.addEventListener("change", update);
+  update();
+});
 
 
     // employment -> employer
