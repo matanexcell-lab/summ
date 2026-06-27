@@ -1607,7 +1607,20 @@ if (a.type && a.type !== "פרט") {
   el.addEventListener("change", () => {
     const a = getCurrentAction();
 
-    if (id === "actionTypeSelect") a.type = el.value;
+    if (id === "actionTypeSelect") {
+        a.type = el.value;
+
+        const container = document.getElementById("formContainer");
+
+        container.innerHTML =
+            renderFundPreview(a) +
+            renderNextFieldsForAction(a);
+
+        wireDynamicVisibility();
+
+        return;
+    }
+
     if (id === "targetCompanySelect") a.targetCompany = el.value;
     if (id === "keepTypeSelect") a.keepType = el.value;
     if (id === "openTrackSelect") a.openTrack = el.value;
@@ -1616,9 +1629,9 @@ if (a.type && a.type !== "פרט") {
     if (id === "newTrackSelect") a.newTrack = el.value;
     if (id === "currentTrackSelect") a.currentTrack = el.value;
     if (id === "mgmtSelect") a.managementFee = el.value;
-  
-    setTimeout(render, 50);
-  });
+
+    render();
+});
 });
 }
 
