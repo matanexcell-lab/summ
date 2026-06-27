@@ -1607,19 +1607,10 @@ if (a.type && a.type !== "פרט") {
   el.addEventListener("change", () => {
     const a = getCurrentAction();
 
-    if (id !== "actionTypeSelect") return;
-
-render();
-
-        const container = document.getElementById("formContainer");
-
-        container.innerHTML =
-            renderFundPreview(a) +
-            renderNextFieldsForAction(a);
-
-        wireDynamicVisibility();
-
-        return;
+    if (id === "actionTypeSelect") {
+      a.type = el.value;
+      render();
+      return;
     }
 
     if (id === "targetCompanySelect") a.targetCompany = el.value;
@@ -1630,11 +1621,8 @@ render();
     if (id === "newTrackSelect") a.newTrack = el.value;
     if (id === "currentTrackSelect") a.currentTrack = el.value;
     if (id === "mgmtSelect") a.managementFee = el.value;
-
-    render();
+  });
 });
-});
-}
 
    
    
