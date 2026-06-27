@@ -1607,8 +1607,9 @@ if (a.type && a.type !== "פרט") {
   el.addEventListener("change", () => {
     const a = getCurrentAction();
 
-    if (id === "actionTypeSelect") {
-        a.type = el.value;
+    if (id !== "actionTypeSelect") return;
+
+render();
 
         const container = document.getElementById("formContainer");
 
