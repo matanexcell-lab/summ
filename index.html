@@ -1602,10 +1602,15 @@ pairs.forEach(([selId, inputId]) => {
     const a = getCurrentAction();
 
     if (id === "actionTypeSelect") {
-      a.type = el.value;
-      render();
-      return;
-    }
+  a.type = el.value;
+
+  // רק במסך שמגיע מה-PDF לפתוח שדות באותו מסך
+  if (currentStep === "fundPreview") {
+    render();
+  }
+
+  return;
+}
 
     if (id === "targetCompanySelect") a.targetCompany = el.value;
     if (id === "keepTypeSelect") a.keepType = el.value;
@@ -2971,3 +2976,5 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
 </body>
 
 </html>
+
+
