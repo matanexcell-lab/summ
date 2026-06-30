@@ -1389,28 +1389,44 @@ function renderNextFieldsForAction(a) {
     }
   }
 
-  // ניוד
-  if (a.type === "ניוד") {
+ // ניוד
+if (a.type === "ניוד") {
 
+  html += `
+    <div class="field-label">לאיזו חברה תנויד הקופה?</div>
+    ${createSelect(
+      "targetCompanySelect",
+      INVEST_COMPANIES,
+      a.targetCompany
+    )}
+  `;
+
+  if (!a.accountNumber) {
     html += `
-      <div class="field-label">לאיזו חברה תנויד הקופה?</div>
-      ${createSelect(
-        "targetCompanySelect",
-        INVEST_COMPANIES,
-        a.targetCompany
-      )}
-
       <div class="field-label" style="margin-top:12px;">
-        מסלול השקעה
+        מספר קופה
       </div>
 
-      ${createSelect(
-        "openTrackSelect",
-        BASE_TRACKS,
-        a.openTrack
-      )}
+      <input
+        type="text"
+        id="accountNumberInput"
+        value="${a.accountNumber || ""}"
+      />
     `;
   }
+
+  html += `
+    <div class="field-label" style="margin-top:12px;">
+      מסלול השקעה
+    </div>
+
+    ${createSelect(
+      "openTrackSelect",
+      BASE_TRACKS,
+      a.openTrack
+    )}
+  `;
+}
 
   // השארה
   if (a.type === "השארה") {
