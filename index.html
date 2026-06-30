@@ -759,7 +759,9 @@ case "actionType":
   html += `<div class="field-label">מה סוג הפעולה?</div>`;
   html += createSelect("actionTypeSelect", ACTION_TYPES, a.type);
 
-  
+  if (a.type) {
+    html += renderNextFieldsForAction(a);
+  }
 
   break;
 
@@ -1601,13 +1603,11 @@ pairs.forEach(([selId, inputId]) => {
     const a = getCurrentAction();
 
     
-
-
 if (id === "actionTypeSelect") {
   a.type = el.value;
+  render();
   return;
 }
-
     if (id === "targetCompanySelect") a.targetCompany = el.value;
     if (id === "keepTypeSelect") a.keepType = el.value;
     if (id === "openTrackSelect") a.openTrack = el.value;
@@ -2972,7 +2972,3 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
 </body>
 
 </html>
-
-
-
-
