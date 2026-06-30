@@ -1675,6 +1675,46 @@ case "actionType": {
     return false;
   }
 
+  if (document.getElementById("employmentSelect")) {
+    a.employmentType = getValue("employmentSelect");
+  }
+
+  if (document.getElementById("employerName")) {
+    a.employerName = getValue("employerName");
+  }
+
+  if (document.getElementById("depositType")) {
+    a.depositType = getValue("depositType");
+  }
+
+  if (document.getElementById("depositMonthly")) {
+    a.depositMonthly = getValue("depositMonthly");
+  }
+
+  if (document.getElementById("depositOneTime")) {
+    a.depositOneTime = getValue("depositOneTime");
+  }
+
+  if (document.getElementById("targetCompanySelect")) {
+    a.targetCompany = getValue("targetCompanySelect");
+  }
+
+  if (document.getElementById("keepTypeSelect")) {
+    a.keepType = getValue("keepTypeSelect");
+  }
+
+  if (document.getElementById("openTrackSelect")) {
+    a.openTrack = getValue("openTrackSelect");
+  }
+
+  if (document.getElementById("newTrackSelect")) {
+    a.newTrack = getValue("newTrackSelect");
+  }
+
+  if (document.getElementById("mgmtSelect")) {
+    a.managementFee = getValue("mgmtSelect");
+  }
+
   return true;
 }
 
@@ -2153,16 +2193,10 @@ if (currentStep === "fundPreview") {
   return "actionType";
 
 case "actionType": {
-  const p = resolveProduct(a);
-
-  if (p === "קופת גמל להשקעה") return "deposit";
-  if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(p)) return "employment";
-
-  return a.type === "פתיחת קופה"
-    ? "trackForOpen"
-    : a.type === "ניוד"
-    ? "transferTargetCompany"
-    : "keepType";
+  if (mode === MODE_RECOMMENDATION) {
+    return "reasons";
+  }
+  return advanceActionOrFinish();
 }
 
 
