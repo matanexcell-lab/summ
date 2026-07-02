@@ -806,16 +806,15 @@ case "actionType":
 
 
     ${createSelect(
-
       "actionTypeSelect",
-
       ACTION_TYPES,
-
       a.type
-
     )}
-
   `;
+
+  if (a.type) {
+    html += renderNextFieldsForAction(a);
+  }
 
   break;
 
