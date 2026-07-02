@@ -755,13 +755,12 @@
 
   break;
 case "actionType":
-  setSubtitle("סוג פעולה");
-  html += `<div class="field-label">מה סוג הפעולה?</div>`;
-  html += createSelect("actionTypeSelect", ACTION_TYPES, a.type);
 
-  if (a.type) {
-    html += renderNextFieldsForAction(a);
-  }
+  setSubtitle("סוג פעולה");
+
+  html += `<div class="field-label">מה סוג הפעולה?</div>`;
+
+  html += createSelect("actionTypeSelect", ACTION_TYPES, a.type);
 
   break;
 
@@ -1388,44 +1387,30 @@ function renderNextFieldsForAction(a) {
       `;
     }
   }
-// ניוד
-if (a.type === "ניוד") {
 
-  html += `
-    <div class="field-label">לאיזו חברה תנויד הקופה?</div>
-    ${createSelect(
-      "targetCompanySelect",
-      INVEST_COMPANIES,
-      a.targetCompany
-    )}
-  `;
+  // ניוד
+  if (a.type === "ניוד") {
 
-  if (!a.accountNumber) {
     html += `
+      <div class="field-label">לאיזו חברה תנויד הקופה?</div>
+      ${createSelect(
+        "targetCompanySelect",
+        INVEST_COMPANIES,
+        a.targetCompany
+      )}
+
       <div class="field-label" style="margin-top:12px;">
-        מספר קופה
+        מסלול השקעה
       </div>
 
-      <input
-        type="text"
-        id="accountNumberInput"
-        value="${a.accountNumber || ""}"
-      />
+      ${createSelect(
+        "openTrackSelect",
+        BASE_TRACKS,
+        a.openTrack
+      )}
     `;
   }
 
-  html += `
-    <div class="field-label" style="margin-top:12px;">
-      מסלול השקעה
-    </div>
-
-    ${createSelect(
-      "openTrackSelect",
-      BASE_TRACKS,
-      a.openTrack
-    )}
-  `;
-}
   // השארה
   if (a.type === "השארה") {
 
@@ -1616,12 +1601,17 @@ pairs.forEach(([selId, inputId]) => {
   el.addEventListener("change", () => {
     const a = getCurrentAction();
 
-    
-if (id === "actionTypeSelect") {
+    if (id === "actionTypeSelect") {
   a.type = el.value;
-  render();
+
+  // רק במסך שמגיע מה-PDF לפתוח שדות באותו מסך
+  if (currentStep === "fundPreview") {
+    render();
+  }
+
   return;
 }
+
     if (id === "targetCompanySelect") a.targetCompany = el.value;
     if (id === "keepTypeSelect") a.keepType = el.value;
     if (id === "openTrackSelect") a.openTrack = el.value;
@@ -1689,46 +1679,6 @@ case "actionType": {
     return false;
   }
 
-  if (document.getElementById("employmentSelect")) {
-    a.employmentType = getValue("employmentSelect");
-  }
-
-  if (document.getElementById("employerName")) {
-    a.employerName = getValue("employerName");
-  }
-
-  if (document.getElementById("depositType")) {
-    a.depositType = getValue("depositType");
-  }
-
-  if (document.getElementById("depositMonthly")) {
-    a.depositMonthly = getValue("depositMonthly");
-  }
-
-  if (document.getElementById("depositOneTime")) {
-    a.depositOneTime = getValue("depositOneTime");
-  }
-
-  if (document.getElementById("targetCompanySelect")) {
-    a.targetCompany = getValue("targetCompanySelect");
-  }
-
-  if (document.getElementById("keepTypeSelect")) {
-    a.keepType = getValue("keepTypeSelect");
-  }
-
-  if (document.getElementById("openTrackSelect")) {
-    a.openTrack = getValue("openTrackSelect");
-  }
-
-  if (document.getElementById("newTrackSelect")) {
-    a.newTrack = getValue("newTrackSelect");
-  }
-
-  if (document.getElementById("mgmtSelect")) {
-    a.managementFee = getValue("mgmtSelect");
-  }
-
   return true;
 }
 
@@ -1766,9 +1716,14 @@ case "fundPreview": {
   }
 
   // ניוד
-  if (document.getElementById("targetCompanySelect")) {
-    a.targetCompany = getValue("targetCompanySelect");
-  }
+if (document.getElementById("targetCompanySelect")) {
+  a.targetCompany = getValue("targetCompanySelect");
+}
+
+if (document.getElementById("accountNumberInput")) {
+  a.accountNumber = getValue("accountNumberInput");
+}
+
 
   // השארה
   if (document.getElementById("keepTypeSelect")) {
@@ -2207,10 +2162,16 @@ if (currentStep === "fundPreview") {
   return "actionType";
 
 case "actionType": {
-  if (mode === MODE_RECOMMENDATION) {
-    return "reasons";
-  }
-  return advanceActionOrFinish();
+  const p = resolveProduct(a);
+
+  if (p === "קופת גמל להשקעה") return "deposit";
+  if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(p)) return "employment";
+
+  return a.type === "פתיחת קופה"
+    ? "trackForOpen"
+    : a.type === "ניוד"
+    ? "transferTargetCompany"
+    : "keepType";
 }
 
 
@@ -3020,3 +2981,5 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
 </body>
 
 </html>
+
+
