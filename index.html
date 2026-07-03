@@ -1652,14 +1652,14 @@ pairs.forEach(([selId, inputId]) => {
     if (id === "currentTrackSelect") a.currentTrack = el.value;
     if (id === "mgmtSelect") a.managementFee = el.value;
 
-   if (
-  id === "actionTypeSelect" ||
-  id === "employmentSelect" ||
-  id === "depositType" ||
-  id === "keepType"
-) {
-  setTimeout(render, 0);
-}
+    if (
+      id === "actionTypeSelect" ||
+      id === "employmentSelect" ||
+      id === "depositType" ||
+      id === "keepTypeSelect"
+    ) {
+      render();
+    }
   });
 });
 }
@@ -3021,5 +3021,3 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
 </body>
 
 </html>
-
-
