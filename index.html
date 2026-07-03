@@ -1315,12 +1315,10 @@ function renderNextFieldsForAction(a) {
 
   let html = "";
 
-  // מצב תעסוקתי
-  if (
-  ["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product)
-  &&
-  !a.employmentType
-) {
+  // =========================
+  // תעסוקה
+  // =========================
+  if (["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product)) {
 
     html += `
       <div class="field-label">האם הלקוח שכיר, עצמאי או ללא?</div>
@@ -1330,8 +1328,8 @@ function renderNextFieldsForAction(a) {
     if (a.employmentType === "שכירה") {
       html += `
         <input
-          type="text"
           id="employerName"
+          type="text"
           placeholder="שם המעסיק"
           value="${a.employerName || ""}"
           style="margin-top:6px;"
@@ -1340,148 +1338,177 @@ function renderNextFieldsForAction(a) {
     }
   }
 
+  // =========================
   // הפקדות
+  // =========================
   if (
-    a.product === "קופת גמל להשקעה" ||
-    (a.employmentType === "עצמאית" &&
-     ["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product))
+      a.product === "קופת גמל להשקעה" ||
+      (
+        a.employmentType === "עצמאית" &&
+        ["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product)
+      )
   ) {
 
-    html += `
-      <div class="field-label">אופי הפקדה</div>
-      ${createSelect(
-        "depositType",
-        ["ללא הפקדה","הוראת קבע","חד פעמי","גם וגם"],
-        a.depositType
-      )}
-    `;
-
-    if (
-      a.depositType === "הוראת קבע" ||
-      a.depositType === "גם וגם"
-    ) {
       html += `
-        <input
-          type="number"
-          id="depositMonthly"
-          placeholder="הוראת קבע חודשית"
-          value="${a.depositMonthly || ""}"
-          style="margin-top:6px;"
-        />
-      `;
-    }
+          <div class="field-label">אופי ההפקדה</div>
 
-    if (
-      a.depositType === "חד פעמי" ||
-      a.depositType === "גם וגם"
-    ) {
-      html += `
-        <input
-          type="number"
-          id="depositOneTime"
-          placeholder="הפקדה חד פעמית"
-          value="${a.depositOneTime || ""}"
-          style="margin-top:6px;"
-        />
+          ${createSelect(
+              "depositType",
+              ["ללא הפקדה","הוראת קבע","חד פעמי","גם וגם"],
+              a.depositType
+          )}
       `;
-    }
+
+      if (a.depositType === "הוראת קבע" || a.depositType === "גם וגם") {
+
+          html += `
+              <input
+                  id="depositMonthly"
+                  type="number"
+                  placeholder="סכום הוראת קבע"
+                  value="${a.depositMonthly || ""}"
+                  style="margin-top:6px;"
+              />
+          `;
+
+      }
+
+      if (a.depositType === "חד פעמי" || a.depositType === "גם וגם") {
+
+          html += `
+              <input
+                  id="depositOneTime"
+                  type="number"
+                  placeholder="סכום חד פעמי"
+                  value="${a.depositOneTime || ""}"
+                  style="margin-top:6px;"
+              />
+          `;
+
+      }
+
   }
 
+  // =========================
   // ניוד
+  // =========================
   if (a.type === "ניוד") {
 
-    html += `
-      <div class="field-label">לאיזו חברה תנויד הקופה?</div>
-      ${createSelect(
-        "targetCompanySelect",
-        INVEST_COMPANIES,
-        a.targetCompany
-      )}
+      html += `
+          <div class="field-label">לאיזו חברה תנויד הקופה?</div>
 
-      <div class="field-label" style="margin-top:12px;">
-        מסלול השקעה
-      </div>
+          ${createSelect(
+              "targetCompanySelect",
+              INVEST_COMPANIES,
+              a.targetCompany
+          )}
 
-      ${createSelect(
-        "openTrackSelect",
-        BASE_TRACKS,
-        a.openTrack
-      )}
-    `;
+          <div class="field-label" style="margin-top:12px;">
+          מסלול השקעה
+          </div>
+
+          ${createSelect(
+              "openTrackSelect",
+              BASE_TRACKS,
+              a.openTrack
+          )}
+      `;
+
   }
 
+  // =========================
   // השארה
+  // =========================
   if (a.type === "השארה") {
 
-    html += `
-      <div class="field-label">מה יקרה בקופה?</div>
-
-      ${createSelect(
-        "keepTypeSelect",
-        ["ללא שינוי","שינוי מסלול השקעה","מינוי סוכן"],
-        a.keepType
-      )}
-    `;
-
-    if (a.keepType === "שינוי מסלול השקעה") {
-
       html += `
-        <div class="field-label" style="margin-top:12px;">
-          מסלול חדש
-        </div>
+          <div class="field-label">
+          מה יקרה בקופה?
+          </div>
 
-        ${createSelect(
-          "newTrackSelect",
-          BASE_TRACKS,
-          a.newTrack
-        )}
+          ${createSelect(
+              "keepTypeSelect",
+              ["ללא שינוי","שינוי מסלול השקעה","מינוי סוכן"],
+              a.keepType
+          )}
       `;
-    }
+
+      if (a.keepType === "שינוי מסלול השקעה") {
+
+          html += `
+              <div class="field-label" style="margin-top:12px;">
+              מסלול חדש
+              </div>
+
+              ${createSelect(
+                  "newTrackSelect",
+                  BASE_TRACKS,
+                  a.newTrack
+              )}
+          `;
+
+      }
+
   }
 
+  // =========================
   // פתיחת קופה
+  // =========================
   if (a.type === "פתיחת קופה") {
 
-    html += `
-      <div class="field-label">מסלול השקעה</div>
+      html += `
+          <div class="field-label">
+          מסלול השקעה
+          </div>
 
-      ${createSelect(
-        "openTrackSelect",
-        BASE_TRACKS,
-        a.openTrack
-      )}
-    `;
+          ${createSelect(
+              "openTrackSelect",
+              BASE_TRACKS,
+              a.openTrack
+          )}
+      `;
+
   }
 
+  // =========================
   // דמי ניהול
-if (a.type && a.type !== "פרט") {
-  html += `
-    <div class="field-label" style="margin-top:12px;">
-      דמי ניהול
-    </div>
-  `;
+  // =========================
 
-  if (a.product === "קרן פנסיה") {
-    html += createSelect(
-      "mgmtSelect",
-      [
-        "0.1% מצבירה ועוד 1.5% מהפקדה",
-        "0.15% מצבירה ועוד 1.5% מהפקדה"
-      ],
-      a.managementFee
-    );
-  } else {
-    html += `
-      <input
-        type="text"
-        id="mgmtSelect"
-        value="${a.managementFee || ""}"
-      />
-    `;
+  if (a.type && a.type !== "פרט") {
+
+      html += `
+          <div class="field-label" style="margin-top:12px;">
+          דמי ניהול
+          </div>
+      `;
+
+      if (a.product === "קרן פנסיה") {
+
+          html += createSelect(
+              "mgmtSelect",
+              [
+                  "0.1% מצבירה ועוד 1.5% מהפקדה",
+                  "0.15% מצבירה ועוד 1.5% מהפקדה"
+              ],
+              a.managementFee
+          );
+
+      } else {
+
+          html += `
+              <input
+                  id="mgmtSelect"
+                  type="text"
+                  value="${a.managementFee || ""}"
+              />
+          `;
+
+      }
+
   }
-}
 
   return html;
+
 }
   
   function wireDynamicVisibility() {
