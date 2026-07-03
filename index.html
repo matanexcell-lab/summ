@@ -1627,17 +1627,7 @@ pairs.forEach(([selId, inputId]) => {
   el.addEventListener("change", () => {
     const a = getCurrentAction();
 
-    if (id === "actionTypeSelect") {
-  a.type = el.value;
-
-  // רק במסך שמגיע מה-PDF לפתוח שדות באותו מסך
-  if (currentStep === "fundPreview") {
-    render();
-  }
-
-  return;
-}
-
+    if (id === "actionTypeSelect") a.type = el.value;
     if (id === "targetCompanySelect") a.targetCompany = el.value;
     if (id === "keepTypeSelect") a.keepType = el.value;
     if (id === "openTrackSelect") a.openTrack = el.value;
@@ -1646,7 +1636,16 @@ pairs.forEach(([selId, inputId]) => {
     if (id === "newTrackSelect") a.newTrack = el.value;
     if (id === "currentTrackSelect") a.currentTrack = el.value;
     if (id === "mgmtSelect") a.managementFee = el.value;
-});
+
+    if (
+      id === "actionTypeSelect" ||
+      id === "employmentSelect" ||
+      id === "depositType" ||
+      id === "keepTypeSelect"
+    ) {
+      render();
+    }
+  });
 });
 }
    
