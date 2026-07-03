@@ -715,16 +715,31 @@
     const a = getCurrentAction();
 
     let html = "";
-    if (currentStep === "fundPreview") {
-  html += renderFundPreview(a);
+if (currentStep === "fundPreview") {
 
-  if (a.type) {
-    html += renderNextFieldsForAction(a);
-  }
+    html += renderFundPreview(a);
 
-  container.innerHTML = html;
-  wireDynamicVisibility();
-  return;
+    let previewStep = null;
+
+    if (a.type === "ניוד") {
+        previewStep = "transferTargetCompany";
+    } else if (a.type === "השארה") {
+        previewStep = "keepType";
+    } else if (a.type === "פתיחת קופה") {
+        previewStep = "trackForOpen";
+    }
+
+    if (previewStep) {
+        const oldStep = currentStep;
+        currentStep = previewStep;
+
+        // ממשיכים ל-switch הרגיל
+
+    } else {
+        container.innerHTML = html;
+        wireDynamicVisibility();
+        return;
+    }
 }
 
 
