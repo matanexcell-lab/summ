@@ -2094,11 +2094,15 @@ if (currentStep === "fundPreview") {
 
         case "company":
 
-          return "product";
+    return "actionType";
 
+case "actionType":
 
-        case "product":
-  return "actionType";
+    if (a.type === "פרט") {
+        return "privateCompany";
+    }
+
+    return "product";
 
 case "actionType": {
   const p = resolveProduct(a);
@@ -2920,3 +2924,5 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
 </body>
 
 </html>
+
+
