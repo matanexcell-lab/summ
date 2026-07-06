@@ -1608,45 +1608,29 @@ const a = getCurrentAction();
 }
 
 
- case "actionType": {
-
-  a.type = getValue("actionTypeSelect");
-
-  if (!a.type) {
-    alert("נא לבחור סוג פעולה");
-    return false;
-  }
-
-  if (a.type !== "פרט") {
-    a.product = getValue("productSelect");
-    a.productOther = getValue("productOther");
-
-    if (!a.product && !a.productOther) {
-      alert("נא לבחור סוג מוצר");
-      return false;
-    }
-  }
-
-  if (document.getElementById("employmentSelect")) a.employmentType = getValue("employmentSelect");
-  if (document.getElementById("employerName")) a.employerName = getValue("employerName");
-
-  if (document.getElementById("depositType")) a.depositType = getValue("depositType");
-  if (document.getElementById("depositMonthly")) a.depositMonthly = getValue("depositMonthly");
-  if (document.getElementById("depositOneTime")) a.depositOneTime = getValue("depositOneTime");
-
-  if (document.getElementById("targetCompanySelect")) a.targetCompany = getValue("targetCompanySelect");
-  if (document.getElementById("openTrackSelect")) a.openTrack = getValue("openTrackSelect");
-  if (document.getElementById("keepTypeSelect")) a.keepType = getValue("keepTypeSelect");
-  if (document.getElementById("newTrackSelect")) a.newTrack = getValue("newTrackSelect");
-  if (document.getElementById("mgmtSelect")) a.managementFee = getValue("mgmtSelect");
-
-  if (document.getElementById("privateCompanySelect")) a.privateCompany = getValue("privateCompanySelect");
-  if (document.getElementById("privateProductSelect")) a.privateProduct = getValue("privateProductSelect");
-  if (document.getElementById("privateActionSelect")) a.privateAction = getValue("privateActionSelect");
-  if (document.getElementById("policyNumberInput")) a.policyNumber = getValue("policyNumberInput");
-
-  return true;
-}
+ 
+case "actionType": {
+ a.type = getValue("actionTypeSelect");
+if (!a.type) {
+ alert("נא לבחור סוג פעולה");
+ return false;
+ }
+if (document.getElementById("employmentSelect")) a.employmentType = getValue("employmentSelect");
+ if (document.getElementById("employerName")) a.employerName = getValue("employerName");
+if (document.getElementById("depositType")) a.depositType = getValue("depositType");
+ if (document.getElementById("depositMonthly")) a.depositMonthly = getValue("depositMonthly");
+ if (document.getElementById("depositOneTime")) a.depositOneTime = getValue("depositOneTime");
+if (document.getElementById("targetCompanySelect")) a.targetCompany = getValue("targetCompanySelect");
+ if (document.getElementById("openTrackSelect")) a.openTrack = getValue("openTrackSelect");
+ if (document.getElementById("keepTypeSelect")) a.keepType = getValue("keepTypeSelect");
+ if (document.getElementById("newTrackSelect")) a.newTrack = getValue("newTrackSelect");
+ if (document.getElementById("mgmtSelect")) a.managementFee = getValue("mgmtSelect");
+if (document.getElementById("privateCompanySelect")) a.privateCompany = getValue("privateCompanySelect");
+ if (document.getElementById("privateProductSelect")) a.privateProduct = getValue("privateProductSelect");
+ if (document.getElementById("privateActionSelect")) a.privateAction = getValue("privateActionSelect");
+ if (document.getElementById("policyNumberInput")) a.policyNumber = getValue("policyNumberInput");
+return true;
+ }
 
 
 case "fundPreview": {
