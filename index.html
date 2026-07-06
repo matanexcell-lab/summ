@@ -762,28 +762,7 @@ case "actionType":
 
   html += createSelect("actionTypeSelect", ACTION_TYPES, a.type);
 
-  // אם זו לא פעולה מסוג פרט, מציגים גם את סוג המוצר
-  if (a.type && a.type !== "פרט") {
-
-    html += `<div class="field-label" style="margin-top:15px;">מה סוג המוצר?</div>`;
-
-    html += createSelect("productSelect", PRODUCTS, a.product);
-
-    html += `
-      <input
-        type="text"
-        id="productOther"
-        class="${a.product === "אחר" ? "" : "hidden"}"
-        placeholder="סוג מוצר (אם נבחר 'אחר')"
-        style="margin-top:6px;"
-        value="${a.productOther || ""}"
-      />
-    `;
-
-  }
-
   break;
-
    case "fundPreview":
 
   html += `
@@ -1609,28 +1588,6 @@ const a = getCurrentAction();
 
 
  
-case "actionType": {
- a.type = getValue("actionTypeSelect");
-if (!a.type) {
- alert("נא לבחור סוג פעולה");
- return false;
- }
-if (document.getElementById("employmentSelect")) a.employmentType = getValue("employmentSelect");
- if (document.getElementById("employerName")) a.employerName = getValue("employerName");
-if (document.getElementById("depositType")) a.depositType = getValue("depositType");
- if (document.getElementById("depositMonthly")) a.depositMonthly = getValue("depositMonthly");
- if (document.getElementById("depositOneTime")) a.depositOneTime = getValue("depositOneTime");
-if (document.getElementById("targetCompanySelect")) a.targetCompany = getValue("targetCompanySelect");
- if (document.getElementById("openTrackSelect")) a.openTrack = getValue("openTrackSelect");
- if (document.getElementById("keepTypeSelect")) a.keepType = getValue("keepTypeSelect");
- if (document.getElementById("newTrackSelect")) a.newTrack = getValue("newTrackSelect");
- if (document.getElementById("mgmtSelect")) a.managementFee = getValue("mgmtSelect");
-if (document.getElementById("privateCompanySelect")) a.privateCompany = getValue("privateCompanySelect");
- if (document.getElementById("privateProductSelect")) a.privateProduct = getValue("privateProductSelect");
- if (document.getElementById("privateActionSelect")) a.privateAction = getValue("privateActionSelect");
- if (document.getElementById("policyNumberInput")) a.policyNumber = getValue("policyNumberInput");
-return true;
- }
 
 
 case "fundPreview": {
