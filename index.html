@@ -759,10 +759,27 @@ case "actionType":
   setSubtitle("סוג פעולה");
 
   html += `<div class="field-label">מה סוג הפעולה?</div>`;
+
   html += createSelect("actionTypeSelect", ACTION_TYPES, a.type);
 
-  if (a.type) {
-    html += renderNextFieldsForAction(a);
+  // אם זו לא פעולה מסוג פרט, מציגים גם את סוג המוצר
+  if (a.type && a.type !== "פרט") {
+
+    html += `<div class="field-label" style="margin-top:15px;">מה סוג המוצר?</div>`;
+
+    html += createSelect("productSelect", PRODUCTS, a.product);
+
+    html += `
+      <input
+        type="text"
+        id="productOther"
+        class="${a.product === "אחר" ? "" : "hidden"}"
+        placeholder="סוג מוצר (אם נבחר 'אחר')"
+        style="margin-top:6px;"
+        value="${a.productOther || ""}"
+      />
+    `;
+
   }
 
   break;
@@ -1591,13 +1608,23 @@ const a = getCurrentAction();
 }
 
 
- 
-case "actionType": {
+ case "actionType": {
+
   a.type = getValue("actionTypeSelect");
 
   if (!a.type) {
     alert("נא לבחור סוג פעולה");
     return false;
+  }
+
+  if (a.type !== "פרט") {
+    a.product = getValue("productSelect");
+    a.productOther = getValue("productOther");
+
+    if (!a.product && !a.productOther) {
+      alert("נא לבחור סוג מוצר");
+      return false;
+    }
   }
 
   if (document.getElementById("employmentSelect")) a.employmentType = getValue("employmentSelect");
@@ -1620,7 +1647,6 @@ case "actionType": {
 
   return true;
 }
-
 
 
 case "fundPreview": {
