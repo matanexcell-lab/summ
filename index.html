@@ -1556,6 +1556,14 @@ pairs.forEach(([selId, inputId]) => {
   el.addEventListener("change", () => {
     const a = getCurrentAction();
 
+if (id === "actionTypeSelect") {
+    a.type = el.value;
+    render();
+    return;
+}
+
+if (id === "targetCompanySelect") a.targetCompany = el.value;
+
 if (id === "keepTypeSelect") {
 
     a.keepType = el.value;
@@ -1572,9 +1580,13 @@ if (id === "keepTypeSelect") {
     render();
     return;
 }
-      
-    if (id === "currentTrackSelect") a.currentTrack = el.value;
-    if (id === "mgmtSelect") a.managementFee = el.value;
+
+if (id === "openTrackSelect") a.openTrack = el.value;
+if (id === "depositType") a.depositType = el.value;
+if (id === "employmentSelect") a.employmentType = el.value;
+if (id === "newTrackSelect") a.newTrack = el.value;
+if (id === "currentTrackSelect") a.currentTrack = el.value;
+if (id === "mgmtSelect") a.managementFee = el.value;
 });
 });
 }
