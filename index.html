@@ -2094,15 +2094,11 @@ if (currentStep === "fundPreview") {
 
         case "company":
 
-    return "actionType";
+          return "product";
 
-case "actionType":
 
-    if (a.type === "פרט") {
-        return "privateCompany";
-    }
-
-    return "product";
+        case "product":
+  return "actionType";
 
 case "actionType": {
   const p = resolveProduct(a);
