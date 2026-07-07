@@ -2100,13 +2100,18 @@ if (currentStep === "fundPreview") {
         case "product":
   return "actionType";
 
-case "actionType":
+case "actionType": {
+  const p = resolveProduct(a);
 
-  if (mode === MODE_RECOMMENDATION) {
-    return "reasons";
-  }
+  if (p === "קופת גמל להשקעה") return "deposit";
+  if (["קרן פנסיה", "קרן השתלמות", "קופת גמל"].includes(p)) return "employment";
 
-  return advanceActionOrFinish();
+  return a.type === "פתיחת קופה"
+    ? "trackForOpen"
+    : a.type === "ניוד"
+    ? "transferTargetCompany"
+    : "keepType";
+}
 
 
         case "employment": {
