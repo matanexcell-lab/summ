@@ -1379,11 +1379,28 @@ if (a.type === "ניוד") {
   `;
 }
 
-  if (a.type === "השארה") {
+ if (a.type === "השארה") {
+  html += `
+    <div class="field-label">מה יקרה בקופה?</div>
+    ${createSelect("keepTypeSelect",
+      ["ללא שינוי","שינוי מסלול השקעה","מינוי סוכן"],
+      a.keepType)}
+
+    <div class="field-label" style="margin-top:12px;">מספר קופה</div>
+    <input
+      type="text"
+      id="accountNumberInput"
+      value="${a.accountNumber || ""}"
+    />
+  `;
+
+  if (a.keepType === "שינוי מסלול השקעה") {
     html += `
-      <div class="field-label">מה יקרה בקופה?</div>
-      ${createSelect("keepTypeSelect", ["ללא שינוי","שינוי מסלול השקעה","מינוי סוכן"], a.keepType)}
+      <div class="field-label" style="margin-top:12px;">מסלול חדש</div>
+      ${createSelect("newTrackSelect", BASE_TRACKS, a.newTrack)}
     `;
+  }
+}
 
     if (a.keepType === "שינוי מסלול השקעה") {
       html += `
