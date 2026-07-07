@@ -931,17 +931,6 @@ case "actionType":
 
         setSubtitle("ניוד קופה");
 
-        <div class="field-label">לאיזו חברה תנויד הקופה?</div>
-${createSelect("targetCompanySelect", INVEST_COMPANIES, a.targetCompany)}
-
-<input
-  type="text"
-  id="targetCompanyOther"
-  class="${a.targetCompany === "אחר" ? "" : "hidden"}"
-  placeholder="שם החברה (אם נבחר 'אחר')"
-  style="margin-top:6px;"
-  value="${a.targetCompanyOther || ""}"
-/>
 
         html += createSelect("targetCompanySelect", INVEST_COMPANIES, a.targetCompany);
 
