@@ -1368,9 +1368,11 @@ if (a.type === "ניוד") {
     ${createSelect("targetCompanySelect", INVEST_COMPANIES, a.targetCompany)}
 
     <div class="field-label" style="margin-top:12px;">מספר קופה</div>
-    <input type="text"
-           id="accountNumberInput"
-           value="${a.accountNumber || ""}" />
+    <input
+      type="text"
+      id="accountNumberInput"
+      value="${a.accountNumber || ""}"
+    />
 
     <div class="field-label" style="margin-top:12px;">מסלול השקעה</div>
     ${createSelect("openTrackSelect", BASE_TRACKS, a.openTrack)}
@@ -1613,6 +1615,9 @@ case "actionType": {
   if (document.getElementById("depositOneTime")) a.depositOneTime = getValue("depositOneTime");
 
   if (document.getElementById("targetCompanySelect")) a.targetCompany = getValue("targetCompanySelect");
+  if (document.getElementById("accountNumberInput")) {
+  a.accountNumber = getValue("accountNumberInput");
+}
   if (document.getElementById("openTrackSelect")) a.openTrack = getValue("openTrackSelect");
   if (document.getElementById("keepTypeSelect")) a.keepType = getValue("keepTypeSelect");
   if (document.getElementById("newTrackSelect")) a.newTrack = getValue("newTrackSelect");
