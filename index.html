@@ -1350,16 +1350,56 @@ function renderNextFieldsForAction(a) {
     }
   }
 
+if (
+  a.product === "קופת גמל להשקעה" ||
+  (
+    a.employmentType === "עצמאית" &&
+    ["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product)
+  )
+) {
+  html += `
+    <div class="field-label">אופי הפקדה</div>
+    ${createSelect(
+      "depositType",
+      ["ללא הפקדה","הוראת קבע","חד פעמי","גם וגם"],
+      a.depositType
+    )}
+  `;
+
   if (
-    a.product === "קופת גמל להשקעה" ||
-    (a.employmentType === "עצמאית" &&
-    ["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product))
+    a.depositType === "הוראת קבע" ||
+    a.depositType === "גם וגם"
   ) {
     html += `
-      <div class="field-label">אופי הפקדה</div>
-      ${createSelect("depositType", ["ללא הפקדה","הוראת קבע","חד פעמי","גם וגם"], a.depositType)}
+      <div class="field-label" style="margin-top:12px;">
+        כמה להפקיד בכל חודש?
+      </div>
+      <input
+        type="number"
+        id="depositMonthly"
+        value="${a.depositMonthly || ""}"
+        placeholder="סכום חודשי"
+      />
     `;
   }
+
+  if (
+    a.depositType === "חד פעמי" ||
+    a.depositType === "גם וגם"
+  ) {
+    html += `
+      <div class="field-label" style="margin-top:12px;">
+        כמה להפקיד באופן חד פעמי?
+      </div>
+      <input
+        type="number"
+        id="depositOneTime"
+        value="${a.depositOneTime || ""}"
+        placeholder="סכום חד פעמי"
+      />
+    `;
+  }
+}
 
 if (a.type === "ניוד") {
   html += `
@@ -1571,8 +1611,34 @@ if (id === "keepTypeSelect") {
 }
 
 if (id === "openTrackSelect") a.openTrack = el.value;
-if (id === "depositType") a.depositType = el.value;
-if (id === "employmentSelect") a.employmentType = el.value;
+if (id === "depositType") {
+  a.depositType = el.value;
+
+  if (document.getElementById("accountNumberInput")) {
+    a.accountNumber = getValue("accountNumberInput");
+  }
+
+  if (document.getElementById("mgmtSelect")) {
+    a.managementFee = getValue("mgmtSelect");
+  }
+
+  render();
+  return;
+}
+if (id === "employmentSelect") {
+  a.employmentType = el.value;
+
+  if (document.getElementById("accountNumberInput")) {
+    a.accountNumber = getValue("accountNumberInput");
+  }
+
+  if (document.getElementById("mgmtSelect")) {
+    a.managementFee = getValue("mgmtSelect");
+  }
+
+  render();
+  return;
+}
 if (id === "newTrackSelect") a.newTrack = el.value;
 if (id === "currentTrackSelect") a.currentTrack = el.value;
 if (id === "mgmtSelect") a.managementFee = el.value;
