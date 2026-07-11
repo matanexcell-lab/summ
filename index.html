@@ -2623,215 +2623,90 @@ document.getElementById("pdfUpload").addEventListener("change", async (e) => {
 function parsePdfData(text) {
   actions.length = 0;
 
-  // מנקה רווחים כפולים כדי שהחיפוש יהיה יציב יותר
-  const cleanText = text
-    .replace(/\u00A0/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const PRODUCT_TYPES = [
+    "קרנות השתלמות", "קרן השתלמות", "קרן פנסיה",
+    "קופת גמל להשקעה", "קופת גמל",
+    "פוליסות פנסיוניות", "פוליסת פנסיה"
+  ];
 
-  // חלוקה לקופות לפי מספר סידורי וסוג מוצר
-  const sections = cleanText.split(
-    /(?=\s*\d+\s+(?:קרן פנסיה|קרנות השתלמות|קרן השתלמות|קופת גמל להשקעה|קופת גמל)\s*[-–])/
+  // מפצל לרשומות לפי התחלה של "N  <סוג מוצר> - "
+  const splitRegex = new RegExp(
+    "(?=\\d+\\s{2,}(?:" + PRODUCT_TYPES.join("|") + ")\\s*-\\s*)"
   );
 
-  // מחזיר את ההתאמה הראשונה שנמצאה
-  function findFirst(source, patterns) {
-    for (const pattern of patterns) {
-      const match = source.match(pattern);
+  const sections = text
+    .split(splitRegex)
+    .filter(s => /מספר תוכנית:/.test(s));
 
-      if (match && match[1]) {
-        return match[1].replace(/\s+/g, " ").trim();
-      }
+  const productMap = {
+    "קרנות השתלמות": "קרן השתלמות",
+    "קרן השתלמות": "קרן השתלמות",
+    "קרן פנסיה": "קרן פנסיה",
+    "קופת גמל להשקעה": "קופת גמל להשקעה",
+    "קופת גמל": "קופת גמל",
+    "פוליסות פנסיוניות": "פוליסת פנסיה",
+    "פוליסת פנסיה": "פוליסת פנסיה"
+  };
+
+  sections.forEach((section) => {
+    // כותרת: סוג מוצר + חברה (למשל "קרן פנסיה - מיטב")
+    const headerMatch = section.match(/^\d+\s+(.+?)\s*-\s*(.+?)\s{2,}/);
+    let rawProductType = "";
+    let rawCompany = "";
+    if (headerMatch) {
+      rawProductType = headerMatch[1].trim();
+      rawCompany = headerMatch[2].trim();
     }
 
-    return "";
-  }
+    // זיהוי חברה מרשימה ידועה (תואם את הרשימות הקיימות שלך)
+    let company = "לא זוהה";
+    const allCompanies = [...new Set([...INVEST_COMPANIES, ...INSURANCE_COMPANIES])];
+    const foundCompany = allCompanies.find(c => rawCompany.includes(c) || section.slice(0, 60).includes(c));
+    if (foundCompany) company = foundCompany;
 
-  function detectCompany(section) {
-    const companyAliases = [
-      {
-        name: "עובדי הרשויות",
-        words: ["עובדי הרשויות", "הרשויות המקומיות"]
-      },
-      {
-        name: "אלטשולר שחם",
-        words: ["אלטשולר שחם", "אלטשולר"]
-      },
-      {
-        name: "ילין לפידות",
-        words: ["ילין לפידות", "ילין"]
-      },
-      {
-        name: "מנורה",
-        words: ["מנורה מבטחים", "מנורה"]
-      },
-      {
-        name: "הפניקס",
-        words: ["הפניקס", "אקסלנס"]
-      },
-      {
-        name: "מיטב",
-        words: ["מיטב דש", "מיטב"]
-      },
-      {
-        name: "הראל",
-        words: ["הראל"]
-      },
-      {
-        name: "כלל",
-        words: ["כלל"]
-      },
-      {
-        name: "מגדל",
-        words: ["מגדל"]
-      },
-      {
-        name: "מור",
-        words: ["מור גמל", "מור"]
-      },
-      {
-        name: "אנליסט",
-        words: ["אנליסט"]
-      },
-      {
-        name: "אינפיניטי",
-        words: ["אינפיניטי"]
-      },
-      {
-        name: "הכשרה",
-        words: ["הכשרה"]
-      },
-      {
-        name: "איילון",
-        words: ["איילון"]
-      }
-    ];
+    const product = productMap[rawProductType] || rawProductType || "";
 
-    // חיפוש בעיקר בתחילת הקופה כדי לא לקחת חברה שמוזכרת בהמשך
-    const beginning = section.slice(0, 1000);
+    // מספר תוכנית — הערך יכול להופיע לפני או אחרי התווית
+    let accountNumber = "";
+    let m = section.match(/(\d[\d\-]{4,})\s+מספר תוכנית:/) ||
+            section.match(/מספר תוכנית:\s*(\d[\d\-]{4,})/);
+    if (m) accountNumber = m[1];
 
-    for (const company of companyAliases) {
-      if (company.words.some(word => beginning.includes(word))) {
-        return company.name;
-      }
+    // דמי ניהול מצבירה
+    let managementFee = "";
+    m = section.match(/([\d.]+%)\s+ד\.ניהול מצבירה:/) ||
+        section.match(/ד\.ניהול מצבירה:\s*([\d.]+%)/);
+    if (m) managementFee = m[1];
+
+    // דמי ניהול מהפקדה (רלוונטי בעיקר לפנסיה)
+    let managementFeeDeposit = "";
+    m = section.match(/([\d.]+%)\s+ד\.ניהול מהפקדה:/) ||
+        section.match(/ד\.ניהול מהפקדה:\s*([\d.]+%)/);
+    if (m) managementFeeDeposit = m[1];
+
+    if (managementFeeDeposit) {
+      managementFee = `${managementFee} מצבירה + ${managementFeeDeposit} מהפקדה`;
     }
 
-    return "לא זוהה";
-  }
+    // מסלול — קוד המסלול (המסלקה לא תמיד חושפת שם מסלול מלא בטקסט הגולמי)
+    let currentTrack = "";
+    m = section.match(/(\d{2,4})\s+מסלול:/);
+    if (m) currentTrack = `מסלול ${m[1]}`;
 
-  function detectProduct(section) {
-    const beginning = section.slice(0, 700);
-
-    // חשוב: קופת גמל להשקעה חייבת להיבדק לפני קופת גמל
-    if (
-      beginning.includes("קופת גמל להשקעה") ||
-      beginning.includes("גמל להשקעה")
-    ) {
-      return "קופת גמל להשקעה";
+    // מעמד תעסוקתי
+    let employmentType = "";
+    m = section.match(/מעמד:\s*(עצמאי|שכיר|שכירה|לא עובד)/);
+    if (m) {
+      employmentType = (m[1] === "עצמאי") ? "עצמאית" : m[1];
     }
 
-    if (
-      beginning.includes("קרנות השתלמות") ||
-      beginning.includes("קרן השתלמות") ||
-      beginning.includes("השתלמות") ||
-      beginning.includes('קה"ש')
-    ) {
-      return "קרן השתלמות";
+    let employerName = "";
+    const employerMatch = section.match(/מעסיק נוכחי:\s*(.*?)(?:קיים|השיקול|מספר תוכנית|תאריך|$)/i);
+    if (employerMatch) {
+      employerName = employerMatch[1].replace(/\s+/g, " ").trim();
+      if (employerName.endsWith("בע")) employerName += '"מ';
+      if (!employmentType) employmentType = "שכירה";
     }
-
-    if (
-      beginning.includes("קרן פנסיה") ||
-      beginning.includes("פנסיה") ||
-      beginning.includes("מקיפה") ||
-      beginning.includes("מקפת")
-    ) {
-      return "קרן פנסיה";
-    }
-
-    if (
-      beginning.includes("קופת גמל") ||
-      beginning.includes("קופות גמל")
-    ) {
-      return "קופת גמל";
-    }
-
-    return "";
-  }
-
-  function detectAccountNumber(section) {
-    return findFirst(section, [
-      /מספר\s*תוכנית\s*[:\-]?\s*([0-9][0-9\-\/]*)/i,
-      /מספר\s*תכנית\s*[:\-]?\s*([0-9][0-9\-\/]*)/i,
-      /מספר\s*קופה\s*[:\-]?\s*([0-9][0-9\-\/]*)/i,
-      /מספר\s*חשבון\s*[:\-]?\s*([0-9][0-9\-\/]*)/i
-    ]);
-  }
-
-  function detectManagementFee(section) {
-    return findFirst(section, [
-      /ד[.\s]*ניהול\s*מצבירה\s*[:\-]?\s*([0-9]+(?:[.,][0-9]+)?\s*%)/i,
-      /דמי\s*ניהול\s*מצבירה\s*[:\-]?\s*([0-9]+(?:[.,][0-9]+)?\s*%)/i,
-      /שיעור\s*דמי\s*ניהול\s*מצבירה\s*[:\-]?\s*([0-9]+(?:[.,][0-9]+)?\s*%)/i,
-      /דמי\s*ניהול\s*[:\-]?\s*([0-9]+(?:[.,][0-9]+)?\s*%)/i
-    ]).replace(",", ".");
-  }
-
-  function detectCurrentTrack(section) {
-    let track = findFirst(section, [
-      /מסלול\s*השקעה\s*[:\-]?\s*(.+?)(?=\s+(?:נכסים|דמי\s*ניהול|ד[.\s]*ניהול|מספר\s*תוכנית|מספר\s*קופה|מעסיק\s*נוכחי|יתרה|תשואה|$))/i,
-      /שם\s*המסלול\s*[:\-]?\s*(.+?)(?=\s+(?:נכסים|דמי\s*ניהול|ד[.\s]*ניהול|מספר\s*תוכנית|מספר\s*קופה|מעסיק\s*נוכחי|יתרה|תשואה|$))/i,
-      /מסלול\s*[:\-]\s*(.+?)(?=\s+(?:נכסים|דמי\s*ניהול|ד[.\s]*ניהול|מספר\s*תוכנית|מספר\s*קופה|מעסיק\s*נוכחי|יתרה|תשואה|$))/i
-    ]);
-
-    if (!track) {
-      return "";
-    }
-
-    track = track
-      .replace(/^מסלול\s*/i, "")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    // מונע קליטת טקסט ארוך מדי במקרה שהעוגן לא נמצא
-    if (track.length > 120) {
-      track = track.slice(0, 120).trim();
-    }
-
-    return track;
-  }
-
-  function detectEmployer(section) {
-    let employer = findFirst(section, [
-      /מעסיק\s*נוכחי\s*[:\-]?\s*(.+?)(?=\s+(?:מספר\s*תוכנית|מספר\s*קופה|מסלול|דמי\s*ניהול|ד[.\s]*ניהול|תאריך|קיים|$))/i,
-      /שם\s*המעסיק\s*[:\-]?\s*(.+?)(?=\s+(?:מספר\s*תוכנית|מספר\s*קופה|מסלול|דמי\s*ניהול|ד[.\s]*ניהול|תאריך|קיים|$))/i
-    ]);
-
-    if (employer.endsWith("בע")) {
-      employer += '"מ';
-    }
-
-    return employer;
-  }
-
-  sections.forEach((rawSection) => {
-    const section = rawSection
-      .replace(/\u00A0/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    const accountNumber = detectAccountNumber(section);
-
-    // לא מוסיפים חלק שאינו קופה
-    if (!accountNumber) {
-      return;
-    }
-
-    const company = detectCompany(section);
-    const product = detectProduct(section);
-    const currentTrack = detectCurrentTrack(section);
-    const managementFee = detectManagementFee(section);
-    const employerName = detectEmployer(section);
-    const employmentType = employerName ? "שכירה" : "";
 
     actions.push({
       index: actions.length,
@@ -2846,11 +2721,6 @@ function parsePdfData(text) {
       reasons: []
     });
   });
-
-  if (actions.length === 0) {
-    alert("לא נמצאו קופות בקובץ. ייתכן שמבנה ה-PDF אינו נתמך.");
-    return;
-  }
 
   totalActions = actions.length;
   currentActionIndex = 0;
