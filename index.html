@@ -2679,17 +2679,21 @@ if (product === "קופת גמל" && /להשקעה/.test(section.slice(0, 300)))
     m = section.match(/(\d{2,4})\s+מסלול:/);
     if (m) trackCode = m[1];
 
-    let trackName = "";
-    m = section.match(/מסלול:\s*(.*?)(?=\s*ד\.ניהול)/s);
-    if (m) {
-      let chunk = m[1];
-      chunk = chunk.replace(/[\d.]+%\s*נכסים:\s*/g, '');
-      chunk = chunk.replace(/מסלול:\s*/g, '');
-      chunk = chunk.replace(/(^|\s)\d+(?=\s|$)/g, ' ');
-      chunk = chunk.replace(/([\d.]+%)\s{2,}([^\d%][^%]*?)(?=\s{2,}|$)/g, '$2 $1');
-      chunk = chunk.replace(/[\d.]+%\s*$/, '').trim();
-      trackName = chunk.replace(/\s+/g, ' ').trim();
-    }
+   let trackName = "";
+m = section.match(/מסלול:\s*(.*?)(?=\s*ד\.ניהול)/s);
+if (m) {
+  let chunk = m[1];
+  chunk = chunk.replace(/[\d.]+%\s*נכסים:\s*/g, '');
+  chunk = chunk.replace(/מסלול:\s*/g, '');
+  chunk = chunk.replace(/(^|\s)\d+(?=\s|$)/g, ' ');   // ← שונה מ-{2,4} ל-+ (כל אורך)
+
+  // חדש: מזיז טוקן לועזי/מספרי (כמו s&p500) שמופיע לפני טקסט עברי - לסוף הביטוי
+  chunk = chunk.replace(/([A-Za-z0-9&]+)\s{2,}([א-ת][^%]*?)(?=\s{2,}|$)/g, '$2 $1');
+
+  chunk = chunk.replace(/([\d.]+%)\s{2,}([^\d%][^%]*?)(?=\s{2,}|$)/g, '$2 $1');
+  chunk = chunk.replace(/[\d.]+%\s*$/, '').trim();
+  trackName = chunk.replace(/\s+/g, ' ').trim();
+}
 
     let currentTrack = trackName || (trackCode ? `מסלול ${trackCode}` : "");
 
