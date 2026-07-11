@@ -2629,7 +2629,6 @@ function parsePdfData(text) {
     "פוליסות פנסיוניות", "פוליסת פנסיה"
   ];
 
-  // מפצל לרשומות לפי התחלה של "N  <סוג מוצר> - "
   const splitRegex = new RegExp(
     "(?=\\d+\\s{2,}(?:" + PRODUCT_TYPES.join("|") + ")\\s*-\\s*)"
   );
@@ -2649,7 +2648,6 @@ function parsePdfData(text) {
   };
 
   sections.forEach((section) => {
-    // כותרת: סוג מוצר + חברה (למשל "קרן פנסיה - מיטב")
     const headerMatch = section.match(/^\d+\s+(.+?)\s*-\s*(.+?)\s{2,}/);
     let rawProductType = "";
     let rawCompany = "";
@@ -2658,27 +2656,26 @@ function parsePdfData(text) {
       rawCompany = headerMatch[2].trim();
     }
 
-    // זיהוי חברה מרשימה ידועה (תואם את הרשימות הקיימות שלך)
     let company = "לא זוהה";
     const allCompanies = [...new Set([...INVEST_COMPANIES, ...INSURANCE_COMPANIES])];
-    const foundCompany = allCompanies.find(c => rawCompany.includes(c) || section.slice(0, 60).includes(c));
+    const foundCompany = allCompanies.find(c => {
+      const re = new RegExp("(^|\\s)" + c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "(\\s|$)");
+      return re.test(rawCompany);
+    });
     if (foundCompany) company = foundCompany;
 
     const product = productMap[rawProductType] || rawProductType || "";
 
-    // מספר תוכנית — הערך יכול להופיע לפני או אחרי התווית
     let accountNumber = "";
     let m = section.match(/(\d[\d\-]{4,})\s+מספר תוכנית:/) ||
             section.match(/מספר תוכנית:\s*(\d[\d\-]{4,})/);
     if (m) accountNumber = m[1];
 
-    // דמי ניהול מצבירה
     let managementFee = "";
     m = section.match(/([\d.]+%)\s+ד\.ניהול מצבירה:/) ||
         section.match(/ד\.ניהול מצבירה:\s*([\d.]+%)/);
     if (m) managementFee = m[1];
 
-    // דמי ניהול מהפקדה (רלוונטי בעיקר לפנסיה)
     let managementFeeDeposit = "";
     m = section.match(/([\d.]+%)\s+ד\.ניהול מהפקדה:/) ||
         section.match(/ד\.ניהול מהפקדה:\s*([\d.]+%)/);
@@ -2688,12 +2685,24 @@ function parsePdfData(text) {
       managementFee = `${managementFee} מצבירה + ${managementFeeDeposit} מהפקדה`;
     }
 
-    // מסלול — קוד המסלול (המסלקה לא תמיד חושפת שם מסלול מלא בטקסט הגולמי)
-    let currentTrack = "";
+    let trackCode = "";
     m = section.match(/(\d{2,4})\s+מסלול:/);
-    if (m) currentTrack = `מסלול ${m[1]}`;
+    if (m) trackCode = m[1];
 
-    // מעמד תעסוקתי
+    let trackName = "";
+    m = section.match(/מסלול:\s*(.*?)(?=\s*ד\.ניהול)/s);
+    if (m) {
+      let chunk = m[1];
+      chunk = chunk.replace(/[\d.]+%\s*נכסים:\s*/g, '');
+      chunk = chunk.replace(/מסלול:\s*/g, '');
+      chunk = chunk.replace(/(^|\s)\d{2,4}(?=\s|$)/g, ' ');
+      chunk = chunk.replace(/([\d.]+%)\s{2,}([^\d%][^%]*?)(?=\s{2,}|$)/g, '$2 $1');
+      chunk = chunk.replace(/[\d.]+%\s*$/, '').trim();
+      trackName = chunk.replace(/\s+/g, ' ').trim();
+    }
+
+    let currentTrack = trackName || (trackCode ? `מסלול ${trackCode}` : "");
+
     let employmentType = "";
     m = section.match(/מעמד:\s*(עצמאי|שכיר|שכירה|לא עובד)/);
     if (m) {
