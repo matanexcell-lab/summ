@@ -1315,7 +1315,7 @@ const needSum = [
 }
 
 function renderNextFieldsForAction(a) {
-  alert("המוצר: " + a.product);
+ 
   let html = "";
 
   if (a.type === "פרט") {
@@ -1453,19 +1453,46 @@ if (a.type === "ניוד") {
   }
 
   if (a.type && a.type !== "פרט") {
-    html += `
-      <div class="field-label" style="margin-top:12px;">דמי ניהול</div>
-    `;
+  html += `
+    <div class="field-label" style="margin-top:12px;">דמי ניהול</div>
+  `;
 
-    if (a.product === "קרן פנסיה") {
-      html += createSelect("mgmtSelect", [
+  if (a.product === "קרן פנסיה") {
+    html += createSelect(
+      "mgmtSelect",
+      [
         "0.1% מצבירה ועוד 1.5% מהפקדה",
         "0.15% מצבירה ועוד 1.5% מהפקדה"
-      ], a.managementFee);
-    } else {
-      html += `<input type="text" id="mgmtSelect" value="${a.managementFee || ""}" />`;
-    }
+      ],
+      a.managementFee
+    );
+  } else if (
+    ["קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"].includes(a.product)
+  ) {
+    html += createSelect(
+      "mgmtSelect",
+      ["0.6%", "0.7%", "0.8%"],
+      a.managementFee
+    );
+  } else {
+    html += `<input
+      type="text"
+      id="mgmtSelect"
+      value="${a.managementFee || ""}"
+    />`;
   }
+
+  html += `
+    <input
+      type="text"
+      id="mgmtOther"
+      class="${a.managementFee === "אחר" ? "" : "hidden"}"
+      placeholder="דמי ניהול אחרים (אם נבחר 'אחר')"
+      style="margin-top:6px;"
+      value="${a.managementFeeOther || ""}"
+    />
+  `;
+}
 
   return html;
 }
