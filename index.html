@@ -2698,10 +2698,12 @@ if (m) {
     let currentTrack = trackName || (trackCode ? `מסלול ${trackCode}` : "");
 
     let employmentType = "";
-    m = section.match(/מעמד:\s*(עצמאי|שכיר|שכירה|לא עובד)/);
-    if (m) {
-      employmentType = (m[1] === "עצמאי") ? "עצמאית" : m[1];
-    }
+m = section.match(/מעמד:\s*(עצמאי|שכיר|שכירה|לא עובד)/);
+if (m) {
+  if (m[1] === "עצמאי") employmentType = "עצמאית";
+  else if (m[1] === "שכיר" || m[1] === "שכירה") employmentType = "שכירה";
+  else employmentType = "ללא";
+}
 
     let employerName = "";
     const employerMatch = section.match(/מעסיק נוכחי:\s*(.*?)(?:קיים|השיקול|מספר תוכנית|תאריך|$)/i);
