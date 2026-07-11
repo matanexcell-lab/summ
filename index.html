@@ -2620,75 +2620,217 @@ document.getElementById("pdfUpload").addEventListener("change", async (e) => {
 
 });
 
-
 function parsePdfData(text) {
   actions.length = 0;
 
-  const sections = text.split(
-    /(?=\s\d+\s+(?:קרן פנסיה|קרנות השתלמות|קופת גמל|קופת גמל להשקעה)\s+-)/
+  // מנקה רווחים כפולים כדי שהחיפוש יהיה יציב יותר
+  const cleanText = text
+    .replace(/\u00A0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // חלוקה לקופות לפי מספר סידורי וסוג מוצר
+  const sections = cleanText.split(
+    /(?=\s*\d+\s+(?:קרן פנסיה|קרנות השתלמות|קרן השתלמות|קופת גמל להשקעה|קופת גמל)\s*[-–])/
   );
 
-  sections.forEach((section) => {
-    const accountMatch = section.match(/מספר תוכנית:\s*([\d-]+)/);
-    if (!accountMatch) return;
+  // מחזיר את ההתאמה הראשונה שנמצאה
+  function findFirst(source, patterns) {
+    for (const pattern of patterns) {
+      const match = source.match(pattern);
 
-    const accountNumber = accountMatch[1].trim();
-
-    let company = "";
-    let product = "";
-    let currentTrack = "";
-
-    const header = section.slice(0, 500);
-
-    // חברה
-    if (header.includes("עובדי הרשויות") || header.includes("הרשויות המקומיות")) company = "עובדי הרשויות";
-    else if (header.includes("הראל")) company = "הראל";
-    else if (header.includes("הפניקס")) company = "הפניקס";
-    else if (header.includes("אלטשולר")) company = "אלטשולר שחם";
-    else if (header.includes("כלל")) company = "כלל";
-    else if (header.includes("מיטב")) company = "מיטב";
-    else if (header.includes("מגדל")) company = "מגדל";
-    else if (header.includes("מנורה")) company = "מנורה";
-    else if (header.includes("מור")) company = "מור";
-    else if (header.includes("אנליסט")) company = "אנליסט";
-    else if (header.includes("ילין")) company = "ילין לפידות";
-    else company = "לא זוהה";
-
-    // מוצר
-    if (header.includes("גמל להשקעה")) product = "קופת גמל להשקעה";
-    else if (header.includes("קרנות השתלמות") || header.includes("השתלמות") || header.includes('קה"ש')) product = "קרן השתלמות";
-    else if (header.includes("קרן פנסיה") || header.includes("פנסיה") || header.includes("מקיפה")) product = "קרן פנסיה";
-    else if (header.includes("קופת גמל")) product = "קופת גמל";
-
-    // מסלול
-    const trackMatch = section.match(/מסלול:\s*(.*?)\s+נכסים:/s);
-    if (trackMatch) {
-      currentTrack = trackMatch[1]
-        .replace(/\b\d+\b/g, "")
-        .replace(/מסלול:/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    // fallback למסלול אם אין טקסט אחרי "מסלול:"
-    if (!currentTrack) {
-      const headerTrackMatch = header.match(/(?:מקומיות|מקיפה|פנסיה)\s+(.+?)\s+שם תוכנית:/);
-      if (headerTrackMatch) {
-        currentTrack = headerTrackMatch[1].replace(/\s+/g, " ").trim();
+      if (match && match[1]) {
+        return match[1].replace(/\s+/g, " ").trim();
       }
     }
 
-    let managementFee = "";
-    const feeMatch = section.match(/ד\.ניהול מצבירה:\s*([\d.]+%)/);
-    if (feeMatch) managementFee = feeMatch[1];
+    return "";
+  }
 
-    let employerName = "";
-    const employerMatch = section.match(/מעסיק נוכחי:\s*(.*?)(?:קיים|השיקול|מספר תוכנית|תאריך|$)/i);
-    if (employerMatch) {
-      employerName = employerMatch[1].replace(/\s+/g, " ").trim();
-      if (employerName.endsWith("בע")) employerName += '"מ';
+  function detectCompany(section) {
+    const companyAliases = [
+      {
+        name: "עובדי הרשויות",
+        words: ["עובדי הרשויות", "הרשויות המקומיות"]
+      },
+      {
+        name: "אלטשולר שחם",
+        words: ["אלטשולר שחם", "אלטשולר"]
+      },
+      {
+        name: "ילין לפידות",
+        words: ["ילין לפידות", "ילין"]
+      },
+      {
+        name: "מנורה",
+        words: ["מנורה מבטחים", "מנורה"]
+      },
+      {
+        name: "הפניקס",
+        words: ["הפניקס", "אקסלנס"]
+      },
+      {
+        name: "מיטב",
+        words: ["מיטב דש", "מיטב"]
+      },
+      {
+        name: "הראל",
+        words: ["הראל"]
+      },
+      {
+        name: "כלל",
+        words: ["כלל"]
+      },
+      {
+        name: "מגדל",
+        words: ["מגדל"]
+      },
+      {
+        name: "מור",
+        words: ["מור גמל", "מור"]
+      },
+      {
+        name: "אנליסט",
+        words: ["אנליסט"]
+      },
+      {
+        name: "אינפיניטי",
+        words: ["אינפיניטי"]
+      },
+      {
+        name: "הכשרה",
+        words: ["הכשרה"]
+      },
+      {
+        name: "איילון",
+        words: ["איילון"]
+      }
+    ];
+
+    // חיפוש בעיקר בתחילת הקופה כדי לא לקחת חברה שמוזכרת בהמשך
+    const beginning = section.slice(0, 1000);
+
+    for (const company of companyAliases) {
+      if (company.words.some(word => beginning.includes(word))) {
+        return company.name;
+      }
     }
 
+    return "לא זוהה";
+  }
+
+  function detectProduct(section) {
+    const beginning = section.slice(0, 700);
+
+    // חשוב: קופת גמל להשקעה חייבת להיבדק לפני קופת גמל
+    if (
+      beginning.includes("קופת גמל להשקעה") ||
+      beginning.includes("גמל להשקעה")
+    ) {
+      return "קופת גמל להשקעה";
+    }
+
+    if (
+      beginning.includes("קרנות השתלמות") ||
+      beginning.includes("קרן השתלמות") ||
+      beginning.includes("השתלמות") ||
+      beginning.includes('קה"ש')
+    ) {
+      return "קרן השתלמות";
+    }
+
+    if (
+      beginning.includes("קרן פנסיה") ||
+      beginning.includes("פנסיה") ||
+      beginning.includes("מקיפה") ||
+      beginning.includes("מקפת")
+    ) {
+      return "קרן פנסיה";
+    }
+
+    if (
+      beginning.includes("קופת גמל") ||
+      beginning.includes("קופות גמל")
+    ) {
+      return "קופת גמל";
+    }
+
+    return "";
+  }
+
+  function detectAccountNumber(section) {
+    return findFirst(section, [
+      /מספר\s*תוכנית\s*[:\-]?\s*([0-9][0-9\-\/]*)/i,
+      /מספר\s*תכנית\s*[:\-]?\s*([0-9][0-9\-\/]*)/i,
+      /מספר\s*קופה\s*[:\-]?\s*([0-9][0-9\-\/]*)/i,
+      /מספר\s*חשבון\s*[:\-]?\s*([0-9][0-9\-\/]*)/i
+    ]);
+  }
+
+  function detectManagementFee(section) {
+    return findFirst(section, [
+      /ד[.\s]*ניהול\s*מצבירה\s*[:\-]?\s*([0-9]+(?:[.,][0-9]+)?\s*%)/i,
+      /דמי\s*ניהול\s*מצבירה\s*[:\-]?\s*([0-9]+(?:[.,][0-9]+)?\s*%)/i,
+      /שיעור\s*דמי\s*ניהול\s*מצבירה\s*[:\-]?\s*([0-9]+(?:[.,][0-9]+)?\s*%)/i,
+      /דמי\s*ניהול\s*[:\-]?\s*([0-9]+(?:[.,][0-9]+)?\s*%)/i
+    ]).replace(",", ".");
+  }
+
+  function detectCurrentTrack(section) {
+    let track = findFirst(section, [
+      /מסלול\s*השקעה\s*[:\-]?\s*(.+?)(?=\s+(?:נכסים|דמי\s*ניהול|ד[.\s]*ניהול|מספר\s*תוכנית|מספר\s*קופה|מעסיק\s*נוכחי|יתרה|תשואה|$))/i,
+      /שם\s*המסלול\s*[:\-]?\s*(.+?)(?=\s+(?:נכסים|דמי\s*ניהול|ד[.\s]*ניהול|מספר\s*תוכנית|מספר\s*קופה|מעסיק\s*נוכחי|יתרה|תשואה|$))/i,
+      /מסלול\s*[:\-]\s*(.+?)(?=\s+(?:נכסים|דמי\s*ניהול|ד[.\s]*ניהול|מספר\s*תוכנית|מספר\s*קופה|מעסיק\s*נוכחי|יתרה|תשואה|$))/i
+    ]);
+
+    if (!track) {
+      return "";
+    }
+
+    track = track
+      .replace(/^מסלול\s*/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // מונע קליטת טקסט ארוך מדי במקרה שהעוגן לא נמצא
+    if (track.length > 120) {
+      track = track.slice(0, 120).trim();
+    }
+
+    return track;
+  }
+
+  function detectEmployer(section) {
+    let employer = findFirst(section, [
+      /מעסיק\s*נוכחי\s*[:\-]?\s*(.+?)(?=\s+(?:מספר\s*תוכנית|מספר\s*קופה|מסלול|דמי\s*ניהול|ד[.\s]*ניהול|תאריך|קיים|$))/i,
+      /שם\s*המעסיק\s*[:\-]?\s*(.+?)(?=\s+(?:מספר\s*תוכנית|מספר\s*קופה|מסלול|דמי\s*ניהול|ד[.\s]*ניהול|תאריך|קיים|$))/i
+    ]);
+
+    if (employer.endsWith("בע")) {
+      employer += '"מ';
+    }
+
+    return employer;
+  }
+
+  sections.forEach((rawSection) => {
+    const section = rawSection
+      .replace(/\u00A0/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const accountNumber = detectAccountNumber(section);
+
+    // לא מוסיפים חלק שאינו קופה
+    if (!accountNumber) {
+      return;
+    }
+
+    const company = detectCompany(section);
+    const product = detectProduct(section);
+    const currentTrack = detectCurrentTrack(section);
+    const managementFee = detectManagementFee(section);
+    const employerName = detectEmployer(section);
     const employmentType = employerName ? "שכירה" : "";
 
     actions.push({
@@ -2705,14 +2847,19 @@ function parsePdfData(text) {
     });
   });
 
- totalActions = actions.length;
-currentActionIndex = 0;
-history = [];
-currentStep = "fundPreview";
+  if (actions.length === 0) {
+    alert("לא נמצאו קופות בקובץ. ייתכן שמבנה ה-PDF אינו נתמך.");
+    return;
+  }
 
-document.getElementById("pdfBox").classList.add("hidden");
+  totalActions = actions.length;
+  currentActionIndex = 0;
+  history = [];
+  currentStep = "fundPreview";
 
-render();
+  document.getElementById("pdfBox").classList.add("hidden");
+
+  render();
 }
 
 
