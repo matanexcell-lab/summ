@@ -1315,7 +1315,7 @@ const needSum = [
 }
 
 function renderNextFieldsForAction(a) {
- 
+
   let html = "";
 
   if (a.type === "פרט") {
@@ -1335,7 +1335,8 @@ function renderNextFieldsForAction(a) {
     return html;
   }
 
-  if (["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product)) {
+  // === מעמד תעסוקתי — רק אם לא הגיע מה-PDF ===
+  if (!a.fromPdf && ["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product)) {
     html += `
       <div class="field-label">האם הלקוח שכיר, עצמאי או ללא?</div>
       ${createSelect("employmentSelect", EMPLOYMENT_TYPES, a.employmentType)}
@@ -1351,98 +1352,83 @@ function renderNextFieldsForAction(a) {
     }
   }
 
-if (
-  a.product === "קופת גמל להשקעה" ||
-  (
-    a.employmentType === "עצמאית" &&
-    ["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product)
-  )
-) {
-  html += `
-    <div class="field-label">אופי הפקדה</div>
-    ${createSelect(
-      "depositType",
-      ["ללא הפקדה","הוראת קבע","חד פעמי","גם וגם"],
-      a.depositType
-    )}
-  `;
-
   if (
-    a.depositType === "הוראת קבע" ||
-    a.depositType === "גם וגם"
+    a.product === "קופת גמל להשקעה" ||
+    (
+      a.employmentType === "עצמאית" &&
+      ["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product)
+    )
   ) {
     html += `
-      <div class="field-label" style="margin-top:12px;">
-        כמה להפקיד בכל חודש?
-      </div>
-      <input
-        type="number"
-        id="depositMonthly"
-        value="${a.depositMonthly || ""}"
-        placeholder="סכום חודשי"
-      />
+      <div class="field-label">אופי הפקדה</div>
+      ${createSelect(
+        "depositType",
+        ["ללא הפקדה","הוראת קבע","חד פעמי","גם וגם"],
+        a.depositType
+      )}
     `;
+
+    if (a.depositType === "הוראת קבע" || a.depositType === "גם וגם") {
+      html += `
+        <div class="field-label" style="margin-top:12px;">
+          כמה להפקיד בכל חודש?
+        </div>
+        <input type="number" id="depositMonthly" value="${a.depositMonthly || ""}" placeholder="סכום חודשי" />
+      `;
+    }
+
+    if (a.depositType === "חד פעמי" || a.depositType === "גם וגם") {
+      html += `
+        <div class="field-label" style="margin-top:12px;">
+          כמה להפקיד באופן חד פעמי?
+        </div>
+        <input type="number" id="depositOneTime" value="${a.depositOneTime || ""}" placeholder="סכום חד פעמי" />
+      `;
+    }
   }
 
-  if (
-    a.depositType === "חד פעמי" ||
-    a.depositType === "גם וגם"
-  ) {
+  if (a.type === "ניוד") {
     html += `
-      <div class="field-label" style="margin-top:12px;">
-        כמה להפקיד באופן חד פעמי?
-      </div>
-      <input
-        type="number"
-        id="depositOneTime"
-        value="${a.depositOneTime || ""}"
-        placeholder="סכום חד פעמי"
-      />
+      <div class="field-label">לאיזו חברה תנויד הקופה?</div>
+      ${createSelect("targetCompanySelect", INVEST_COMPANIES, a.targetCompany)}
     `;
-  }
-}
 
-if (a.type === "ניוד") {
-  html += `
-    <div class="field-label">לאיזו חברה תנויד הקופה?</div>
-    ${createSelect("targetCompanySelect", INVEST_COMPANIES, a.targetCompany)}
+    // === מספר קופה — רק אם לא הגיע מה-PDF ===
+    if (!a.fromPdf) {
+      html += `
+        <div class="field-label" style="margin-top:12px;">מספר קופה</div>
+        <input type="text" id="accountNumberInput" value="${a.accountNumber || ""}" />
+      `;
+    }
 
-    <div class="field-label" style="margin-top:12px;">מספר קופה</div>
-    <input
-      type="text"
-      id="accountNumberInput"
-      value="${a.accountNumber || ""}"
-    />
-
-    <div class="field-label" style="margin-top:12px;">מסלול השקעה</div>
-    ${createSelect("openTrackSelect", BASE_TRACKS, a.openTrack)}
-  `;
-}
-
- if (a.type === "השארה") {
-  html += `
-    <div class="field-label">מה יקרה בקופה?</div>
-    ${createSelect("keepTypeSelect",
-      ["ללא שינוי","שינוי מסלול השקעה","מינוי סוכן"],
-      a.keepType)}
-
-    <div class="field-label" style="margin-top:12px;">מספר קופה</div>
-    <input
-      type="text"
-      id="accountNumberInput"
-      value="${a.accountNumber || ""}"
-    />
-  `;
-
-  if (a.keepType === "שינוי מסלול השקעה") {
     html += `
-      <div class="field-label" style="margin-top:12px;">מסלול חדש</div>
-      ${createSelect("newTrackSelect", BASE_TRACKS, a.newTrack)}
+      <div class="field-label" style="margin-top:12px;">מסלול השקעה</div>
+      ${createSelect("openTrackSelect", BASE_TRACKS, a.openTrack)}
     `;
   }
 
+  if (a.type === "השארה") {
+    html += `
+      <div class="field-label">מה יקרה בקופה?</div>
+      ${createSelect("keepTypeSelect",
+        ["ללא שינוי","שינוי מסלול השקעה","מינוי סוכן"],
+        a.keepType)}
+    `;
 
+    // === מספר קופה — רק אם לא הגיע מה-PDF ===
+    if (!a.fromPdf) {
+      html += `
+        <div class="field-label" style="margin-top:12px;">מספר קופה</div>
+        <input type="text" id="accountNumberInput" value="${a.accountNumber || ""}" />
+      `;
+    }
 
+    if (a.keepType === "שינוי מסלול השקעה") {
+      html += `
+        <div class="field-label" style="margin-top:12px;">מסלול חדש</div>
+        ${createSelect("newTrackSelect", BASE_TRACKS, a.newTrack)}
+      `;
+    }
   }
 
   if (a.type === "פתיחת קופה") {
@@ -1452,47 +1438,38 @@ if (a.type === "ניוד") {
     `;
   }
 
-  if (a.type && a.type !== "פרט") {
-  html += `
-    <div class="field-label" style="margin-top:12px;">דמי ניהול</div>
-  `;
+  // === דמי ניהול — רק אם לא הגיע מה-PDF ===
+  if (!a.fromPdf && a.type && a.type !== "פרט") {
+    html += `
+      <div class="field-label" style="margin-top:12px;">דמי ניהול</div>
+    `;
 
-  if (a.product === "קרן פנסיה") {
-    html += createSelect(
-      "mgmtSelect",
-      [
-        "0.1% מצבירה ועוד 1.5% מהפקדה",
-        "0.15% מצבירה ועוד 1.5% מהפקדה"
-      ],
-      a.managementFee
-    );
-  } else if (
-    ["קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"].includes(a.product)
-  ) {
-    html += createSelect(
-      "mgmtSelect",
-      ["0.6%", "0.7%", "0.8%"],
-      a.managementFee
-    );
-  } else {
-    html += `<input
-      type="text"
-      id="mgmtSelect"
-      value="${a.managementFee || ""}"
-    />`;
+    if (a.product === "קרן פנסיה") {
+      html += createSelect(
+        "mgmtSelect",
+        [
+          "0.1% מצבירה ועוד 1.5% מהפקדה",
+          "0.15% מצבירה ועוד 1.5% מהפקדה"
+        ],
+        a.managementFee
+      );
+    } else if (["קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"].includes(a.product)) {
+      html += createSelect("mgmtSelect", ["0.6%", "0.7%", "0.8%"], a.managementFee);
+    } else {
+      html += `<input type="text" id="mgmtSelect" value="${a.managementFee || ""}" />`;
+    }
+
+    html += `
+      <input
+        type="text"
+        id="mgmtOther"
+        class="${a.managementFee === "אחר" ? "" : "hidden"}"
+        placeholder="דמי ניהול אחרים (אם נבחר 'אחר')"
+        style="margin-top:6px;"
+        value="${a.managementFeeOther || ""}"
+      />
+    `;
   }
-
-  html += `
-    <input
-      type="text"
-      id="mgmtOther"
-      class="${a.managementFee === "אחר" ? "" : "hidden"}"
-      placeholder="דמי ניהול אחרים (אם נבחר 'אחר')"
-      style="margin-top:6px;"
-      value="${a.managementFeeOther || ""}"
-    />
-  `;
-}
 
   return html;
 }
@@ -2701,7 +2678,7 @@ function parsePdfData(text) {
       let chunk = m[1];
       chunk = chunk.replace(/[\d.]+%\s*נכסים:\s*/g, '');
       chunk = chunk.replace(/מסלול:\s*/g, '');
-      chunk = chunk.replace(/(^|\s)\d{2,4}(?=\s|$)/g, ' ');
+      chunk = chunk.replace(/(^|\s)\d+(?=\s|$)/g, ' ');
       chunk = chunk.replace(/([\d.]+%)\s{2,}([^\d%][^%]*?)(?=\s{2,}|$)/g, '$2 $1');
       chunk = chunk.replace(/[\d.]+%\s*$/, '').trim();
       trackName = chunk.replace(/\s+/g, ' ').trim();
@@ -2723,18 +2700,19 @@ function parsePdfData(text) {
       if (!employmentType) employmentType = "שכירה";
     }
 
-    actions.push({
-      index: actions.length,
-      type: null,
-      company,
-      product,
-      accountNumber,
-      currentTrack,
-      managementFee,
-      employmentType,
-      employerName,
-      reasons: []
-    });
+actions.push({
+  index: actions.length,
+  type: null,
+  company,
+  product,
+  accountNumber,
+  currentTrack,
+  managementFee,
+  employmentType,
+  employerName,
+  fromPdf: true,   // ← חדש
+  reasons: []
+});
   });
 
   totalActions = actions.length;
