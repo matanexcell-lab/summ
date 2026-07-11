@@ -1628,8 +1628,10 @@ if (id === "keepTypeSelect") {
     if (document.getElementById("accountNumberInput"))
         a.accountNumber = getValue("accountNumberInput");
 
-    if (document.getElementById("mgmtSelect"))
-        a.managementFee = getValue("mgmtSelect");
+    if (document.getElementById("mgmtSelect")) {
+    const mgmtVal = getValue("mgmtSelect");
+    if (mgmtVal) a.managementFee = mgmtVal;
+}
 
     if (document.getElementById("newTrackSelect"))
         a.newTrack = getValue("newTrackSelect");
@@ -1661,8 +1663,9 @@ if (id === "employmentSelect") {
   }
 
   if (document.getElementById("mgmtSelect")) {
-    a.managementFee = getValue("mgmtSelect");
-  }
+    const mgmtVal = getValue("mgmtSelect");
+    if (mgmtVal) a.managementFee = mgmtVal;
+}
 
   render();
   return;
@@ -1743,7 +1746,10 @@ case "actionType": {
   if (document.getElementById("openTrackSelect")) a.openTrack = getValue("openTrackSelect");
   if (document.getElementById("keepTypeSelect")) a.keepType = getValue("keepTypeSelect");
   if (document.getElementById("newTrackSelect")) a.newTrack = getValue("newTrackSelect");
-  if (document.getElementById("mgmtSelect")) a.managementFee = getValue("mgmtSelect");
+  if (document.getElementById("mgmtSelect")) {
+    const mgmtVal = getValue("mgmtSelect");
+    if (mgmtVal) a.managementFee = mgmtVal;
+}
 
   if (document.getElementById("privateCompanySelect")) a.privateCompany = getValue("privateCompanySelect");
   if (document.getElementById("privateProductSelect")) a.privateProduct = getValue("privateProductSelect");
