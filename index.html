@@ -1439,7 +1439,8 @@ function renderNextFieldsForAction(a) {
   }
 
   // === דמי ניהול — רק אם לא הגיע מה-PDF ===
-  if (!a.fromPdf && a.type && a.type !== "פרט") {
+  const feeNeedsInput = !a.fromPdf || a.type === "ניוד" || (a.type === "השארה" && a.keepType === "שינוי מסלול השקעה");
+if (feeNeedsInput && a.type && a.type !== "פרט") {
     html += `
       <div class="field-label" style="margin-top:12px;">דמי ניהול</div>
     `;
@@ -2647,7 +2648,13 @@ function parsePdfData(text) {
     });
     if (foundCompany) company = foundCompany;
 
-    const product = productMap[rawProductType] || rawProductType || "";
+    let product = productMap[rawProductType] || rawProductType || "";
+
+// תיקון: "קופת גמל להשקעה" מוצג לפעמים תחת הכותרת הכללית "קופת גמל" בלבד,
+// כשה"להשקעה" מופיע רק בשם התוכנית הספציפי בהמשך הרשומה
+if (product === "קופת גמל" && /להשקעה/.test(section.slice(0, 300))) {
+  product = "קופת גמל להשקעה";
+}
 
     let accountNumber = "";
     let m = section.match(/(\d[\d\-]{4,})\s+מספר תוכנית:/) ||
