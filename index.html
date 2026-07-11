@@ -2538,17 +2538,30 @@ case "keepType":
 
 function advanceActionOrFinish() {
 
-
   if (currentActionIndex + 1 < totalActions) {
-
 
     currentActionIndex++;
 
+    const nextAction = actions[currentActionIndex];
 
-    return "fundPreview";
+    // אם יש נתונים מהמסלקה
+    if (
+      nextAction &&
+      (
+        nextAction.company ||
+        nextAction.product ||
+        nextAction.accountNumber
+      )
+    ) {
+      return "fundPreview";
+    }
 
-
+    // פעולה ידנית
+    return "company";
   }
+
+  return null;
+}
 
 
   return null;
