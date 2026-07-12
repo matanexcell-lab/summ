@@ -1328,11 +1328,62 @@ function renderNextFieldsForAction(a) {
 
       <div class="field-label" style="margin-top:12px;">מה סוג הפעולה בפוליסה?</div>
       ${createSelect("privateActionSelect", PRIVATE_ACTIONS, a.privateAction)}
-
-      <div class="field-label" style="margin-top:12px;">מספר פוליסה</div>
-      <input type="text" id="policyNumberInput" value="${a.policyNumber || ""}" />
     `;
+
+    if (a.privateAction) {
+      html += `
+        <div class="field-label" style="margin-top:12px;">מספר פוליסה</div>
+        <input type="text" id="policyNumberInput" value="${a.policyNumber || ""}" />
+      `;
+    }
+
+    const isNewIssue = a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה";
+
+    if (isNewIssue) {
+      if (a.privateAction === "ביטול והפקה חדשה") {
+        html += `
+          <div class="field-label" style="margin-top:12px;">סוג הביטוח החדש</div>
+          ${createSelect("newPolicyTypeSelect", PRIVATE_PRODUCTS, a.newPolicyType)}
+          <input type="text" id="newPolicyTypeOther"
+            class="${a.newPolicyType === "אחר" ? "" : "hidden"}"
+            placeholder="סוג ביטוח (אם 'אחר')" style="margin-top:6px;"
+            value="${a.newPolicyTypeOther || ""}" />
+        `;
+      }
+
+      html += `
+        <div class="field-label" style="margin-top:12px;">באיזו חברה תופק הפוליסה?</div>
+        ${createSelect("newPolicyCompanySelect", INSURANCE_COMPANIES, a.newPolicyCompany)}
+        <input type="text" id="newPolicyCompanyOther"
+          class="${a.newPolicyCompany === "אחר" ? "" : "hidden"}"
+          placeholder="שם חברה (אם 'אחר')" style="margin-top:6px;"
+          value="${a.newPolicyCompanyOther || ""}" />
+      `;
+
+      const relevantProduct = a.privateAction === "ביטול והפקה חדשה"
+        ? (a.newPolicyType === "אחר" ? a.newPolicyTypeOther : a.newPolicyType)
+        : a.privateProduct;
+
+      const needSum = [
+        "פוליסת חיים", "פוליסת חיים משועבדת", "פוליסת משכנתא",
+        "ביטוח מחלות קשות", "ביטוח בריאות ומחלות קשות"
+      ].includes(relevantProduct);
+
+      if (needSum) {
+        html += `
+          <div class="field-label" style="margin-top:12px;">מהו סכום הביטוח (פיצוי)?</div>
+          <input type="number" id="insuranceSumInput" value="${a.insuranceSum || ""}" />
+        `;
+      }
+
+      html += `
+        <div class="field-label" style="margin-top:12px;">מה הפרמיה החודשית?</div>
+        <input type="number" id="newPolicyPremium" value="${a.newPolicyPremium || ""}" />
+      `;
+    }
+
     return html;
+  
   }
 
   // === מעמד תעסוקתי — רק אם לא הגיע מה-PDF ===
@@ -1583,7 +1634,9 @@ pairs.forEach(([selId, inputId]) => {
   "employmentSelect",
   "newTrackSelect",
   "currentTrackSelect",
-  "mgmtSelect"
+  "mgmtSelect",
+  "privateActionSelect",
+  "privateProductSelect"
 ].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
@@ -1651,8 +1704,22 @@ if (id === "employmentSelect") {
 if (id === "newTrackSelect") a.newTrack = el.value;
 if (id === "currentTrackSelect") a.currentTrack = el.value;
 if (id === "mgmtSelect") a.managementFee = el.value;
+
+if (id === "privateActionSelect") {
+  a.privateAction = el.value;
+  if (document.getElementById("policyNumberInput")) a.policyNumber = getValue("policyNumberInput");
+  if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
+  if (document.getElementById("newPolicyPremium")) a.newPolicyPremium = getValue("newPolicyPremium");
+  render();
+  return;
+}
+if (id === "privateProductSelect") {
+  a.privateProduct = el.value;
+  render();
+  return;
+}
 });
-});
+
 }
    
    
@@ -1733,6 +1800,14 @@ case "actionType": {
   if (document.getElementById("privateProductSelect")) a.privateProduct = getValue("privateProductSelect");
   if (document.getElementById("privateActionSelect")) a.privateAction = getValue("privateActionSelect");
   if (document.getElementById("policyNumberInput")) a.policyNumber = getValue("policyNumberInput");
+
+  if (document.getElementById("mgmtOther")) a.managementFeeOther = getValue("mgmtOther");
+  if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
+  if (document.getElementById("newPolicyPremium")) a.newPolicyPremium = getValue("newPolicyPremium");
+  if (document.getElementById("newPolicyTypeSelect")) a.newPolicyType = getValue("newPolicyTypeSelect");
+  if (document.getElementById("newPolicyTypeOther")) a.newPolicyTypeOther = getValue("newPolicyTypeOther");
+  if (document.getElementById("newPolicyCompanySelect")) a.newPolicyCompany = getValue("newPolicyCompanySelect");
+  if (document.getElementById("newPolicyCompanyOther")) a.newPolicyCompanyOther = getValue("newPolicyCompanyOther");
 
   return true;
 }
@@ -3078,3 +3153,5 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
 </body>
 
 </html>
+
+
