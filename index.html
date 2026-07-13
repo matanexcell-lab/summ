@@ -1319,18 +1319,32 @@ function renderNextFieldsForAction(a) {
   let html = "";
 
   if (a.type === "פרט") {
-    html += `
-      <div class="field-label">מה שם חברת הביטוח?</div>
-      ${createSelect("privateCompanySelect", INSURANCE_COMPANIES, a.privateCompany)}
+    const isBrandNew = a.privateAction === "הפקה";
 
+    if (!isBrandNew) {
+      html += `
+        <div class="field-label">מה שם חברת הביטוח?</div>
+        ${createSelect("privateCompanySelect", INSURANCE_COMPANIES, a.privateCompany)}
+        <input type="text" id="privateCompanyOther"
+          class="${a.privateCompany === "אחר" ? "" : "hidden"}"
+          placeholder="שם חברה (אם 'אחר')" style="margin-top:6px;"
+          value="${a.privateCompanyOther || ""}" />
+      `;
+    }
+
+    html += `
       <div class="field-label" style="margin-top:12px;">מה סוג הביטוח?</div>
       ${createSelect("privateProductSelect", PRIVATE_PRODUCTS, a.privateProduct)}
+      <input type="text" id="privateProductOther"
+        class="${a.privateProduct === "אחר" ? "" : "hidden"}"
+        placeholder="סוג ביטוח (אם 'אחר')" style="margin-top:6px;"
+        value="${a.privateProductOther || ""}" />
 
       <div class="field-label" style="margin-top:12px;">מה סוג הפעולה בפוליסה?</div>
       ${createSelect("privateActionSelect", PRIVATE_ACTIONS, a.privateAction)}
     `;
 
-    if (a.privateAction) {
+    if (a.privateAction && a.privateAction !== "הפקה") {
       html += `
         <div class="field-label" style="margin-top:12px;">מספר פוליסה</div>
         <input type="text" id="policyNumberInput" value="${a.policyNumber || ""}" />
@@ -1338,7 +1352,6 @@ function renderNextFieldsForAction(a) {
     }
 
     const isNewIssue = a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה";
-
     if (isNewIssue) {
       if (a.privateAction === "ביטול והפקה חדשה") {
         html += `
@@ -1438,10 +1451,15 @@ function renderNextFieldsForAction(a) {
     }
   }
 
-  if (a.type === "ניוד") {
+  
+    if (a.type === "ניוד") {
     html += `
       <div class="field-label">לאיזו חברה תנויד הקופה?</div>
       ${createSelect("targetCompanySelect", INVEST_COMPANIES, a.targetCompany)}
+      <input type="text" id="targetCompanyOther"
+        class="${a.targetCompany === "אחר" ? "" : "hidden"}"
+        placeholder="שם חברה (אם 'אחר')" style="margin-top:6px;"
+        value="${a.targetCompanyOther || ""}" />
     `;
 
     // === מספר קופה — רק אם לא הגיע מה-PDF ===
@@ -1455,6 +1473,49 @@ function renderNextFieldsForAction(a) {
     html += `
       <div class="field-label" style="margin-top:12px;">מסלול השקעה</div>
       ${createSelect("openTrackSelect", BASE_TRACKS, a.openTrack)}
+      <input type="text" id="openTrackOther"
+        class="${a.openTrack === "אחר" ? "" : "hidden"}"
+        placeholder="מסלול אחר (אם 'אחר')" style="margin-top:6px;"
+        value="${a.openTrackOther || ""}" />
+    `;
+  }
+
+  if (a.type === "השארה") {
+    html += `
+      <div class="field-label">מה יקרה בקופה?</div>
+      ${createSelect("keepTypeSelect",
+        ["ללא שינוי","שינוי מסלול השקעה","מינוי סוכן"],
+        a.keepType)}
+    `;
+
+    // === מספר קופה — רק אם לא הגיע מה-PDF ===
+    if (!a.fromPdf) {
+      html += `
+        <div class="field-label" style="margin-top:12px;">מספר קופה</div>
+        <input type="text" id="accountNumberInput" value="${a.accountNumber || ""}" />
+      `;
+    }
+
+    if (a.keepType === "שינוי מסלול השקעה") {
+      html += `
+        <div class="field-label" style="margin-top:12px;">מסלול חדש</div>
+        ${createSelect("newTrackSelect", BASE_TRACKS, a.newTrack)}
+        <input type="text" id="newTrackOther"
+          class="${a.newTrack === "אחר" ? "" : "hidden"}"
+          placeholder="מסלול אחר (אם 'אחר')" style="margin-top:6px;"
+          value="${a.newTrackOther || ""}" />
+      `;
+    }
+  }
+
+  if (a.type === "פתיחת קופה") {
+    html += `
+      <div class="field-label">מסלול השקעה</div>
+      ${createSelect("openTrackSelect", BASE_TRACKS, a.openTrack)}
+      <input type="text" id="openTrackOther"
+        class="${a.openTrack === "אחר" ? "" : "hidden"}"
+        placeholder="מסלול אחר (אם 'אחר')" style="margin-top:6px;"
+        value="${a.openTrackOther || ""}" />
     `;
   }
 
@@ -1705,8 +1766,13 @@ if (id === "newTrackSelect") a.newTrack = el.value;
 if (id === "currentTrackSelect") a.currentTrack = el.value;
 if (id === "mgmtSelect") a.managementFee = el.value;
 
+
 if (id === "privateActionSelect") {
   a.privateAction = el.value;
+  if (document.getElementById("privateCompanySelect")) a.privateCompany = getValue("privateCompanySelect");
+  if (document.getElementById("privateCompanyOther")) a.privateCompanyOther = getValue("privateCompanyOther");
+  if (document.getElementById("privateProductSelect")) a.privateProduct = getValue("privateProductSelect");
+  if (document.getElementById("privateProductOther")) a.privateProductOther = getValue("privateProductOther");
   if (document.getElementById("policyNumberInput")) a.policyNumber = getValue("policyNumberInput");
   if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
   if (document.getElementById("newPolicyPremium")) a.newPolicyPremium = getValue("newPolicyPremium");
@@ -1715,9 +1781,13 @@ if (id === "privateActionSelect") {
 }
 if (id === "privateProductSelect") {
   a.privateProduct = el.value;
+  if (document.getElementById("privateCompanySelect")) a.privateCompany = getValue("privateCompanySelect");
+  if (document.getElementById("privateCompanyOther")) a.privateCompanyOther = getValue("privateCompanyOther");
   render();
   return;
 }
+
+
 });
 });
 
@@ -1785,22 +1855,31 @@ case "actionType": {
   if (document.getElementById("depositMonthly")) a.depositMonthly = getValue("depositMonthly");
   if (document.getElementById("depositOneTime")) a.depositOneTime = getValue("depositOneTime");
 
-  if (document.getElementById("targetCompanySelect")) a.targetCompany = getValue("targetCompanySelect");
+
+if (document.getElementById("targetCompanySelect")) a.targetCompany = getValue("targetCompanySelect");
+  if (document.getElementById("targetCompanyOther")) a.targetCompanyOther = getValue("targetCompanyOther");
   if (document.getElementById("accountNumberInput")) {
   a.accountNumber = getValue("accountNumberInput");
 }
   if (document.getElementById("openTrackSelect")) a.openTrack = getValue("openTrackSelect");
+  if (document.getElementById("openTrackOther")) a.openTrackOther = getValue("openTrackOther");
   if (document.getElementById("keepTypeSelect")) a.keepType = getValue("keepTypeSelect");
   if (document.getElementById("newTrackSelect")) a.newTrack = getValue("newTrackSelect");
+  if (document.getElementById("newTrackOther")) a.newTrackOther = getValue("newTrackOther");
   if (document.getElementById("mgmtSelect")) {
     const mgmtVal = getValue("mgmtSelect");
     if (mgmtVal) a.managementFee = mgmtVal;
 }
 
   if (document.getElementById("privateCompanySelect")) a.privateCompany = getValue("privateCompanySelect");
+  if (document.getElementById("privateCompanyOther")) a.privateCompanyOther = getValue("privateCompanyOther");
   if (document.getElementById("privateProductSelect")) a.privateProduct = getValue("privateProductSelect");
+  if (document.getElementById("privateProductOther")) a.privateProductOther = getValue("privateProductOther");
   if (document.getElementById("privateActionSelect")) a.privateAction = getValue("privateActionSelect");
   if (document.getElementById("policyNumberInput")) a.policyNumber = getValue("policyNumberInput");
+  
+
+
 
   if (document.getElementById("mgmtOther")) a.managementFeeOther = getValue("mgmtOther");
   if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
@@ -2267,7 +2346,6 @@ case "insuranceSum": {
 
 }
 
-
 if (currentStep === "fundPreview") {
 
   if (mode === MODE_RECOMMENDATION) {
@@ -2277,6 +2355,9 @@ if (currentStep === "fundPreview") {
   return advanceActionOrFinish();
 }
 
+if (currentStep === "actionType") {
+  return mode === MODE_RECOMMENDATION ? "reasons" : advanceActionOrFinish();
+}
 
     // ----- פנסיוני / השקעות -----
 
@@ -3154,6 +3235,8 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
 </body>
 
 </html>
+
+
 
 
 
