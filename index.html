@@ -1326,14 +1326,19 @@ case "fundPreview": {
     a.depositOneTime = getValue("depositOneTime");
   }
 
-  // ניוד
+// ניוד
 if (document.getElementById("targetCompanySelect")) {
   a.targetCompany = getValue("targetCompanySelect");
+}
+
+if (document.getElementById("targetCompanyOther")) {
+  a.targetCompanyOther = getValue("targetCompanyOther");
 }
 
 if (document.getElementById("accountNumberInput")) {
   a.accountNumber = getValue("accountNumberInput");
 }
+
 
   // השארה
   if (document.getElementById("keepTypeSelect")) {
@@ -1349,17 +1354,33 @@ if (document.getElementById("accountNumberInput")) {
     a.newTrack = getValue("newTrackSelect");
   }
 
+  if (document.getElementById("newTrackOther")) {
+    a.newTrackOther = getValue("newTrackOther");
+  }
+
   if (document.getElementById("openTrackSelect")) {
     a.openTrack = getValue("openTrackSelect");
   }
 
+  if (document.getElementById("openTrackOther")) {
+    a.openTrackOther = getValue("openTrackOther");
+  }
+
   // דמי ניהול
   if (document.getElementById("mgmtSelect")) {
-    a.managementFee = getValue("mgmtSelect");
+    const mgmtVal = getValue("mgmtSelect");
+    if (mgmtVal) a.managementFee = mgmtVal;
+  }
+
+  if (document.getElementById("mgmtOther")) {
+    a.managementFeeOther = getValue("mgmtOther");
   }
 
   return true;
 }
+
+
+
 
       case "company": {
         a.company = getValue("companySelect");
@@ -2155,3 +2176,4 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
 </script>
 </body>
 </html>
+
