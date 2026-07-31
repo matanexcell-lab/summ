@@ -215,7 +215,7 @@
   ];
 
   const INSURANCE_COMPANIES = [
-    "מגדל","כלל","הראל","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר"
+    "מגדל","כלל","הראל","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר","ליברה"
   ];
 
   const PRODUCTS = ["קרן פנסיה","קרן השתלמות","קופת גמל","קופת גמל להשקעה"];
@@ -852,7 +852,8 @@
       "privateProductSelect",
       "companySelect",
       "productSelect",
-      "moreActionsSelect"
+      "moreActionsSelect",
+      "newPolicyTypeSelect"
     ].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -963,6 +964,21 @@
 
         if (id === "moreActionsSelect") {
           moreActionsAnswer = el.value;
+          render();
+          return;
+        }
+
+        if (id === "newPolicyTypeSelect") {
+          a.newPolicyType = el.value;
+          if (document.getElementById("privateCompanySelect")) a.privateCompany = getValue("privateCompanySelect");
+          if (document.getElementById("privateCompanyOther")) a.privateCompanyOther = getValue("privateCompanyOther");
+          if (document.getElementById("privateProductSelect")) a.privateProduct = getValue("privateProductSelect");
+          if (document.getElementById("privateProductOther")) a.privateProductOther = getValue("privateProductOther");
+          if (document.getElementById("policyNumberInput")) a.policyNumber = getValue("policyNumberInput");
+          if (document.getElementById("newPolicyCompanySelect")) a.newPolicyCompany = getValue("newPolicyCompanySelect");
+          if (document.getElementById("newPolicyCompanyOther")) a.newPolicyCompanyOther = getValue("newPolicyCompanyOther");
+          if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
+          if (document.getElementById("newPolicyPremium")) a.newPolicyPremium = getValue("newPolicyPremium");
           render();
           return;
         }
@@ -1124,6 +1140,19 @@
           a.managementFeeOther = getValue("mgmtOther");
         }
 
+        if (document.getElementById("privateCompanySelect")) a.privateCompany = getValue("privateCompanySelect");
+        if (document.getElementById("privateCompanyOther")) a.privateCompanyOther = getValue("privateCompanyOther");
+        if (document.getElementById("privateProductSelect")) a.privateProduct = getValue("privateProductSelect");
+        if (document.getElementById("privateProductOther")) a.privateProductOther = getValue("privateProductOther");
+        if (document.getElementById("privateActionSelect")) a.privateAction = getValue("privateActionSelect");
+        if (document.getElementById("policyNumberInput")) a.policyNumber = getValue("policyNumberInput");
+        if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
+        if (document.getElementById("newPolicyPremium")) a.newPolicyPremium = getValue("newPolicyPremium");
+        if (document.getElementById("newPolicyTypeSelect")) a.newPolicyType = getValue("newPolicyTypeSelect");
+        if (document.getElementById("newPolicyTypeOther")) a.newPolicyTypeOther = getValue("newPolicyTypeOther");
+        if (document.getElementById("newPolicyCompanySelect")) a.newPolicyCompany = getValue("newPolicyCompanySelect");
+        if (document.getElementById("newPolicyCompanyOther")) a.newPolicyCompanyOther = getValue("newPolicyCompanyOther");
+
         return true;
       }
 
@@ -1273,7 +1302,7 @@
     const PRODUCT_TYPES = [
       "קרנות השתלמות", "קרן השתלמות", "קרן פנסיה",
       "קופת גמל להשקעה", "קופת גמל",
-      "פוליסות פנסיוניות", "פוליסת פנסיה"
+      "פוליסות פנסיוניות", "פוליסת פנסיה", "פרט"
     ];
 
     const splitRegex = new RegExp(
@@ -1303,9 +1332,60 @@
         rawCompany = headerMatch[2].trim();
       }
 
+      const allCompaniesForMatch = [...new Set([...INVEST_COMPANIES, ...INSURANCE_COMPANIES])];
+
+      // ===== פרט (ביטוח פרטי) =====
+      if (rawProductType === "פרט") {
+        let privateCompany = "לא זוהה";
+        const foundCompanyP = allCompaniesForMatch.find(c => {
+          const re = new RegExp("(^|\\s)" + c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "(\\s|$)");
+          return re.test(rawCompany);
+        });
+        privateCompany = foundCompanyP || rawCompany || "לא זוהה";
+
+        let policyNumber = "";
+        let mNum = section.match(/(\d[\d\-]{4,})\s+מספר תוכנית:/) ||
+                   section.match(/מספר תוכנית:\s*(\d[\d\-]{4,})/);
+        if (mNum) policyNumber = mNum[1];
+
+        let premium = "";
+        let mPrem = section.match(/₪([\d,.]+)\s+הפקדה:/) ||
+                    section.match(/הפקדה:\s*₪?([\d,.]+)/);
+        if (mPrem) premium = mPrem[1].replace(/,/g, '');
+
+        let insuranceSum = "";
+        let mSum = section.match(/ש''ח\s+[\d.]+\s+ש''ח עלות\s+([\d,]+)/);
+        if (mSum) insuranceSum = mSum[1].replace(/,/g, '');
+
+        let planNameMatch = section.match(/שם תוכנית:\s*(.*?)(?=\d[\d\-]{4,}\s+מספר תוכנית:|מספר תוכנית:)/s);
+        let planNameRaw = planNameMatch ? planNameMatch[1].replace(/\s+/g, " ").trim() : "";
+
+        let privateProduct = "", privateProductOther = "";
+        if (/משכנתא/.test(planNameRaw) && /חיים/.test(planNameRaw)) privateProduct = "פוליסת חיים משועבדת";
+        else if (/משכנתא/.test(planNameRaw)) privateProduct = "פוליסת משכנתא";
+        else if (/מחלות קשות/.test(planNameRaw) && /בריאות/.test(planNameRaw)) privateProduct = "ביטוח בריאות ומחלות קשות";
+        else if (/מחלות קשות/.test(planNameRaw)) privateProduct = "ביטוח מחלות קשות";
+        else if (/בריאות/.test(planNameRaw)) privateProduct = "ביטוח בריאות";
+        else if (/חיים/.test(planNameRaw)) privateProduct = "פוליסת חיים";
+        else { privateProduct = "אחר"; privateProductOther = planNameRaw; }
+
+        actions.push({
+          index: actions.length,
+          type: "פרט",
+          privateCompany,
+          privateProduct,
+          privateProductOther,
+          policyNumber,
+          insuranceSum,
+          newPolicyPremium: premium,
+          fromPdf: true,
+          reasons: []
+        });
+        return;
+      }
+
       let company = "לא זוהה";
-      const allCompanies = [...new Set([...INVEST_COMPANIES, ...INSURANCE_COMPANIES])];
-      const foundCompany = allCompanies.find(c => {
+      const foundCompany = allCompaniesForMatch.find(c => {
         const re = new RegExp("(^|\\s)" + c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "(\\s|$)");
         return re.test(rawCompany);
       });
