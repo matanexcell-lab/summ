@@ -223,6 +223,7 @@
   const PRIVATE_PRODUCTS = [
     "פוליסת חיים",
     "פוליסת חיים משועבדת",
+    "פוליסת חיים למשכנתא",
     "פוליסת משכנתא",
     "ביטוח בריאות",
     "ביטוח בריאות ומחלות קשות",
@@ -463,6 +464,25 @@
   }
 
   function renderFundPreview(a) {
+    // === רשומת "פרט" (ביטוח פרטי) שזוהתה מה-PDF — תיבת תצוגה ייעודית, בלי מסלול/דמי ניהול ===
+    if (a.type === "פרט" || a.privateCompany) {
+      const previewCompany = formatCompanyWithOther(a.privateCompany, a.privateCompanyOther);
+      const previewProduct = (a.privateProduct === "אחר" ? a.privateProductOther : a.privateProduct);
+      return `
+        <div class="question-title">פרטי הפוליסה שנקראו מהמסלקה</div>
+
+        <div class="summary-box" style="background:#f3f4f6;color:black;margin-top:10px;">
+          חברה: ${previewCompany || "-"}<br>
+          מוצר: ${previewProduct || "-"}<br>
+          מספר פוליסה: ${a.policyNumber || "-"}<br>
+          מחיר: ${a.newPolicyPremium ? a.newPolicyPremium + " ₪" : "-"}
+        </div>
+
+        <div class="field-label" style="margin-top:15px;">מה לעשות עם הפוליסה?</div>
+        ${createSelect("actionTypeSelect", ACTION_TYPES, a.type)}
+      `;
+    }
+
     return `
       <div class="question-title">פרטי הקופה שנקראו מהמסלקה</div>
 
@@ -544,7 +564,7 @@
           : a.privateProduct;
 
         const needSum = [
-          "פוליסת חיים", "פוליסת חיים משועבדת", "פוליסת משכנתא",
+          "פוליסת חיים", "פוליסת חיים משועבדת", "פוליסת חיים למשכנתא", "פוליסת משכנתא",
           "ביטוח מחלות קשות", "ביטוח בריאות ומחלות קשות"
         ].includes(relevantProduct);
 
@@ -1361,7 +1381,8 @@
         let planNameRaw = planNameMatch ? planNameMatch[1].replace(/\s+/g, " ").trim() : "";
 
         let privateProduct = "", privateProductOther = "";
-        if (/משכנתא/.test(planNameRaw) && /חיים/.test(planNameRaw)) privateProduct = "פוליסת חיים משועבדת";
+        if (/למשכנתא/.test(planNameRaw) && /חיים/.test(planNameRaw)) privateProduct = "פוליסת חיים למשכנתא";
+        else if (/משועבד/.test(planNameRaw) && /חיים/.test(planNameRaw)) privateProduct = "פוליסת חיים משועבדת";
         else if (/משכנתא/.test(planNameRaw)) privateProduct = "פוליסת משכנתא";
         else if (/מחלות קשות/.test(planNameRaw) && /בריאות/.test(planNameRaw)) privateProduct = "ביטוח בריאות ומחלות קשות";
         else if (/מחלות קשות/.test(planNameRaw)) privateProduct = "ביטוח מחלות קשות";
@@ -1570,6 +1591,7 @@
           const lifeTypes2 = [
             "פוליסת חיים",
             "פוליסת חיים משועבדת",
+            "פוליסת חיים למשכנתא",
             "ביטוח בריאות",
             "ביטוח בריאות ומחלות קשות",
             "ביטוח מחלות קשות"
@@ -1590,6 +1612,7 @@
           const lifeTypes2 = [
             "פוליסת חיים",
             "פוליסת חיים משועבדת",
+            "פוליסת חיים למשכנתא",
             "ביטוח בריאות",
             "ביטוח בריאות ומחלות קשות",
             "ביטוח מחלות קשות"
