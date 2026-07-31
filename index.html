@@ -1392,6 +1392,7 @@
         else if (/בריאות/.test(planNameRaw)) privateProduct = "ביטוח בריאות";
         else if (/חיים/.test(planNameRaw)) privateProduct = "פוליסת חיים";
         else if (/ריסק/.test(planNameRaw)) privateProduct = "פוליסת חיים";
+        else if (/מגן/.test(planNameRaw)) privateProduct = "פוליסת חיים";
         else { privateProduct = "אחר"; privateProductOther = planNameRaw; }
 
         actions.push({
@@ -1604,9 +1605,9 @@
           if (lifeTypes2.includes(product) && a.insuranceSum) sumPart = ` עם פיצוי של ${a.insuranceSum} ₪`;
 
           if (mode === MODE_RECOMMENDATION) {
-            line += `פתיחת פוליסה של ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
+            line += `פתיחת ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
           } else {
-            line += `תופק פוליסה חדשה של ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
+            line += `תופק ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
           }
 
         } else if (a.privateAction === "ביטול והפקה חדשה") {
@@ -1624,7 +1625,7 @@
 
           if (lifeTypes2.includes(product) && a.insuranceSum) sumPart = ` עם פיצוי של ${a.insuranceSum} ₪`;
 
-          line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber} - פוליסה זו תתבטל ובמקום זה תופק פוליסת ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
+          line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber} - פוליסה זו תתבטל ובמקום זה תופק ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
         }
       }
 
