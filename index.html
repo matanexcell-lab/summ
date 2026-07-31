@@ -464,6 +464,9 @@
   }
 
   function renderFundPreview(a) {
+    // כשהקופה/פוליסה הגיעה מה-PDF, "פתיחת קופה" לא רלוונטי — היא כבר קיימת
+    const actionTypesForPdf = ACTION_TYPES.filter(t => t !== "פתיחת קופה");
+
     // === רשומת "פרט" (ביטוח פרטי) שזוהתה מה-PDF — תיבת תצוגה ייעודית, בלי מסלול/דמי ניהול ===
     if (a.type === "פרט" || a.privateCompany) {
       const previewCompany = formatCompanyWithOther(a.privateCompany, a.privateCompanyOther);
@@ -479,7 +482,7 @@
         </div>
 
         <div class="field-label" style="margin-top:15px;">מה לעשות עם הפוליסה?</div>
-        ${createSelect("actionTypeSelect", ACTION_TYPES, a.type)}
+        ${createSelect("actionTypeSelect", actionTypesForPdf, a.type)}
       `;
     }
 
@@ -495,7 +498,7 @@
       </div>
 
       <div class="field-label" style="margin-top:15px;">מה לעשות עם הקופה?</div>
-      ${createSelect("actionTypeSelect", ACTION_TYPES, a.type)}
+      ${createSelect("actionTypeSelect", actionTypesForPdf.filter(t => t !== "פרט"), a.type)}
     `;
   }
 
@@ -526,7 +529,7 @@
           value="${a.privateProductOther || ""}" />
 
         <div class="field-label" style="margin-top:12px;">מה סוג הפעולה בפוליסה?</div>
-        ${createSelect("privateActionSelect", PRIVATE_ACTIONS, a.privateAction)}
+        ${createSelect("privateActionSelect", a.fromPdf ? PRIVATE_ACTIONS.filter(x => x !== "הפקה") : PRIVATE_ACTIONS, a.privateAction)}
       `;
 
       if (a.privateAction && a.privateAction !== "הפקה") {
