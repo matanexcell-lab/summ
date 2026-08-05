@@ -1522,11 +1522,15 @@
       lines.push("");
     }
 
+    const validActionsCount = actions.filter(a => a && a.type).length;
+    let itemCounter = 0;
+
     actions.forEach((a, idx) => {
 
       if (!a || !a.type) return;
 
-      let line = `${idx + 1}. `;
+      itemCounter++;
+      let line = validActionsCount > 1 ? `${itemCounter}. ` : "";
 
       if (a.type !== "פרט") {
 
