@@ -204,6 +204,7 @@
 
 <script>
 
+
   const ACTION_TYPES = ["ניוד", "השארה", "פתיחת קופה", "פרט"];
   const INVEST_COMPANIES = ["מגדל","כלל","הראל","אלטשולר שחם","ילין לפידות","אנליסט","מיטב","מור","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר"];
   const INSURANCE_COMPANIES = ["מגדל","כלל","הראל","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר","ליברה"];
@@ -497,8 +498,11 @@
     }
 
     if (
-      a.product === "קופת גמל להשקעה" ||
-      (a.employmentType === "עצמאית" && ["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product))
+      !(a.type === "השארה" && a.keepType === "שינוי מסלול השקעה") &&
+      (
+        a.product === "קופת גמל להשקעה" ||
+        (a.employmentType === "עצמאית" && ["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product))
+      )
     ) {
       html += `
         <div class="field-label">אופי הפקדה</div>
@@ -554,7 +558,8 @@
       `;
     }
 
-    const feeNeedsInput = !a.fromPdf || a.type === "ניוד" || (a.type === "השארה" && a.keepType === "שינוי מסלול השקעה");
+    const isTrackChangeOnly = a.type === "השארה" && a.keepType === "שינוי מסלול השקעה";
+    const feeNeedsInput = !isTrackChangeOnly && (!a.fromPdf || a.type === "ניוד");
     if (feeNeedsInput && a.type && a.type !== "פרט") {
       html += `<div class="field-label" style="margin-top:12px;">דמי ניהול</div>`;
       const mgmtPrefix = (a.type === "השארה") ? ["ללא שינוי"] : [];
@@ -1120,19 +1125,13 @@
             let nt = (a.newTrack === "אחר" ? a.newTrackOther : a.newTrack) || "";
             cur = formatTrack(cur || "");
             nt = formatTrack(nt || "");
-            const mgmt = (a.managementFee === "אחר" ? a.managementFeeOther : a.managementFee);
 
             const trackChanged = !!nt && nt !== "ללא שינוי";
-            const mgmtChanged = !!mgmt && mgmt !== "ללא שינוי";
 
-            let changeClauses = [];
-            if (trackChanged) changeClauses.push(`יתבצע שינוי מסלול מ${cur} ל${nt}`);
-            if (mgmtChanged) changeClauses.push(`ישתנו דמי הניהול ל-${mgmt}`);
-
-            if (changeClauses.length > 0) {
-              line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תישאר באותה חברה כאשר ${changeClauses.join(" ו")}${depositPart}.`;
+            if (trackChanged) {
+              line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תישאר באותה חברה כאשר יתבצע שינוי מסלול מ${cur} ל${nt}.`;
             } else {
-              line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תישאר ללא שינוי${depositPart}.`;
+              line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תישאר ללא שינוי.`;
             }
           } else if (a.keepType === "מינוי סוכן") {
             line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - יתבצע מינוי סוכן בקופה זו.`;
@@ -1214,6 +1213,7 @@
     const text = document.getElementById("summaryBox").textContent;
     try { await navigator.clipboard.writeText(text); } catch (err) {}
   });
+
 
 </script>
 </body>
