@@ -170,6 +170,19 @@
 
       <div id="formContainer"></div>
 
+      <div id="customTracksBox" style="margin-top:14px;border-top:1px dashed #d1d5db;padding-top:10px;">
+        <button type="button" id="customTracksToggle" class="btn btn-secondary btn-small" style="width:100%;margin-top:0;">➕ הוספה / ניהול מסלולי השקעה</button>
+        <div id="customTracksBody" class="hidden" style="margin-top:10px;">
+          <div class="field-label">שם המסלול החדש (כך יופיע ברשימה):</div>
+          <input type="text" id="customTrackName" placeholder="לדוגמה: אג״ח ממשלתי" />
+          <div class="field-label" style="margin-top:8px;">איך זה ייכתב בסיכום? (לא חובה — אם ריק, יופיע השם)</div>
+          <input type="text" id="customTrackOutput" placeholder="לדוגמה: 50% אג״ח, 50% מניות" />
+          <button type="button" id="addCustomTrackBtn" class="btn btn-primary btn-small" style="width:100%;">הוסף מסלול</button>
+          <div id="customTracksList" style="margin-top:8px;"></div>
+          <div class="helper-text">המסלולים נשמרים בדפדפן הזה ויופיעו בכל הרשימות של מסלול השקעה.</div>
+        </div>
+      </div>
+
 <div id="pdfBox" style="margin-top:16px;">
   <label class="field-label">העלה PDF של המסלקה:</label>
 
@@ -252,13 +265,119 @@
   }
 
   function createSelect(id, options, value) {
-    const htmlOptions = options.map(opt => `<option value="${opt}" ${opt === value ? "selected" : ""}>${opt}</option>`).join("");
+    const esc = (x) => String(x).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const htmlOptions = options.map(opt => `<option value="${esc(opt)}" ${opt === value ? "selected" : ""}>${esc(opt)}</option>`).join("");
     return `<select id="${id}"><option value="">בחר...</option>${htmlOptions}<option value="אחר" ${value === "אחר" ? "selected" : ""}>אחר...</option></select>`;
   }
 
   function getValue(id) { const el = document.getElementById(id); return el ? (el.value || "").trim() : ""; }
   function resolveProduct(a) { return (a.product === "אחר" ? (a.productOther || "") : (a.product || "")).trim(); }
-  function formatTrack(track) { if (SPECIAL_TRACK_OUTPUT[track]) return SPECIAL_TRACK_OUTPUT[track]; return track; }
+  // ===== מסלולים מותאמים (נשמרים בדפדפן) =====
+  const CUSTOM_TRACKS_KEY = "customTracksV1";
+  let customTracks = [];
+  try {
+    const raw = localStorage.getItem(CUSTOM_TRACKS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) customTracks = parsed.filter(t => t && typeof t.name === "string" && t.name.trim());
+    }
+  } catch (e) { customTracks = []; }
+
+  function saveCustomTracks() {
+    try { localStorage.setItem(CUSTOM_TRACKS_KEY, JSON.stringify(customTracks)); } catch (e) {}
+  }
+
+  function getAllTracks() {
+    const extra = customTracks.map(t => t.name).filter(n => !BASE_TRACKS.includes(n));
+    return [...BASE_TRACKS, ...extra];
+  }
+
+  function formatTrack(track) {
+    if (SPECIAL_TRACK_OUTPUT[track]) return SPECIAL_TRACK_OUTPUT[track];
+    const c = customTracks.find(t => t.name === track);
+    if (c && c.output && c.output.trim()) return c.output.trim();
+    return track;
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  const TRACK_SELECT_IDS = ["openTrackSelect", "newTrackSelect"];
+
+  function addOptionToLiveSelects(name) {
+    TRACK_SELECT_IDS.forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      if ([...sel.options].some(o => o.value === name)) return;
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      const otherOpt = [...sel.options].find(o => o.value === "אחר");
+      sel.insertBefore(opt, otherOpt || null);
+    });
+  }
+
+  function removeOptionFromLiveSelects(name) {
+    TRACK_SELECT_IDS.forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      const opt = [...sel.options].find(o => o.value === name);
+      if (opt) {
+        const wasSelected = sel.value === name;
+        opt.remove();
+        if (wasSelected) { sel.value = ""; sel.dispatchEvent(new Event("change")); }
+      }
+    });
+  }
+
+  function renderCustomTracksList() {
+    const list = document.getElementById("customTracksList");
+    if (!list) return;
+    if (!customTracks.length) {
+      list.innerHTML = '<div class="helper-text">עדיין לא נוספו מסלולים משלך.</div>';
+      return;
+    }
+    list.innerHTML = customTracks.map((t, i) => `
+      <div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:13px;">
+        <div style="flex:1;">
+          <b>${escHtml(t.name)}</b>${t.output && t.output.trim() ? ` <span style="color:#6b7280;">← בסיכום: ${escHtml(t.output)}</span>` : ""}
+        </div>
+        <button type="button" class="btn btn-secondary btn-small" style="margin-top:0;" data-del-track="${i}">מחק</button>
+      </div>`).join("");
+    list.querySelectorAll("[data-del-track]").forEach(btn => {
+      btn.onclick = () => {
+        const i = parseInt(btn.getAttribute("data-del-track"), 10);
+        const removed = customTracks.splice(i, 1)[0];
+        saveCustomTracks();
+        if (removed) removeOptionFromLiveSelects(removed.name);
+        renderCustomTracksList();
+      };
+    });
+  }
+
+  function setupCustomTracksUI() {
+    const toggle = document.getElementById("customTracksToggle");
+    const body = document.getElementById("customTracksBody");
+    const addBtn = document.getElementById("addCustomTrackBtn");
+    if (!toggle || !body || !addBtn) return;
+    toggle.onclick = () => body.classList.toggle("hidden");
+    addBtn.onclick = () => {
+      const nameEl = document.getElementById("customTrackName");
+      const outEl = document.getElementById("customTrackOutput");
+      const name = (nameEl.value || "").trim();
+      const output = (outEl.value || "").trim();
+      if (!name) { alert("נא לכתוב שם למסלול."); return; }
+      if (getAllTracks().includes(name)) { alert("מסלול בשם הזה כבר קיים."); return; }
+      customTracks.push({ name, output });
+      saveCustomTracks();
+      addOptionToLiveSelects(name);
+      nameEl.value = "";
+      outEl.value = "";
+      renderCustomTracksList();
+    };
+    renderCustomTracksList();
+  }
   function formatCompanyWithOther(selected, other) { if (selected === "אחר") return (other || "").trim(); return (selected || "").trim(); }
 
   function shouldAskDeposit(a) {
@@ -528,7 +647,7 @@
       }
       html += `
         <div class="field-label" style="margin-top:12px;">מסלול השקעה</div>
-        ${createSelect("openTrackSelect", BASE_TRACKS, a.openTrack)}
+        ${createSelect("openTrackSelect", getAllTracks(), a.openTrack)}
         <input type="text" id="openTrackOther" class="${a.openTrack === "אחר" ? "" : "hidden"}" placeholder="מסלול אחר (אם 'אחר')" style="margin-top:6px;" value="${a.openTrackOther || ""}" />
       `;
     }
@@ -544,7 +663,7 @@
       if (a.keepType === "שינוי מסלול השקעה") {
         html += `
           <div class="field-label" style="margin-top:12px;">מסלול חדש</div>
-          ${createSelect("newTrackSelect", ["ללא שינוי", ...BASE_TRACKS], a.newTrack)}
+          ${createSelect("newTrackSelect", ["ללא שינוי", ...getAllTracks()], a.newTrack)}
           <input type="text" id="newTrackOther" class="${a.newTrack === "אחר" ? "" : "hidden"}" placeholder="מסלול אחר (אם 'אחר')" style="margin-top:6px;" value="${a.newTrackOther || ""}" />
         `;
       }
@@ -553,7 +672,7 @@
     if (a.type === "פתיחת קופה") {
       html += `
         <div class="field-label">מסלול השקעה</div>
-        ${createSelect("openTrackSelect", BASE_TRACKS, a.openTrack)}
+        ${createSelect("openTrackSelect", getAllTracks(), a.openTrack)}
         <input type="text" id="openTrackOther" class="${a.openTrack === "אחר" ? "" : "hidden"}" placeholder="מסלול אחר (אם 'אחר')" style="margin-top:6px;" value="${a.openTrackOther || ""}" />
       `;
     }
@@ -1207,6 +1326,7 @@
     render();
   });
 
+  setupCustomTracksUI();
   render();
 
   document.getElementById("copyBtn").addEventListener("click", async () => {
