@@ -178,8 +178,19 @@
           <div class="field-label" style="margin-top:8px;">איך זה ייכתב בסיכום? (לא חובה — אם ריק, יופיע השם)</div>
           <input type="text" id="customTrackOutput" placeholder="לדוגמה: 50% אג״ח, 50% מניות" />
           <button type="button" id="addCustomTrackBtn" class="btn btn-primary btn-small" style="width:100%;">הוסף מסלול</button>
+          <button type="button" id="cancelEditTrackBtn" class="btn btn-secondary btn-small hidden" style="width:100%;">בטל עריכה</button>
           <div id="customTracksList" style="margin-top:8px;"></div>
-          <div class="helper-text">המסלולים נשמרים בדפדפן הזה ויופיעו בכל הרשימות של מסלול השקעה.</div>
+          <div class="helper-text">המסלולים נשמרים בדפדפן הזה ויופיעו בכל הרשימות של מסלול השקעה. עדכון הקוד באתר לא מוחק אותם.</div>
+          <div class="field-label" style="margin-top:12px;">קובץ מסלולים</div>
+          <button type="button" id="downloadTracksBtn" class="btn btn-primary btn-small" style="width:100%;">⬇️ הורד קובץ עם כל המסלולים שלי</button>
+          <div class="field-label" style="margin-top:8px;">טען קובץ מסלולים (מוסיף את מה שחסר):</div>
+          <input type="file" id="uploadTracksInput" accept=".json,application/json,text/plain" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:10px;background:white;" />
+          <div class="field-label" style="margin-top:12px;">או גיבוי בטקסט</div>
+          <textarea id="customTracksBackup" placeholder="כאן יופיע הגיבוי, או הדבק לכאן גיבוי כדי לשחזר" style="min-height:60px;"></textarea>
+          <div style="display:flex;gap:8px;">
+            <button type="button" id="exportTracksBtn" class="btn btn-secondary btn-small" style="flex:1;">גבה (העתק)</button>
+            <button type="button" id="importTracksBtn" class="btn btn-secondary btn-small" style="flex:1;">שחזר מהדבקה</button>
+          </div>
         </div>
       </div>
 
@@ -331,6 +342,29 @@
     });
   }
 
+  let editingTrackIndex = -1;
+
+  function resetTrackForm() {
+    editingTrackIndex = -1;
+    const n = document.getElementById("customTrackName"); if (n) n.value = "";
+    const o = document.getElementById("customTrackOutput"); if (o) o.value = "";
+    const b = document.getElementById("addCustomTrackBtn"); if (b) b.textContent = "הוסף מסלול";
+    const c = document.getElementById("cancelEditTrackBtn"); if (c) c.classList.add("hidden");
+  }
+
+  function renameTrackEverywhere(oldName, newName) {
+    TRACK_SELECT_IDS.forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      const opt = [...sel.options].find(o => o.value === oldName);
+      if (opt) { opt.value = newName; opt.textContent = newName; }
+    });
+    actions.forEach(act => {
+      if (!act) return;
+      ["openTrack", "newTrack", "currentTrack"].forEach(k => { if (act[k] === oldName) act[k] = newName; });
+    });
+  }
+
   function renderCustomTracksList() {
     const list = document.getElementById("customTracksList");
     if (!list) return;
@@ -343,12 +377,26 @@
         <div style="flex:1;">
           <b>${escHtml(t.name)}</b>${t.output && t.output.trim() ? ` <span style="color:#6b7280;">← בסיכום: ${escHtml(t.output)}</span>` : ""}
         </div>
+        <button type="button" class="btn btn-secondary btn-small" style="margin-top:0;" data-edit-track="${i}">ערוך</button>
         <button type="button" class="btn btn-secondary btn-small" style="margin-top:0;" data-del-track="${i}">מחק</button>
       </div>`).join("");
+    list.querySelectorAll("[data-edit-track]").forEach(btn => {
+      btn.onclick = () => {
+        const i = parseInt(btn.getAttribute("data-edit-track"), 10);
+        const t = customTracks[i];
+        if (!t) return;
+        editingTrackIndex = i;
+        document.getElementById("customTrackName").value = t.name;
+        document.getElementById("customTrackOutput").value = t.output || "";
+        document.getElementById("addCustomTrackBtn").textContent = "שמור שינויים";
+        document.getElementById("cancelEditTrackBtn").classList.remove("hidden");
+      };
+    });
     list.querySelectorAll("[data-del-track]").forEach(btn => {
       btn.onclick = () => {
         const i = parseInt(btn.getAttribute("data-del-track"), 10);
         const removed = customTracks.splice(i, 1)[0];
+        resetTrackForm();
         saveCustomTracks();
         if (removed) removeOptionFromLiveSelects(removed.name);
         renderCustomTracksList();
@@ -368,14 +416,73 @@
       const name = (nameEl.value || "").trim();
       const output = (outEl.value || "").trim();
       if (!name) { alert("נא לכתוב שם למסלול."); return; }
+      if (editingTrackIndex >= 0 && customTracks[editingTrackIndex]) {
+        const oldName = customTracks[editingTrackIndex].name;
+        const clash = getAllTracks().includes(name) && name !== oldName;
+        if (clash) { alert("מסלול בשם הזה כבר קיים."); return; }
+        customTracks[editingTrackIndex] = { name, output };
+        saveCustomTracks();
+        if (name !== oldName) renameTrackEverywhere(oldName, name);
+        resetTrackForm();
+        renderCustomTracksList();
+        return;
+      }
       if (getAllTracks().includes(name)) { alert("מסלול בשם הזה כבר קיים."); return; }
       customTracks.push({ name, output });
       saveCustomTracks();
       addOptionToLiveSelects(name);
-      nameEl.value = "";
-      outEl.value = "";
+      resetTrackForm();
       renderCustomTracksList();
     };
+    document.getElementById("cancelEditTrackBtn").onclick = resetTrackForm;
+
+    // גיבוי / שחזור
+    const backupArea = document.getElementById("customTracksBackup");
+    document.getElementById("exportTracksBtn").onclick = async () => {
+      const txt = JSON.stringify(customTracks);
+      backupArea.value = txt;
+      try { await navigator.clipboard.writeText(txt); alert("הגיבוי הועתק. שמור אותו במקום בטוח (למשל הערות)."); }
+      catch (e) { backupArea.select(); alert("סמן והעתק את הטקסט שבתיבה."); }
+    };
+    function importTracksFromText(text, label) {
+      let parsed;
+      try { parsed = JSON.parse(text); } catch (e) { alert(label + " אינו גיבוי תקין."); return; }
+      if (!Array.isArray(parsed)) { alert(label + " אינו גיבוי תקין."); return; }
+      let added = 0;
+      parsed.forEach(t => {
+        if (t && typeof t.name === "string" && t.name.trim() && !getAllTracks().includes(t.name.trim())) {
+          customTracks.push({ name: t.name.trim(), output: (t.output || "").toString() });
+          addOptionToLiveSelects(t.name.trim());
+          added++;
+        }
+      });
+      saveCustomTracks();
+      renderCustomTracksList();
+      alert(added ? `נוספו ${added} מסלולים.` : "לא נמצאו מסלולים חדשים להוספה.");
+    }
+    document.getElementById("importTracksBtn").onclick = () => importTracksFromText(backupArea.value, "הטקסט שהודבק");
+
+    document.getElementById("downloadTracksBtn").onclick = () => {
+      try {
+        const blob = new Blob([JSON.stringify(customTracks, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "מסלולי-השקעה.json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (e) { alert("ההורדה נכשלה. אפשר להשתמש ב'גבה (העתק)'."); }
+    };
+    document.getElementById("uploadTracksInput").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { importTracksFromText(String(r.result || ""), "הקובץ"); e.target.value = ""; };
+      r.onerror = () => alert("קריאת הקובץ נכשלה.");
+      r.readAsText(f, "utf-8");
+    });
     renderCustomTracksList();
   }
   function formatCompanyWithOther(selected, other) { if (selected === "אחר") return (other || "").trim(); return (selected || "").trim(); }
