@@ -192,6 +192,27 @@
             <button type="button" id="importTracksBtn" class="btn btn-secondary btn-small" style="flex:1;">שחזר מהדבקה</button>
           </div>
         </div>
+
+        <button type="button" id="opsEditToggle" class="btn btn-secondary btn-small" style="width:100%;margin-top:10px;">✏️ עריכת הנחיות לתפעול</button>
+        <div id="opsEditBody" class="hidden" style="margin-top:10px;">
+          <div class="helper-text">במקום {פעולות} יוכנסו הפעולות מהסיכום, ובמקום {קוביות} שורת טופס הקוביות המתאימה.</div>
+          <div class="field-label">נוסח לפני חתימה:</div>
+          <textarea id="opsBeforeTemplate" style="min-height:130px;"></textarea>
+          <div class="field-label">נוסח אחרי חתימה:</div>
+          <textarea id="opsAfterTemplate" style="min-height:130px;"></textarea>
+          <div class="field-label">שורת קוביות לפני חתימה — כשצריך:</div>
+          <input type="text" id="opsKubiotYesBefore" />
+          <div class="field-label">שורת קוביות לפני חתימה — כשלא צריך:</div>
+          <input type="text" id="opsKubiotNoBefore" />
+          <div class="field-label">שורת קוביות אחרי חתימה — כשצריך:</div>
+          <input type="text" id="opsKubiotYesAfter" />
+          <div class="field-label">שורת קוביות אחרי חתימה — כשלא צריך (אפשר להשאיר ריק):</div>
+          <input type="text" id="opsKubiotNoAfter" />
+          <div style="display:flex;gap:8px;">
+            <button type="button" id="opsSaveBtn" class="btn btn-primary btn-small" style="flex:1;">שמור</button>
+            <button type="button" id="opsResetBtn" class="btn btn-secondary btn-small" style="flex:1;">אפס לברירת מחדל</button>
+          </div>
+        </div>
       </div>
 
 <div id="pdfBox" style="margin-top:16px;">
@@ -218,6 +239,14 @@
 
       <button id="copyBtn" class="btn btn-secondary btn-small hidden" style="width:100%;">
         העתק סיכום
+      </button>
+
+      <button id="opsCopyBtn" class="btn btn-secondary btn-small hidden" style="width:100%;">
+        העתק הנחיות לתפעול לחתימה
+      </button>
+
+      <button id="opsAfterBtn" class="btn btn-secondary btn-small hidden" style="width:100%;">
+        העתק הנחיות לתפעול לאחר חתימה
       </button>
 
       <div id="summaryBox" class="summary-box hidden"></div>
@@ -283,6 +312,73 @@
 
   function getValue(id) { const el = document.getElementById(id); return el ? (el.value || "").trim() : ""; }
   function resolveProduct(a) { return (a.product === "אחר" ? (a.productOther || "") : (a.product || "")).trim(); }
+  // ===== הנחיות לתפעול (ניתנות לעריכה, נשמרות בדפדפן) =====
+  const OPS_CONFIG_KEY = "opsConfigV1";
+  const DEFAULT_OPS_CONFIG = {
+    beforeTemplate: "היי\nיש לשלוח ללקוח לחתימה את הדברים הבאים:\n\n{פעולות}\n\n{קוביות}",
+    afterTemplate: "לקוח חתם על הדברים הבאים:\n\n{פעולות}\n\nלא לשכוח להעלות את המסמכים לבפי.\n{קוביות}",
+    kubiotYesBefore: "לא לשכוח לצרף טופס קוביות ולשלוח לי לאחר שחותם.",
+    kubiotNoBefore: "אין צורך לצרף טופס קוביות.",
+    kubiotYesAfter: "יש לשלוח לי טופס קוביות.",
+    kubiotNoAfter: ""
+  };
+  let opsConfig = Object.assign({}, DEFAULT_OPS_CONFIG);
+  try {
+    const rawOps = localStorage.getItem(OPS_CONFIG_KEY);
+    if (rawOps) {
+      const p = JSON.parse(rawOps);
+      if (p && typeof p === "object") {
+        Object.keys(DEFAULT_OPS_CONFIG).forEach(k => { if (typeof p[k] === "string") opsConfig[k] = p[k]; });
+      }
+    }
+  } catch (e) {}
+
+  function buildOpsText(template, actionsText, kubiotLine) {
+    return template
+      .split("{פעולות}").join(actionsText)
+      .split("{קוביות}").join(kubiotLine)
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  const OPS_FIELDS = [
+    ["opsBeforeTemplate", "beforeTemplate"],
+    ["opsAfterTemplate", "afterTemplate"],
+    ["opsKubiotYesBefore", "kubiotYesBefore"],
+    ["opsKubiotNoBefore", "kubiotNoBefore"],
+    ["opsKubiotYesAfter", "kubiotYesAfter"],
+    ["opsKubiotNoAfter", "kubiotNoAfter"]
+  ];
+
+  function fillOpsForm() {
+    OPS_FIELDS.forEach(([id, key]) => { const el = document.getElementById(id); if (el) el.value = opsConfig[key]; });
+  }
+
+  function setupOpsEditorUI() {
+    const toggle = document.getElementById("opsEditToggle");
+    const body = document.getElementById("opsEditBody");
+    if (!toggle || !body) return;
+    toggle.onclick = () => { fillOpsForm(); body.classList.toggle("hidden"); };
+    document.getElementById("opsSaveBtn").onclick = () => {
+      const before = document.getElementById("opsBeforeTemplate").value;
+      const after = document.getElementById("opsAfterTemplate").value;
+      if (!before.includes("{פעולות}") || !after.includes("{פעולות}")) {
+        alert("בשני הנוסחים חייב להופיע {פעולות} — שם יוכנסו הפעולות מהסיכום.");
+        return;
+      }
+      OPS_FIELDS.forEach(([id, key]) => { opsConfig[key] = document.getElementById(id).value; });
+      try { localStorage.setItem(OPS_CONFIG_KEY, JSON.stringify(opsConfig)); } catch (e) {}
+      alert("נשמר.");
+    };
+    document.getElementById("opsResetBtn").onclick = () => {
+      if (!confirm("לאפס את הנוסחים לברירת המחדל?")) return;
+      opsConfig = Object.assign({}, DEFAULT_OPS_CONFIG);
+      try { localStorage.removeItem(OPS_CONFIG_KEY); } catch (e) {}
+      fillOpsForm();
+    };
+  }
+
   // ===== מסלולים מותאמים (נשמרים בדפדפן) =====
   const CUSTOM_TRACKS_KEY = "customTracksV1";
   let customTracks = [];
@@ -506,6 +602,12 @@
     summaryBox.classList.add("hidden");
     summaryBox.textContent = "";
     copyBtn.classList.add("hidden");
+    const opsBtnR = document.getElementById("opsCopyBtn");
+    if (opsBtnR) opsBtnR.classList.add("hidden");
+    const opsAfterR = document.getElementById("opsAfterBtn");
+    if (opsAfterR) opsAfterR.classList.add("hidden");
+    const tracksBox = document.getElementById("customTracksBox");
+    if (tracksBox) tracksBox.classList.toggle("hidden", currentStep !== "mode");
     setModePill();
     setStepIndicator();
     const a = getCurrentAction();
@@ -799,6 +901,19 @@
       html += `<input type="text" id="mgmtOther" class="${a.managementFee === "אחר" ? "" : "hidden"}" placeholder="דמי ניהול אחרים (אם נבחר 'אחר')" style="margin-top:6px;" value="${a.managementFeeOther || ""}" />`;
     }
 
+    // הפקדות מהמעסיק — רק בניוד / פתיחת קופה כשיש מעסיק
+    if (a.type === "ניוד" && a.employmentType === "שכירה" && a.product !== "קופת גמל להשקעה") {
+      const empLabel = a.employerName ? ` (${a.employerName})` : "";
+      html += `
+        <div class="field-label" style="margin-top:12px;">האם יש הפקדות במעסיק${empLabel}?</div>
+        <select id="employerDepositsSelect">
+          <option value="">בחר...</option>
+          <option value="כן" ${a.employerDeposits === "כן" ? "selected" : ""}>כן</option>
+          <option value="לא" ${a.employerDeposits === "לא" ? "selected" : ""}>לא</option>
+        </select>
+      `;
+    }
+
     return html;
   }
 
@@ -873,6 +988,8 @@
           if (document.getElementById("productSelect")) a.product = getValue("productSelect");
           if (document.getElementById("productOther")) a.productOther = getValue("productOther");
           if (document.getElementById("depositTypeOther")) a.depositTypeOther = getValue("depositTypeOther");
+          if (document.getElementById("employerDepositsSelect")) a.employerDeposits = getValue("employerDepositsSelect");
+          if (document.getElementById("employerName")) a.employerName = getValue("employerName");
           if (document.getElementById("depositMonthly")) a.depositMonthly = getValue("depositMonthly");
           if (document.getElementById("depositOneTime")) a.depositOneTime = getValue("depositOneTime");
           if (document.getElementById("newTrackOther")) a.newTrackOther = getValue("newTrackOther");
@@ -996,6 +1113,7 @@
         if (document.getElementById("productOther")) a.productOther = getValue("productOther");
         if (document.getElementById("employmentSelect")) a.employmentType = getValue("employmentSelect");
         if (document.getElementById("employerName")) a.employerName = getValue("employerName");
+        if (document.getElementById("employerDepositsSelect")) a.employerDeposits = getValue("employerDepositsSelect");
         if (document.getElementById("depositType")) a.depositType = getValue("depositType");
         if (document.getElementById("depositTypeOther")) a.depositTypeOther = getValue("depositTypeOther");
         if (document.getElementById("depositMonthly")) a.depositMonthly = getValue("depositMonthly");
@@ -1033,6 +1151,7 @@
         if (!a.type) { alert("נא לבחור סוג פעולה"); return false; }
         if (document.getElementById("employmentSelect")) { a.employmentType = getValue("employmentSelect"); }
         if (document.getElementById("employerName")) { a.employerName = getValue("employerName"); }
+        if (document.getElementById("employerDepositsSelect")) { a.employerDeposits = getValue("employerDepositsSelect"); }
         if (document.getElementById("depositType")) { a.depositType = getValue("depositType"); }
         if (document.getElementById("depositTypeOther")) { a.depositTypeOther = getValue("depositTypeOther"); }
         if (document.getElementById("depositMonthly")) { a.depositMonthly = getValue("depositMonthly"); }
@@ -1304,6 +1423,8 @@
 
     const validActionsCount = actions.filter(a => a && a.type).length;
     let itemCounter = 0;
+    const opsLines = [];
+    let needsKubiot = false;
 
     actions.forEach((a, idx) => {
       if (!a || !a.type) return;
@@ -1328,11 +1449,21 @@
           if (a.depositType === "אחר" && a.depositTypeOther) depositPart = ` עם אופי הפקדה: ${a.depositTypeOther}`;
         }
 
+        let employerPart = "";
+        a.__employerDeposits = false;
+        if (a.type === "ניוד" && a.employmentType === "שכירה" && a.product !== "קופת גמל להשקעה" && a.employerDeposits === "כן") {
+          employerPart = a.employerName ? ` עם המשך הפקדות מהמעסיק ${a.employerName}` : " עם המשך הפקדות מהמעסיק";
+          a.__employerDeposits = true;
+        } else if (a.type === "פתיחת קופה" && a.employmentType === "שכירה" && product !== "קופת גמל להשקעה") {
+          employerPart = a.employerName ? ` עם הפקדות מהמעסיק ${a.employerName}` : " עם הפקדות מהמעסיק";
+          a.__employerDeposits = true;
+        }
+
         if (a.type === "פתיחת קופה") {
           let track = (a.openTrack === "אחר" ? a.openTrackOther : a.openTrack);
           track = formatTrack(track || "");
           const mgmt = (a.managementFee === "אחר" ? a.managementFeeOther : a.managementFee);
-          line += `פתיחת ${product}${empPart} בחברת ${company} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${mgmt}${depositPart}.`;
+          line += `פתיחת ${product}${empPart} בחברת ${company} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${mgmt}${depositPart}${employerPart}.`;
         }
 
         if (a.type === "ניוד") {
@@ -1340,7 +1471,7 @@
           let track = (a.openTrack === "אחר" ? a.openTrackOther : a.openTrack);
           track = formatTrack(track || "");
           const mgmt = (a.managementFee === "אחר" ? (a.managementFeeOther || "") : (a.managementFee || ""));
-          line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תנויד לחברת ${target} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${mgmt}${depositPart}.`;
+          line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תנויד לחברת ${target} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${mgmt}${depositPart}${employerPart}.`;
         }
 
         if (a.type === "השארה") {
@@ -1394,6 +1525,9 @@
         }
       }
 
+      opsLines.push(line);
+      if (a.__employerDeposits) needsKubiot = true;
+
       if (mode === MODE_RECOMMENDATION && a.reasons && a.reasons.length) {
         line += "\nלהלן הסיבות להמלצה זאת:\n";
         if (a.reasons.length === 1) {
@@ -1417,6 +1551,31 @@
     copyBtn.onclick = () => {
       try { navigator.clipboard.writeText(box.textContent || ""); } catch (e) {}
     };
+
+    // הנחיות לתפעול
+    const actionsBlock = opsLines.join("\n\n");
+    const opsText = buildOpsText(opsConfig.beforeTemplate, actionsBlock,
+      needsKubiot ? opsConfig.kubiotYesBefore : opsConfig.kubiotNoBefore);
+    const opsAfterText = buildOpsText(opsConfig.afterTemplate, actionsBlock,
+      needsKubiot ? opsConfig.kubiotYesAfter : opsConfig.kubiotNoAfter);
+    window.__opsText = opsText;
+    window.__opsAfterText = opsAfterText;
+
+    function wireCopyBtn(btn, label, text) {
+      btn.classList.remove("hidden");
+      btn.textContent = label;
+      btn.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          btn.textContent = "הועתק ✓";
+        } catch (e) {
+          btn.textContent = "ההעתקה נכשלה";
+        }
+        setTimeout(() => { btn.textContent = label; }, 1800);
+      };
+    }
+    wireCopyBtn(document.getElementById("opsCopyBtn"), "העתק הנחיות לתפעול לחתימה", opsText);
+    wireCopyBtn(document.getElementById("opsAfterBtn"), "העתק הנחיות לתפעול לאחר חתימה", opsAfterText);
   }
 
   document.getElementById("nextBtn").addEventListener("click", () => {
@@ -1434,6 +1593,7 @@
   });
 
   setupCustomTracksUI();
+  setupOpsEditorUI();
   render();
 
   document.getElementById("copyBtn").addEventListener("click", async () => {
