@@ -170,6 +170,23 @@
 
       <div id="formContainer"></div>
 
+      <div id="importBox" style="margin-top:14px;border-top:1px dashed #d1d5db;padding-top:10px;">
+        <button type="button" id="importToggle" class="btn btn-secondary btn-small" style="width:100%;margin-top:0;">📋 יש לי סיכום שיחה מוכן — ליצור הנחיות לתפעול</button>
+        <div id="importBody" class="hidden" style="margin-top:10px;">
+          <div class="field-label">הדבק כאן את סיכום השיחה:</div>
+          <textarea id="importText" placeholder="בהמשך לשיחתנו&#10;סוכם על הדברים הבאים:&#10;1. ..." style="min-height:140px;"></textarea>
+          <div class="field-label" style="margin-top:8px;">או טען קובץ טקסט (.txt):</div>
+          <input type="file" id="importFile" accept=".txt,text/plain" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:10px;background:white;" />
+          <button type="button" id="importBuildBtn" class="btn btn-primary btn-small" style="width:100%;">צור הנחיות לתפעול</button>
+          <div id="importResult" class="hidden" style="margin-top:8px;">
+            <div id="importKubiotNote" class="helper-text"></div>
+            <button type="button" id="importOpsBefore" class="btn btn-secondary btn-small" style="width:100%;"></button>
+            <button type="button" id="importOpsAfter" class="btn btn-secondary btn-small" style="width:100%;"></button>
+            <div id="importPreview" class="summary-box" style="margin-top:10px;"></div>
+          </div>
+        </div>
+      </div>
+
       <div id="customTracksBox" style="margin-top:14px;border-top:1px dashed #d1d5db;padding-top:10px;">
         <button type="button" id="customTracksToggle" class="btn btn-secondary btn-small" style="width:100%;margin-top:0;">➕ הוספה / ניהול מסלולי השקעה</button>
         <div id="customTracksBody" class="hidden" style="margin-top:10px;">
@@ -376,6 +393,71 @@
       opsConfig = Object.assign({}, DEFAULT_OPS_CONFIG);
       try { localStorage.removeItem(OPS_CONFIG_KEY); } catch (e) {}
       fillOpsForm();
+    };
+  }
+
+  // ===== סיכום שיחה מוכן → הנחיות לתפעול =====
+  function setupCopyBtn(btn, label, text) {
+    btn.classList.remove("hidden");
+    btn.textContent = label;
+    btn.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = "הועתק ✓";
+      } catch (e) {
+        btn.textContent = "ההעתקה נכשלה";
+      }
+      setTimeout(() => { btn.textContent = label; }, 1800);
+    };
+  }
+
+  function extractActionsFromSummary(text) {
+    let t = String(text || "").replace(/\r/g, "").trim();
+    // הסרת כותרות
+    t = t.split("\n").filter(l => {
+      const x = l.trim();
+      return !/^בהמשך לשיחתנו/.test(x) &&
+             !/^סוכם על הדברים הבאים/.test(x) &&
+             !/^להלן ההמלצות שנאמרו בשיחה/.test(x);
+    }).join("\n");
+    // הסרת נימוקים (מצב המלצות): מ"להלן הסיבות" עד תחילת הפעולה הבאה או סוף הטקסט
+    t = t.replace(/להלן הסיבות להמלצה זאת:[\s\S]*?(?=\n\s*\d+\.\s|$)/g, "");
+    return t.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+
+  function setupImportUI() {
+    const toggle = document.getElementById("importToggle");
+    const body = document.getElementById("importBody");
+    if (!toggle || !body) return;
+    toggle.onclick = () => body.classList.toggle("hidden");
+
+    document.getElementById("importFile").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { document.getElementById("importText").value = String(r.result || ""); e.target.value = ""; };
+      r.onerror = () => alert("קריאת הקובץ נכשלה.");
+      r.readAsText(f, "utf-8");
+    });
+
+    document.getElementById("importBuildBtn").onclick = () => {
+      const raw = document.getElementById("importText").value;
+      const actionsText = extractActionsFromSummary(raw);
+      if (!actionsText) { alert("נא להדביק סיכום שיחה."); return; }
+      const needsKubiot = /עם (?:המשך )?הפקדות מהמעסיק/.test(actionsText);
+      const before = buildOpsText(opsConfig.beforeTemplate, actionsText,
+        needsKubiot ? opsConfig.kubiotYesBefore : opsConfig.kubiotNoBefore);
+      const after = buildOpsText(opsConfig.afterTemplate, actionsText,
+        needsKubiot ? opsConfig.kubiotYesAfter : opsConfig.kubiotNoAfter);
+      window.__importBefore = before;
+      window.__importAfter = after;
+      document.getElementById("importResult").classList.remove("hidden");
+      document.getElementById("importKubiotNote").textContent = needsKubiot
+        ? "זוהו הפקדות מהמעסיק — נוספה הערה על טופס קוביות."
+        : "לא זוהו הפקדות מהמעסיק — לא נדרש טופס קוביות.";
+      setupCopyBtn(document.getElementById("importOpsBefore"), "העתק הנחיות לתפעול לחתימה", before);
+      setupCopyBtn(document.getElementById("importOpsAfter"), "העתק הנחיות לתפעול לאחר חתימה", after);
+      document.getElementById("importPreview").textContent = before + "\n\n— — —\n\n" + after;
     };
   }
 
@@ -608,6 +690,8 @@
     if (opsAfterR) opsAfterR.classList.add("hidden");
     const tracksBox = document.getElementById("customTracksBox");
     if (tracksBox) tracksBox.classList.toggle("hidden", currentStep !== "mode");
+    const importBoxR = document.getElementById("importBox");
+    if (importBoxR) importBoxR.classList.toggle("hidden", currentStep !== "mode");
     setModePill();
     setStepIndicator();
     const a = getCurrentAction();
@@ -1594,6 +1678,7 @@
 
   setupCustomTracksUI();
   setupOpsEditorUI();
+  setupImportUI();
   render();
 
   document.getElementById("copyBtn").addEventListener("click", async () => {
