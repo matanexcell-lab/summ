@@ -956,6 +956,7 @@
       html += `
         <div class="field-label">מה יקרה בקופה?</div>
         ${createSelect("keepTypeSelect", ["ללא שינוי","שינוי מסלול השקעה","מינוי סוכן"], a.keepType)}
+        <input type="text" id="keepTypeOther" class="${a.keepType === "אחר" ? "" : "hidden"}" placeholder="פרט מה יקרה בקופה" style="margin-top:6px;" value="${(a.keepTypeOther || "").replace(/"/g,"&quot;")}" />
       `;
       if (!a.fromPdf) {
         html += `<div class="field-label" style="margin-top:12px;">מספר קופה</div><input type="text" id="accountNumberInput" value="${a.accountNumber || ""}" />`;
@@ -1084,6 +1085,7 @@
           if (document.getElementById("depositMonthly")) a.depositMonthly = getValue("depositMonthly");
           if (document.getElementById("depositOneTime")) a.depositOneTime = getValue("depositOneTime");
           if (document.getElementById("newTrackOther")) a.newTrackOther = getValue("newTrackOther");
+          if (document.getElementById("keepTypeOther")) a.keepTypeOther = getValue("keepTypeOther");
           if (document.getElementById("mgmtOther")) a.managementFeeOther = getValue("mgmtOther");
         }
 
@@ -1215,6 +1217,7 @@
         if (document.getElementById("openTrackSelect")) a.openTrack = getValue("openTrackSelect");
         if (document.getElementById("openTrackOther")) a.openTrackOther = getValue("openTrackOther");
         if (document.getElementById("keepTypeSelect")) a.keepType = getValue("keepTypeSelect");
+        if (document.getElementById("keepTypeOther")) a.keepTypeOther = getValue("keepTypeOther");
         if (document.getElementById("newTrackSelect")) a.newTrack = getValue("newTrackSelect");
         if (document.getElementById("newTrackOther")) a.newTrackOther = getValue("newTrackOther");
         if (document.getElementById("mgmtSelect")) {
@@ -1251,6 +1254,7 @@
         if (document.getElementById("targetCompanyOther")) { a.targetCompanyOther = getValue("targetCompanyOther"); }
         if (document.getElementById("accountNumberInput")) { a.accountNumber = getValue("accountNumberInput"); }
         if (document.getElementById("keepTypeSelect")) { a.keepType = getValue("keepTypeSelect"); }
+        if (document.getElementById("keepTypeOther")) { a.keepTypeOther = getValue("keepTypeOther"); }
         if (document.getElementById("currentTrackSelect")) { a.currentTrack = getValue("currentTrackSelect"); }
         if (document.getElementById("newTrackSelect")) { a.newTrack = getValue("newTrackSelect"); }
         if (document.getElementById("newTrackOther")) { a.newTrackOther = getValue("newTrackOther"); }
@@ -1583,6 +1587,9 @@
             }
           } else if (a.keepType === "מינוי סוכן") {
             line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - יתבצע מינוי סוכן בקופה זו.`;
+          } else if (a.keepType === "אחר") {
+            const ko = (a.keepTypeOther || "").trim().replace(/[.\s]+$/,"");
+            line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - ${ko}.`;
           }
         }
       } else {
