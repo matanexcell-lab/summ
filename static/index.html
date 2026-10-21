@@ -824,6 +824,7 @@
         <input type="text" id="privateProductOther" class="${a.privateProduct === "אחר" ? "" : "hidden"}" placeholder="סוג ביטוח (אם 'אחר')" style="margin-top:6px;" value="${a.privateProductOther || ""}" />
         <div class="field-label" style="margin-top:12px;">מה סוג הפעולה בפוליסה?</div>
         ${createSelect("privateActionSelect", a.fromPdf ? PRIVATE_ACTIONS.filter(x => x !== "הפקה") : PRIVATE_ACTIONS, a.privateAction)}
+        <input type="text" id="privateActionOther" class="${a.privateAction === "אחר" ? "" : "hidden"}" placeholder="פרט מה הפעולה בפוליסה" style="margin-top:6px;" value="${(a.privateActionOther || "").replace(/"/g,"&quot;")}" />
       `;
 
       if (a.privateAction && a.privateAction !== "הפקה") {
@@ -1141,6 +1142,7 @@
 
         if (id === "privateActionSelect") {
           a.privateAction = el.value;
+          if (document.getElementById("privateActionOther")) a.privateActionOther = getValue("privateActionOther");
           if (document.getElementById("privateCompanySelect")) a.privateCompany = getValue("privateCompanySelect");
           if (document.getElementById("privateCompanyOther")) a.privateCompanyOther = getValue("privateCompanyOther");
           if (document.getElementById("privateProductSelect")) a.privateProduct = getValue("privateProductSelect");
@@ -1229,6 +1231,7 @@
         if (document.getElementById("privateProductSelect")) a.privateProduct = getValue("privateProductSelect");
         if (document.getElementById("privateProductOther")) a.privateProductOther = getValue("privateProductOther");
         if (document.getElementById("privateActionSelect")) a.privateAction = getValue("privateActionSelect");
+        if (document.getElementById("privateActionOther")) a.privateActionOther = getValue("privateActionOther");
         if (document.getElementById("policyNumberInput")) a.policyNumber = getValue("policyNumberInput");
         if (document.getElementById("mgmtOther")) a.managementFeeOther = getValue("mgmtOther");
         if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
@@ -1270,6 +1273,7 @@
         if (document.getElementById("privateProductSelect")) a.privateProduct = getValue("privateProductSelect");
         if (document.getElementById("privateProductOther")) a.privateProductOther = getValue("privateProductOther");
         if (document.getElementById("privateActionSelect")) a.privateAction = getValue("privateActionSelect");
+        if (document.getElementById("privateActionOther")) a.privateActionOther = getValue("privateActionOther");
         if (document.getElementById("policyNumberInput")) a.policyNumber = getValue("policyNumberInput");
         if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
         if (document.getElementById("newPolicyPremium")) a.newPolicyPremium = getValue("newPolicyPremium");
@@ -1602,6 +1606,9 @@
           line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber} - תישאר ללא שינוי.`;
         } else if (a.privateAction === "מינוי סוכן") {
           line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber} - יתבצע מינוי סוכן בפוליסה זו.`;
+        } else if (a.privateAction === "אחר") {
+          const po = (a.privateActionOther || "").trim().replace(/[.\s]+$/,"");
+          line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber} - ${po}.`;
         } else if (a.privateAction === "הפקה") {
           let newType = (a.newPolicyType === "אחר" ? a.newPolicyTypeOther : (a.newPolicyType || product));
           let newComp = formatCompanyWithOther(a.newPolicyCompany, a.newPolicyCompanyOther);
