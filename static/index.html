@@ -300,6 +300,37 @@
   const actions = [];
   let moreActionsAnswer = "";
   let moreActionsCount = 0;
+  let neshamAssign = { a1: "", a2: "", a3: "" };
+
+  const GOV_EMPLOYER_RE = /משרד(?:י)?\s*ה?ממשלה|מס\s*הכנסה|משרד\s*החינוך/;
+  function isGovEmployerAction(a) {
+    return !!(a && a.type && a.type !== "פרט" && a.employmentType === "שכירה" && GOV_EMPLOYER_RE.test(a.employerName || ""));
+  }
+  function needsNesham() { return actions.some(isGovEmployerAction); }
+  function neshamCandidates() {
+    const out = [];
+    actions.forEach((a, i) => {
+      if (!a || !a.type || a.type === "פרט") return;
+      const company = formatCompanyWithOther(a.company, a.companyOther);
+      const product = resolveProduct(a);
+      const acct = a.accountNumber ? ` מספר קופה ${a.accountNumber}` : "";
+      const pre = a.type === "פתיחת קופה" ? "פתיחת קופה: " : "";
+      out.push({ idx: String(i), label: `${pre}${company} ${product}${acct}`.replace(/\s+/g, " ").trim() });
+    });
+    return out;
+  }
+  function buildNeshamBlock() {
+    if (!needsNesham()) return "";
+    const cands = neshamCandidates();
+    const find = (v) => { const c = cands.find(x => x.idx === v); return c ? c.label : ""; };
+    let assign = { a1: find(neshamAssign.a1), a2: find(neshamAssign.a2), a3: find(neshamAssign.a3) };
+    if (cands.length === 1) { assign = { a1: cands[0].label, a2: cands[0].label, a3: cands[0].label }; }
+    const rows = [];
+    if (assign.a1) rows.push(`נספח א1 - ${assign.a1}`);
+    if (assign.a2) rows.push(`נספח א2 - ${assign.a2}`);
+    if (assign.a3) rows.push(`נספח א3 - ${assign.a3}`);
+    return 'יש לצרף גם טפסי נש"מ' + (rows.length ? ":\n" + rows.join("\n") : ".");
+  }
 
   function getCurrentAction() {
     if (!actions[currentActionIndex]) {
@@ -312,7 +343,7 @@
 
   function setStepIndicator() {
     const el = document.getElementById("stepIndicator");
-    if (currentStep === "mode" || currentStep === "totalActions" || currentStep === "moreActions") { el.textContent = ""; return; }
+    if (currentStep === "mode" || currentStep === "totalActions" || currentStep === "moreActions" || currentStep === "nesham") { el.textContent = ""; return; }
     el.textContent = `פעולה ${currentActionIndex + 1} מתוך ${totalActions}`;
   }
 
@@ -451,8 +482,10 @@
       const actionsText = extractActionsFromSummary(raw);
       if (!actionsText) { alert("נא להדביק סיכום שיחה."); return; }
       const needsKubiot = /עם (?:המשך )?הפקדות מהמעסיק/.test(actionsText);
+      const importGov = /המעסיק[^\n]*?(?:משרד(?:י)?\s*ה?ממשלה|מס\s*הכנסה|משרד\s*החינוך)/.test(actionsText);
+      const importKubLine = needsKubiot ? opsConfig.kubiotYesBefore : opsConfig.kubiotNoBefore;
       const before = buildOpsText(opsConfig.beforeTemplate, actionsText,
-        needsKubiot ? opsConfig.kubiotYesBefore : opsConfig.kubiotNoBefore);
+        importGov ? (importKubLine ? importKubLine + "\n\n" : "") + 'יש לצרף גם טפסי נש"מ.' : importKubLine);
       const after = buildOpsText(opsConfig.afterTemplate, actionsText,
         needsKubiot ? opsConfig.kubiotYesAfter : opsConfig.kubiotNoAfter);
       window.__importBefore = before;
@@ -744,6 +777,18 @@
         }
         html += `<button type="button" class="btn btn-secondary btn-small" id="addReasonBtn">הוסף נימוק נוסף</button>`;
         break;
+      case "nesham": {
+        setSubtitle('טפסי נש"מ');
+        html += `<div class="question-title">זוהה מעסיק ממשלתי — יש לצרף טפסי נש"מ</div>`;
+        const cands = neshamCandidates();
+        [["a1","א1"],["a2","א2"],["a3","א3"]].forEach(([k, name]) => {
+          html += `<div class="field-label" style="margin-top:12px;">על איזו קופה תרצה שנספח ${name} יירשם?</div>`;
+          html += `<select id="nesham_${k}"><option value="">בחר...</option>` +
+            cands.map(c => `<option value="${c.idx}" ${neshamAssign[k] === c.idx ? "selected" : ""}>${String(c.label).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</option>`).join("") +
+            `</select>`;
+        });
+        break;
+      }
       case "moreActions":
         setSubtitle("");
         html += `<div class="question-title">האם יש פעולות נוספות שברצונך להוסיף?</div>`;
@@ -943,6 +988,12 @@
         ${createSelect("targetCompanySelect", INVEST_COMPANIES, a.targetCompany)}
         <input type="text" id="targetCompanyOther" class="${a.targetCompany === "אחר" ? "" : "hidden"}" placeholder="שם חברה (אם 'אחר')" style="margin-top:6px;" value="${a.targetCompanyOther || ""}" />
       `;
+      if (["קרן פנסיה","קופת גמל"].includes(resolveProduct(a))) {
+        html += `
+        <div class="field-label" style="margin-top:12px;">לאיזה מוצר תנויד הקופה?</div>
+        <select id="targetProductSelect"><option value="">בחר...</option><option value="קרן פנסיה" ${a.targetProduct === "קרן פנסיה" ? "selected" : ""}>קרן פנסיה</option><option value="קופת גמל" ${a.targetProduct === "קופת גמל" ? "selected" : ""}>קופת גמל</option></select>
+        `;
+      }
       if (!a.fromPdf) {
         html += `<div class="field-label" style="margin-top:12px;">מספר קופה</div><input type="text" id="accountNumberInput" value="${a.accountNumber || ""}" />`;
       }
@@ -1081,6 +1132,7 @@
           if (document.getElementById("productSelect")) a.product = getValue("productSelect");
           if (document.getElementById("productOther")) a.productOther = getValue("productOther");
           if (document.getElementById("depositTypeOther")) a.depositTypeOther = getValue("depositTypeOther");
+          if (document.getElementById("targetProductSelect")) a.targetProduct = getValue("targetProductSelect");
           if (document.getElementById("employerDepositsSelect")) a.employerDeposits = getValue("employerDepositsSelect");
           if (document.getElementById("employerName")) a.employerName = getValue("employerName");
           if (document.getElementById("depositMonthly")) a.depositMonthly = getValue("depositMonthly");
@@ -1215,6 +1267,7 @@
         if (document.getElementById("depositOneTime")) a.depositOneTime = getValue("depositOneTime");
         if (document.getElementById("targetCompanySelect")) a.targetCompany = getValue("targetCompanySelect");
         if (document.getElementById("targetCompanyOther")) a.targetCompanyOther = getValue("targetCompanyOther");
+        if (document.getElementById("targetProductSelect")) a.targetProduct = getValue("targetProductSelect");
         if (document.getElementById("accountNumberInput")) { a.accountNumber = getValue("accountNumberInput"); }
         if (document.getElementById("openTrackSelect")) a.openTrack = getValue("openTrackSelect");
         if (document.getElementById("openTrackOther")) a.openTrackOther = getValue("openTrackOther");
@@ -1255,6 +1308,7 @@
         if (document.getElementById("depositOneTime")) { a.depositOneTime = getValue("depositOneTime"); }
         if (document.getElementById("targetCompanySelect")) { a.targetCompany = getValue("targetCompanySelect"); }
         if (document.getElementById("targetCompanyOther")) { a.targetCompanyOther = getValue("targetCompanyOther"); }
+        if (document.getElementById("targetProductSelect")) { a.targetProduct = getValue("targetProductSelect"); }
         if (document.getElementById("accountNumberInput")) { a.accountNumber = getValue("accountNumberInput"); }
         if (document.getElementById("keepTypeSelect")) { a.keepType = getValue("keepTypeSelect"); }
         if (document.getElementById("keepTypeOther")) { a.keepTypeOther = getValue("keepTypeOther"); }
@@ -1287,6 +1341,10 @@
       case "reasons": {
         const txt = getValue("reasonInput");
         if (txt) { a.reasons = a.reasons || []; a.reasons.push(txt); }
+        return true;
+      }
+      case "nesham": {
+        ["a1","a2","a3"].forEach(k => { if (document.getElementById("nesham_" + k)) neshamAssign[k] = getValue("nesham_" + k); });
         return true;
       }
       case "moreActions": {
@@ -1335,7 +1393,7 @@
         moreActionsCount = 0;
         return "actionType";
       }
-      return null;
+      return (needsNesham() && neshamCandidates().length > 1) ? "nesham" : null;
     }
 
     return null;
@@ -1570,7 +1628,7 @@
           let track = (a.openTrack === "אחר" ? a.openTrackOther : a.openTrack);
           track = formatTrack(track || "");
           const mgmt = (a.managementFee === "אחר" ? (a.managementFeeOther || "") : (a.managementFee || ""));
-          line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תנויד לחברת ${target} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${mgmt}${depositPart}${employerPart}.`;
+          line += `${company} ${product}${empPart} מספר קופה ${a.accountNumber} - תנויד ${a.targetProduct ? `ל${a.targetProduct} בחברת` : "לחברת"} ${target} כאשר הכסף יושקע במסלול השקעה ${track} בדמי ניהול ${mgmt}${depositPart}${employerPart}.`;
         }
 
         if (a.type === "השארה") {
@@ -1659,8 +1717,10 @@
 
     // הנחיות לתפעול
     const actionsBlock = opsLines.join("\n\n");
+    const neshamBlock = buildNeshamBlock();
+    const beforeKubiotLine = (needsKubiot ? opsConfig.kubiotYesBefore : opsConfig.kubiotNoBefore);
     const opsText = buildOpsText(opsConfig.beforeTemplate, actionsBlock,
-      needsKubiot ? opsConfig.kubiotYesBefore : opsConfig.kubiotNoBefore);
+      neshamBlock ? (beforeKubiotLine ? beforeKubiotLine + "\n\n" : "") + neshamBlock : beforeKubiotLine);
     const opsAfterText = buildOpsText(opsConfig.afterTemplate, actionsBlock,
       needsKubiot ? opsConfig.kubiotYesAfter : opsConfig.kubiotNoAfter);
     window.__opsText = opsText;
