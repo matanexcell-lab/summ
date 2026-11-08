@@ -275,7 +275,7 @@
 <script>
 
 
-  const ACTION_TYPES = ["ניוד", "השארה", "פתיחת קופה", "פרט"];
+  const ACTION_TYPES = ["ניוד", "השארה", "פתיחת קופה", "קבלת בעלות", "פרט"];
   const INVEST_COMPANIES = ["מגדל","כלל","הראל","אלטשולר שחם","ילין לפידות","אנליסט","מיטב","מור","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר"];
   const INSURANCE_COMPANIES = ["מגדל","כלל","הראל","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר","ליברה"];
   const PRODUCTS = ["קרן פנסיה","קרן השתלמות","קופת גמל","קופת גמל להשקעה"];
@@ -959,6 +959,25 @@
       }
     }
 
+    if (a.type === "קבלת בעלות") {
+      if (!a.fromPdf) {
+        html += `
+          <div class="field-label">מה סוג המוצר?</div>
+          ${createSelect("productSelect", PRODUCTS, a.product)}
+          <input type="text" id="productOther" class="${a.product === "אחר" ? "" : "hidden"}" placeholder="סוג מוצר (אם 'אחר')" style="margin-top:6px;" value="${a.productOther || ""}" />
+          <div class="field-label" style="margin-top:12px;">מה שם החברה?</div>
+          ${createSelect("companySelect", INVEST_COMPANIES, a.company)}
+          <input type="text" id="companyOther" class="${a.company === "אחר" ? "" : "hidden"}" placeholder="שם החברה (אם 'אחר')" style="margin-top:6px;" value="${a.companyOther || ""}" />
+          <div class="field-label" style="margin-top:12px;">מספר קופה</div><input type="text" id="accountNumberInput" value="${a.accountNumber || ""}" />
+        `;
+      }
+      html += `
+        <div class="field-label" style="margin-top:12px;">שם המעסיק (אופציונלי)</div>
+        <input type="text" id="ownerEmployerName" placeholder="תחת איזה מעסיק תתבצע קבלת הבעלות" value="${(a.ownerEmployerName || "").replace(/"/g,"&quot;")}" />
+      `;
+      return html;
+    }
+
     if (!a.fromPdf && ["קרן פנסיה","קרן השתלמות","קופת גמל"].includes(a.product)) {
       html += `
         <div class="field-label">האם הלקוח שכיר, עצמאי או ללא?</div>
@@ -1142,6 +1161,7 @@
           if (document.getElementById("targetProductSelect")) a.targetProduct = getValue("targetProductSelect");
           if (document.getElementById("employerDepositsSelect")) a.employerDeposits = getValue("employerDepositsSelect");
           if (document.getElementById("employerName")) a.employerName = getValue("employerName");
+          if (document.getElementById("ownerEmployerName")) a.ownerEmployerName = getValue("ownerEmployerName");
           if (document.getElementById("depositMonthly")) a.depositMonthly = getValue("depositMonthly");
           if (document.getElementById("depositOneTime")) a.depositOneTime = getValue("depositOneTime");
           if (document.getElementById("newTrackOther")) a.newTrackOther = getValue("newTrackOther");
@@ -1269,6 +1289,7 @@
         if (document.getElementById("productOther")) a.productOther = getValue("productOther");
         if (document.getElementById("employmentSelect")) a.employmentType = getValue("employmentSelect");
         if (document.getElementById("employerName")) a.employerName = getValue("employerName");
+        if (document.getElementById("ownerEmployerName")) a.ownerEmployerName = getValue("ownerEmployerName");
         if (document.getElementById("employerDepositsSelect")) a.employerDeposits = getValue("employerDepositsSelect");
         if (document.getElementById("depositType")) a.depositType = getValue("depositType");
         if (document.getElementById("depositTypeOther")) a.depositTypeOther = getValue("depositTypeOther");
@@ -1311,6 +1332,7 @@
         if (!a.type) { alert("נא לבחור סוג פעולה"); return false; }
         if (document.getElementById("employmentSelect")) { a.employmentType = getValue("employmentSelect"); }
         if (document.getElementById("employerName")) { a.employerName = getValue("employerName"); }
+        if (document.getElementById("ownerEmployerName")) a.ownerEmployerName = getValue("ownerEmployerName");
         if (document.getElementById("employerDepositsSelect")) { a.employerDeposits = getValue("employerDepositsSelect"); }
         if (document.getElementById("depositType")) { a.depositType = getValue("depositType"); }
         if (document.getElementById("depositTypeOther")) { a.depositTypeOther = getValue("depositTypeOther"); }
@@ -1600,6 +1622,8 @@
 
       itemCounter++;
       let line = validActionsCount > 1 ? `${itemCounter}. ` : "";
+      const linePrefix = line;
+      let opsLineText = null;
 
       if (a.type !== "פרט") {
         const company = formatCompanyWithOther(a.company, a.companyOther);
@@ -1626,6 +1650,14 @@
         } else if (a.type === "פתיחת קופה" && a.employmentType === "שכירה" && product !== "קופת גמל להשקעה") {
           employerPart = a.employerName ? ` עם הפקדות מהמעסיק ${a.employerName}` : " עם הפקדות מהמעסיק";
           a.__employerDeposits = true;
+        }
+
+        if (a.type === "קבלת בעלות") {
+          const acctPart = a.accountNumber ? ` מספר קופה ${a.accountNumber}` : "";
+          const ownEmp = (a.ownerEmployerName || "").trim();
+          const empTxt = ownEmp ? ` תחת המעסיק ${ownEmp}` : "";
+          line += `קבלת בעלות על ${product} בחברת ${company}${acctPart}${empTxt}.`;
+          opsLineText = `${linePrefix}${product} בחברת ${company}${acctPart} - יש לבצע קבלת בעלות${empTxt}.`;
         }
 
         if (a.type === "פתיחת קופה") {
@@ -1700,10 +1732,10 @@
         }
       }
 
-      opsLines.push(line);
+      opsLines.push(opsLineText !== null ? opsLineText : line);
       const discStr = (a.type === "פרט" && (a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה") && (a.policyDiscounts || "").trim())
         ? `\nהנחות: ${a.policyDiscounts.trim()}` : "";
-      opsAfterLines.push(line + discStr);
+      opsAfterLines.push((opsLineText !== null ? opsLineText : line) + discStr);
       if (a.__employerDeposits) needsKubiot = true;
 
       if (mode === MODE_RECOMMENDATION && a.reasons && a.reasons.length) {
