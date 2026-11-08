@@ -306,6 +306,7 @@
   function isGovEmployerAction(a) {
     return !!(a && a.type && a.type !== "פרט" && a.employmentType === "שכירה" && GOV_EMPLOYER_RE.test(a.employerName || ""));
   }
+  const DISCOUNT_PRODUCTS = ["פוליסת חיים","פוליסת חיים משועבדת","פוליסת חיים למשכנתא","פוליסת משכנתא","ביטוח בריאות","ביטוח בריאות ומחלות קשות","ביטוח מחלות קשות"];
   function needsNesham() { return actions.some(isGovEmployerAction); }
   function neshamCandidates() {
     const out = [];
@@ -916,6 +917,12 @@
           <div class="field-label" style="margin-top:12px;">מה הפרמיה החודשית?</div>
           <input type="number" id="newPolicyPremium" value="${a.newPolicyPremium || ""}" />
         `;
+        if (DISCOUNT_PRODUCTS.includes(relevantProduct)) {
+          html += `
+            <div class="field-label" style="margin-top:12px;">אילו הנחות תרצה? (יופיע בהנחיות לתפעול לאחר חתימה)</div>
+            <input type="text" id="policyDiscountsInput" placeholder="לדוגמה: הנחה של 10% ל-3 שנים" value="${(a.policyDiscounts || "").replace(/"/g,"&quot;")}" />
+          `;
+        }
       }
 
       return html;
@@ -1202,6 +1209,7 @@
           if (document.getElementById("policyNumberInput")) a.policyNumber = getValue("policyNumberInput");
           if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
           if (document.getElementById("newPolicyPremium")) a.newPolicyPremium = getValue("newPolicyPremium");
+          if (document.getElementById("policyDiscountsInput")) a.policyDiscounts = getValue("policyDiscountsInput");
           render();
           return;
         }
@@ -1226,6 +1234,7 @@
           if (document.getElementById("newPolicyCompanyOther")) a.newPolicyCompanyOther = getValue("newPolicyCompanyOther");
           if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
           if (document.getElementById("newPolicyPremium")) a.newPolicyPremium = getValue("newPolicyPremium");
+          if (document.getElementById("policyDiscountsInput")) a.policyDiscounts = getValue("policyDiscountsInput");
           render();
           return;
         }
@@ -1289,6 +1298,7 @@
         if (document.getElementById("mgmtOther")) a.managementFeeOther = getValue("mgmtOther");
         if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
         if (document.getElementById("newPolicyPremium")) a.newPolicyPremium = getValue("newPolicyPremium");
+        if (document.getElementById("policyDiscountsInput")) a.policyDiscounts = getValue("policyDiscountsInput");
         if (document.getElementById("newPolicyTypeSelect")) a.newPolicyType = getValue("newPolicyTypeSelect");
         if (document.getElementById("newPolicyTypeOther")) a.newPolicyTypeOther = getValue("newPolicyTypeOther");
         if (document.getElementById("newPolicyCompanySelect")) a.newPolicyCompany = getValue("newPolicyCompanySelect");
@@ -1331,6 +1341,7 @@
         if (document.getElementById("policyNumberInput")) a.policyNumber = getValue("policyNumberInput");
         if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
         if (document.getElementById("newPolicyPremium")) a.newPolicyPremium = getValue("newPolicyPremium");
+        if (document.getElementById("policyDiscountsInput")) a.policyDiscounts = getValue("policyDiscountsInput");
         if (document.getElementById("newPolicyTypeSelect")) a.newPolicyType = getValue("newPolicyTypeSelect");
         if (document.getElementById("newPolicyTypeOther")) a.newPolicyTypeOther = getValue("newPolicyTypeOther");
         if (document.getElementById("newPolicyCompanySelect")) a.newPolicyCompany = getValue("newPolicyCompanySelect");
@@ -1581,6 +1592,7 @@
     const validActionsCount = actions.filter(a => a && a.type).length;
     let itemCounter = 0;
     const opsLines = [];
+    const opsAfterLines = [];
     let needsKubiot = false;
 
     actions.forEach((a, idx) => {
@@ -1689,6 +1701,9 @@
       }
 
       opsLines.push(line);
+      const discStr = (a.type === "פרט" && (a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה") && (a.policyDiscounts || "").trim())
+        ? `\nהנחות: ${a.policyDiscounts.trim()}` : "";
+      opsAfterLines.push(line + discStr);
       if (a.__employerDeposits) needsKubiot = true;
 
       if (mode === MODE_RECOMMENDATION && a.reasons && a.reasons.length) {
@@ -1721,7 +1736,7 @@
     const beforeKubiotLine = (needsKubiot ? opsConfig.kubiotYesBefore : opsConfig.kubiotNoBefore);
     const opsText = buildOpsText(opsConfig.beforeTemplate, actionsBlock,
       neshamBlock ? (beforeKubiotLine ? beforeKubiotLine + "\n\n" : "") + neshamBlock : beforeKubiotLine);
-    const opsAfterText = buildOpsText(opsConfig.afterTemplate, actionsBlock,
+    const opsAfterText = buildOpsText(opsConfig.afterTemplate, opsAfterLines.join("\n\n"),
       needsKubiot ? opsConfig.kubiotYesAfter : opsConfig.kubiotNoAfter);
     window.__opsText = opsText;
     window.__opsAfterText = opsAfterText;
