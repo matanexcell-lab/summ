@@ -1774,9 +1774,17 @@
           let tgt = "";
           if (a.mergeTarget === "אחר") tgt = (a.mergeTargetOther || "").trim();
           else tgt = mergeTargetLabel(a.mergeTarget);
-          const tgtTxt = tgt ? ` לתוך ${tgt}` : "";
+          let tgtTxt = tgt ? ` לתוך ${tgt}` : "";
+          if (typeof a.mergeTarget === "string" && a.mergeTarget[0] === "n" && actions[a.mergeTarget.slice(1)]) {
+            const ti = parseInt(a.mergeTarget.slice(1), 10);
+            const nf = actions[ti];
+            const nfCompany = nf.type === "ניוד" ? formatCompanyWithOther(nf.targetCompany, nf.targetCompanyOther) : formatCompanyWithOther(nf.company, nf.companyOther);
+            const nfProduct = nf.type === "ניוד" ? (nf.targetProduct || resolveProduct(nf)) : resolveProduct(nf);
+            const itemNo = actions.slice(0, ti + 1).filter(x => x && x.type).length;
+            tgtTxt = ` ${nfCompany} ${nfProduct} שתיפתח בסעיף ${itemNo}`;
+          }
           line += `${company} ${product}${acctPart} - תאוחד${tgtTxt}.`;
-          opsLineText = `${linePrefix}${company} ${product}${acctPart} - יש לבצע איחוד קופות${tgtTxt}.`;
+          opsLineText = `${linePrefix}${company} ${product}${acctPart} - ${/^ [^ל]/.test(tgtTxt) && /שתיפתח בסעיף/.test(tgtTxt) ? "תאוחד" : "יש לבצע איחוד קופות"}${tgtTxt}.`;
         }
 
         if (a.type === "פתיחת קופה") {
