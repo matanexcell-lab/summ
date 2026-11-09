@@ -189,6 +189,19 @@
         </div>
       </div>
 
+      <div id="convBox" style="margin-top:10px;">
+        <button type="button" id="convToggle" class="btn btn-secondary btn-small" style="width:100%;margin-top:0;">🔄 המרת הנחיות לפני חתימה להנחיות לאחר חתימה</button>
+        <div id="convBody" class="hidden" style="margin-top:10px;">
+          <div class="field-label">הדבק כאן את ההנחיות לפני חתימה:</div>
+          <textarea id="convBefore" placeholder="היי&#10;יש לשלוח ללקוח לחתימה את הדברים הבאים:&#10;..." style="min-height:140px;"></textarea>
+          <button type="button" id="convBtn" class="btn btn-primary btn-small" style="width:100%;">המר להנחיות לאחר חתימה</button>
+          <div id="convResult" class="hidden" style="margin-top:8px;">
+            <button type="button" id="convCopyBtn" class="btn btn-secondary btn-small" style="width:100%;">העתק הנחיות לאחר חתימה</button>
+            <div id="convPreview" class="summary-box" style="margin-top:10px;"></div>
+          </div>
+        </div>
+      </div>
+
       <div id="customTracksBox" style="margin-top:14px;border-top:1px dashed #d1d5db;padding-top:10px;">
         <button type="button" id="customTracksToggle" class="btn btn-secondary btn-small" style="width:100%;margin-top:0;">➕ הוספה / ניהול מסלולי השקעה</button>
         <div id="customTracksBody" class="hidden" style="margin-top:10px;">
@@ -530,6 +543,60 @@
     return t.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   }
 
+  function convertBeforeToAfter(beforeRaw) {
+    const before = String(beforeRaw || "").replace(/\r/g, "").trim();
+    if (!before) return "";
+    const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // כותרת: כל מה שלפני {פעולות} בתבנית
+    const head = opsConfig.beforeTemplate.split("{פעולות}")[0];
+    let body = before;
+    const hm = head.trim() ? new RegExp("^\\s*" + esc(head.trim()).replace(/\n+/g, "\\s*")).exec(before) : null;
+    if (hm) body = before.slice(hm[0].length).trim();
+    else {
+      const lines = before.split("\n");
+      let i = lines.findIndex(l => /^\s*\d+\.\s/.test(l));
+      if (i < 0) i = 0;
+      body = lines.slice(i).join("\n").trim();
+    }
+    // סוף: שורת הקוביות ובלוקים שרק לפני חתימה (נש"מ / פרטי עצמאי)
+    const markers = [opsConfig.kubiotYesBefore, opsConfig.kubiotNoBefore, 'יש לצרף גם טפסי נש"מ', "פרטי העצמאי לטופסי ההצטרפות"].filter(Boolean);
+    const cuts = markers.map(x => body.indexOf(x)).filter(x => x >= 0);
+    let actionsText = body, rest = "";
+    if (cuts.length) { const p = Math.min(...cuts); actionsText = body.slice(0, p).trim(); rest = body.slice(p); }
+    let kub = "";
+    if (opsConfig.kubiotYesBefore && rest.indexOf(opsConfig.kubiotYesBefore) >= 0) kub = opsConfig.kubiotYesAfter;
+    else if (opsConfig.kubiotNoBefore && rest.indexOf(opsConfig.kubiotNoBefore) >= 0) kub = opsConfig.kubiotNoAfter;
+    let out = buildOpsText(opsConfig.afterTemplate, actionsText, kub);
+    const blocks = [];
+    if (/מצ"ב אסמכתא על ההעברה/.test(actionsText)) blocks.push("חשוב מאוד!\nלא לשכוח להעלות את האסמכתא לבפי, לשלוח לחברות ולשים תזכורת לראות ששוייך");
+    if (/מצ"ב אסמכתא על הוראה לחיוב חשבון/.test(actionsText)) blocks.push("חשוב מאוד!\nלא לשכוח להעלות את האסמכתא לבפי ולשלוח לחברות");
+    if (blocks.length) out += "\n\n" + blocks.join("\n\n");
+    return out;
+  }
+
+  function setupConvertUI() {
+    const toggle = document.getElementById("convToggle");
+    if (!toggle) return;
+    const body = document.getElementById("convBody");
+    toggle.onclick = () => body.classList.toggle("hidden");
+    document.getElementById("convBtn").onclick = () => {
+      const raw = document.getElementById("convBefore").value;
+      const saved = loadPending().find(x => (x.beforeText || "").trim() === raw.trim());
+      const after = (saved && saved.afterText) ? saved.afterText : convertBeforeToAfter(raw);
+      if (!after) { alert("נא להדביק הנחיות לפני חתימה."); return; }
+      document.getElementById("convResult").classList.remove("hidden");
+      document.getElementById("convPreview").textContent = after;
+      const btn = document.getElementById("convCopyBtn");
+      const label = "העתק הנחיות לאחר חתימה";
+      btn.textContent = label;
+      btn.onclick = async () => {
+        try { await navigator.clipboard.writeText(after); btn.textContent = "הועתק ✓"; } catch (e) { btn.textContent = "ההעתקה נכשלה"; return; }
+        if (saved) { pendingDeleteRemote(saved.id); savePending(loadPending().filter(x => x.id !== saved.id)); if (openedPendingId === saved.id) { openedPendingId = null; setClient(""); } renderPending(); btn.textContent = "הועתק ✓ — הלקוח נמחק מהרשימה"; }
+        setTimeout(() => { btn.textContent = label; }, 2200);
+      };
+    };
+  }
+
   function setupImportUI() {
     const toggle = document.getElementById("importToggle");
     const body = document.getElementById("importBody");
@@ -803,6 +870,8 @@
     if (tracksBox) tracksBox.classList.toggle("hidden", currentStep !== "mode");
     const importBoxR = document.getElementById("importBox");
     if (importBoxR) importBoxR.classList.toggle("hidden", currentStep !== "mode");
+    const convBoxR = document.getElementById("convBox");
+    if (convBoxR) convBoxR.classList.toggle("hidden", currentStep !== "mode");
     setModePill();
     setStepIndicator();
     const a = getCurrentAction();
@@ -1089,6 +1158,7 @@
       `;
       if (a.depositType === "הוראת קבע" || a.depositType === "גם וגם") {
         html += `<div class="field-label" style="margin-top:12px;">כמה להפקיד בכל חודש?</div><input type="number" id="depositMonthly" value="${a.depositMonthly || ""}" placeholder="סכום חודשי" />`;
+        html += `<div class="field-label" style="margin-top:12px;">מתי יהיה החיוב?</div><input type="text" id="depositChargeDate" value="${(a.depositChargeDate || "").replace(/"/g,"&quot;")}" placeholder="לדוגמה: ה-10 לכל חודש" />`;
         html += `<div class="field-label" style="margin-top:12px;">האם יש אסמכתא על הוראה לחיוב חשבון?</div>${yesNoSelect("depositMonthlyRef", a.depositMonthlyRef)}`;
       }
       if (a.depositType === "חד פעמי" || a.depositType === "גם וגם") {
@@ -1256,6 +1326,7 @@
           if (document.getElementById("employerName")) a.employerName = getValue("employerName");
           if (document.getElementById("ownerEmployerName")) a.ownerEmployerName = getValue("ownerEmployerName");
           if (document.getElementById("depositMonthly")) a.depositMonthly = getValue("depositMonthly");
+          if (document.getElementById("depositChargeDate")) a.depositChargeDate = getValue("depositChargeDate");
           if (document.getElementById("depositOneTime")) a.depositOneTime = getValue("depositOneTime");
           if (document.getElementById("depositOneTimeRef")) a.depositOneTimeRef = getValue("depositOneTimeRef");
           if (document.getElementById("depositMonthlyRef")) a.depositMonthlyRef = getValue("depositMonthlyRef");
@@ -1402,6 +1473,7 @@
         if (document.getElementById("depositType")) a.depositType = getValue("depositType");
         if (document.getElementById("depositTypeOther")) a.depositTypeOther = getValue("depositTypeOther");
         if (document.getElementById("depositMonthly")) a.depositMonthly = getValue("depositMonthly");
+        if (document.getElementById("depositChargeDate")) a.depositChargeDate = getValue("depositChargeDate");
         if (document.getElementById("depositOneTime")) a.depositOneTime = getValue("depositOneTime");
         if (document.getElementById("depositOneTimeRef")) a.depositOneTimeRef = getValue("depositOneTimeRef");
         if (document.getElementById("depositMonthlyRef")) a.depositMonthlyRef = getValue("depositMonthlyRef");
@@ -1449,6 +1521,7 @@
         if (document.getElementById("depositType")) { a.depositType = getValue("depositType"); }
         if (document.getElementById("depositTypeOther")) { a.depositTypeOther = getValue("depositTypeOther"); }
         if (document.getElementById("depositMonthly")) { a.depositMonthly = getValue("depositMonthly"); }
+        if (document.getElementById("depositChargeDate")) { a.depositChargeDate = getValue("depositChargeDate"); }
         if (document.getElementById("depositOneTime")) { a.depositOneTime = getValue("depositOneTime"); }
         if (document.getElementById("depositOneTimeRef")) { a.depositOneTimeRef = getValue("depositOneTimeRef"); }
         if (document.getElementById("depositMonthlyRef")) { a.depositMonthlyRef = getValue("depositMonthlyRef"); }
@@ -1746,7 +1819,7 @@
   }
   async function pendingPush(item) {
     try {
-      const res = await pendingReq("POST", "/api/pending", { id: item.id, name: item.name, beforeText: item.beforeText, date: item.date });
+      const res = await pendingReq("POST", "/api/pending", { id: item.id, name: item.name, beforeText: item.beforeText, afterText: item.afterText || "", date: item.date });
       if (res.ok) {
         const list = loadPending();
         const x = list.find(y => y.id === item.id);
@@ -1808,6 +1881,15 @@
       const row = mk("div", "", "display:flex;gap:8px;");
       const c = mk("button", "העתק", ""); c.type = "button"; c.className = "btn btn-secondary btn-small";
       c.onclick = async () => { try { await navigator.clipboard.writeText(opened.beforeText); c.textContent = "הועתק ✓"; } catch (e) { c.textContent = "ההעתקה נכשלה"; } setTimeout(() => { c.textContent = "העתק"; }, 1500); };
+      const ac = mk("button", "העתק הנחיות לאחר חתימה", ""); ac.type = "button"; ac.className = "btn btn-primary btn-small";
+      ac.onclick = async () => {
+        const afterT = opened.afterText || convertBeforeToAfter(opened.beforeText);
+        try { await navigator.clipboard.writeText(afterT); } catch (e) { ac.textContent = "ההעתקה נכשלה"; return; }
+        pendingDeleteRemote(opened.id); savePending(loadPending().filter(x => x.id !== opened.id));
+        openedPendingId = null; setClient(""); renderPending();
+        ac.textContent = "הועתק ✓ — הלקוח נמחק מהרשימה";
+      };
+      row.appendChild(ac);
       const h = mk("button", "סגור", ""); h.type = "button"; h.className = "btn btn-secondary btn-small";
       h.onclick = () => { openedPendingId = null; setClient(""); renderPending(); };
       const d = mk("button", "מחק לקוח", ""); d.type = "button"; d.className = "btn btn-secondary btn-small";
@@ -1870,9 +1952,10 @@
 
         let depositPart = "";
         if (shouldAskDeposit(a) && a.depositType && a.depositType !== "ללא הפקדה") {
-          if (a.depositType === "הוראת קבע") depositPart = ` עם הוראת קבע של ${a.depositMonthly} ₪ בחודש`;
+          const chg = (a.depositChargeDate || "").trim() ? ` (מועד חיוב: ${a.depositChargeDate.trim()})` : "";
+          if (a.depositType === "הוראת קבע") depositPart = ` עם הוראת קבע של ${a.depositMonthly} ₪ בחודש${chg}`;
           if (a.depositType === "חד פעמי") depositPart = ` עם הפקדה חד פעמית של ${a.depositOneTime} ₪`;
-          if (a.depositType === "גם וגם") depositPart = ` עם הוראת קבע של ${a.depositMonthly} ₪ בחודש והפקדה חד פעמית של ${a.depositOneTime} ₪`;
+          if (a.depositType === "גם וגם") depositPart = ` עם הוראת קבע של ${a.depositMonthly} ₪ בחודש${chg} והפקדה חד פעמית של ${a.depositOneTime} ₪`;
           if (a.depositType === "אחר" && a.depositTypeOther) depositPart = ` עם אופי הפקדה: ${a.depositTypeOther}`;
         }
 
@@ -2075,7 +2158,7 @@
       if (!nm) { alert("נא להזין שם לקוח."); return; }
       const list = loadPending().filter(x => x.name !== nm);
       const d = new Date();
-      const item = { id: String(Date.now()), name: nm, beforeText: window.__opsText, date: d.toLocaleDateString("he-IL"), unsynced: true };
+      const item = { id: String(Date.now()), name: nm, beforeText: window.__opsText, afterText: window.__opsAfterText, date: d.toLocaleDateString("he-IL"), unsynced: true };
       loadPending().filter(x => x.name === nm).forEach(x => pendingDeleteRemote(x.id));
       list.unshift(item);
       savePending(list);
@@ -2184,6 +2267,7 @@
   syncPending();
   setupOpsEditorUI();
   setupImportUI();
+  setupConvertUI();
   render();
   loadRemote();
 
