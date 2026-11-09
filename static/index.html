@@ -1972,4 +1972,227 @@
           if (mode === MODE_RECOMMENDATION) {
             line += `פתיחת ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
           } else {
-      
+            line += `תופק ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
+          }
+        } else if (a.privateAction === "ביטול והפקה חדשה") {
+          let newType = (a.newPolicyType === "אחר" ? a.newPolicyTypeOther : a.newPolicyType);
+          let newComp = formatCompanyWithOther(a.newPolicyCompany, a.newPolicyCompanyOther);
+          let sumPart = "";
+          const lifeTypes2 = ["פוליסת חיים","פוליסת חיים משועבדת","פוליסת חיים למשכנתא","ביטוח בריאות","ביטוח בריאות ומחלות קשות","ביטוח מחלות קשות"];
+          if (lifeTypes2.includes(product) && a.insuranceSum) sumPart = ` עם פיצוי של ${a.insuranceSum} ₪`;
+          line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber} - פוליסה זו תתבטל ובמקום זה תופק ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
+        }
+      }
+
+      let refStr = "";
+      if (a.type !== "פרט" && ["קרן פנסיה","קרן השתלמות","קופת גמל","קופת גמל להשקעה"].includes(resolveProduct(a)) && shouldAskDeposit(a) && a.depositType && a.depositType !== "ללא הפקדה") {
+        const who = fundLabelSafe(a);
+        if (["חד פעמי","גם וגם"].includes(a.depositType) && a.depositOneTimeRef) {
+          if (a.depositOneTimeRef === "כן") refStr += '\nמצ"ב אסמכתא על ההעברה.';
+          else { refStr += "\nאסמכתא על ההעברה אשלח לי בהמשך תשימי לעצמך גם תזכורת שאגיד לו"; }
+        }
+        if (["הוראת קבע","גם וגם"].includes(a.depositType) && a.depositMonthlyRef) {
+          if (a.depositMonthlyRef === "כן") refStr += '\nמצ"ב אסמכתא על הוראה לחיוב חשבון.';
+          else { refStr += "\nאסמכתא על הוראה לחיוב חשבון אשלח לי בהמשך תשימי לעצמך גם תזכורת שאגיד לו"; }
+        }
+      }
+      opsLines.push((opsLineText !== null ? opsLineText : line) + refStr);
+      const discStr = (a.type === "פרט" && (a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה") && (a.policyDiscounts || "").trim())
+        ? `\nהנחות: ${a.policyDiscounts.trim()}` : "";
+      opsAfterLines.push((opsLineText !== null ? opsLineText : line) + refStr + discStr);
+      if (a.__employerDeposits) needsKubiot = true;
+
+      if (mode === MODE_RECOMMENDATION && a.reasons && a.reasons.length) {
+        line += "\nלהלן הסיבות להמלצה זאת:\n";
+        if (a.reasons.length === 1) {
+          line += a.reasons[0];
+        } else {
+          a.reasons.forEach((r, i) => {
+            const letter = HEBREW_LETTERS[i] || "";
+            line += `${letter}. ${r}\n`;
+          });
+          line = line.trimEnd();
+        }
+      }
+
+      lines.push(line);
+      lines.push("");
+    });
+
+    box.textContent = lines.join("\n").trim();
+    box.classList.remove("hidden");
+    copyBtn.classList.remove("hidden");
+    copyBtn.onclick = () => {
+      try { navigator.clipboard.writeText(box.textContent || ""); } catch (e) {}
+    };
+
+    // הנחיות לתפעול
+    const actionsBlock = opsLines.join("\n\n");
+    const neshamBlock = buildNeshamBlock();
+    const beforeKubiotLine = (needsKubiot ? opsConfig.kubiotYesBefore : opsConfig.kubiotNoBefore);
+    const extraBlocks = [neshamBlock, buildSelfEmpBlock()].filter(Boolean).join("\n\n");
+    const opsText = buildOpsText(opsConfig.beforeTemplate, actionsBlock,
+      extraBlocks ? (beforeKubiotLine ? beforeKubiotLine + "\n\n" : "") + extraBlocks : beforeKubiotLine);
+    let opsAfterText = buildOpsText(opsConfig.afterTemplate, opsAfterLines.join("\n\n"),
+      needsKubiot ? opsConfig.kubiotYesAfter : opsConfig.kubiotNoAfter);
+    const importantBlocks = [];
+    if (actions.some(x => x && x.type !== "פרט" && shouldAskDeposit(x) && ["חד פעמי","גם וגם"].includes(x.depositType) && x.depositOneTimeRef === "כן"))
+      importantBlocks.push("חשוב מאוד!\nלא לשכוח להעלות את האסמכתא לבפי, לשלוח לחברות ולשים תזכורת לראות ששוייך");
+    if (actions.some(x => x && x.type !== "פרט" && shouldAskDeposit(x) && ["הוראת קבע","גם וגם"].includes(x.depositType) && x.depositMonthlyRef === "כן"))
+      importantBlocks.push("חשוב מאוד!\nלא לשכוח להעלות את האסמכתא לבפי ולשלוח לחברות");
+    if (importantBlocks.length) opsAfterText = opsAfterText + "\n\n" + importantBlocks.join("\n\n");
+    window.__opsText = opsText;
+    window.__opsAfterText = opsAfterText;
+
+    function wireCopyBtn(btn, label, text, onCopied) {
+      btn.classList.remove("hidden");
+      btn.textContent = label;
+      btn.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          btn.textContent = "הועתק ✓" + (onCopied ? (onCopied() || "") : "");
+        } catch (e) {
+          btn.textContent = "ההעתקה נכשלה";
+        }
+        setTimeout(() => { btn.textContent = label; }, 1800);
+      };
+    }
+    wireCopyBtn(document.getElementById("opsCopyBtn"), "העתק הנחיות לתפעול לחתימה", opsText);
+    wireCopyBtn(document.getElementById("opsAfterBtn"), "העתק הנחיות לתפעול לאחר חתימה", opsAfterText, () => {
+      const nm = (document.getElementById("clientNameInput").value || "").trim() || currentClient;
+      if (removePendingByName(nm)) { setClient(""); renderPending(); return " — הלקוח נמחק מהרשימה"; }
+      return "";
+    });
+
+    const saveRow = document.getElementById("clientSaveRow");
+    const nameInp = document.getElementById("clientNameInput");
+    const saveBtn = document.getElementById("saveBeforeBtn");
+    saveRow.classList.remove("hidden");
+    if (currentClient && !nameInp.value) nameInp.value = currentClient;
+    saveBtn.textContent = "שמור הנחיות לפני חתימה ללקוח";
+    saveBtn.onclick = () => {
+      const nm = (nameInp.value || "").trim();
+      if (!nm) { alert("נא להזין שם לקוח."); return; }
+      const list = loadPending().filter(x => x.name !== nm);
+      const d = new Date();
+      const item = { id: String(Date.now()), name: nm, beforeText: window.__opsText, date: d.toLocaleDateString("he-IL"), unsynced: true };
+      loadPending().filter(x => x.name === nm).forEach(x => pendingDeleteRemote(x.id));
+      list.unshift(item);
+      savePending(list);
+      pendingPush(item);
+      setClient(nm);
+      saveBtn.textContent = "נשמר ✓";
+      setTimeout(() => { saveBtn.textContent = "שמור הנחיות לפני חתימה ללקוח"; }, 1800);
+    };
+  }
+
+  document.getElementById("nextBtn").addEventListener("click", () => {
+    const isValid = saveCurrentStep();
+    if (!isValid) return;
+    history.push(currentStep);
+    const next = computeNextStep();
+    if (next !== null) { currentStep = next; render(); } else { showSummary(); }
+  });
+
+  document.getElementById("backBtn").addEventListener("click", () => {
+    if (!history.length) return;
+    currentStep = history.pop();
+    render();
+  });
+
+  // ===== סנכרון מול השרת (אם האתר רץ עם שרת) =====
+  const EDIT_PW_KEY = "editPwV1";
+  const REMOTE_MIGRATED_KEY = "remoteMigratedV1";
+  let remoteAvailable = false;
+
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  async function pushRemote(retried) {
+    if (!remoteAvailable) return false;
+    try {
+      const res = await fetch("/api/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "X-Edit-Password": lsGet(EDIT_PW_KEY) || "" },
+        body: JSON.stringify({ customTracks, opsConfig: opsIsCustom ? opsConfig : null })
+      });
+      if (res.status === 401) {
+        if (!retried) {
+          const pw = prompt("נא להזין סיסמת עריכה:");
+          if (pw) { lsSet(EDIT_PW_KEY, pw); return pushRemote(true); }
+        } else {
+          alert("הסיסמה שגויה — השינוי נשמר רק במכשיר הזה.");
+        }
+        return false;
+      }
+      return res.ok;
+    } catch (e) { return false; }
+  }
+
+  async function loadRemote() {
+    let data;
+    try {
+      const res = await fetch("/api/config");
+      if (!res.ok) return;
+      data = await res.json();
+    } catch (e) { return; }
+    if (!data || typeof data !== "object") return;
+    remoteAvailable = true;
+
+    const migrated = lsGet(REMOTE_MIGRATED_KEY) === "1";
+    const valid = t => t && typeof t.name === "string" && t.name.trim();
+    const remoteTracks = Array.isArray(data.customTracks) ? data.customTracks.filter(valid) : [];
+    const oldNames = customTracks.map(t => t.name);
+
+    let merged = remoteTracks.slice();
+    if (!migrated) {
+      customTracks.forEach(t => { if (!merged.some(m => m.name === t.name)) merged.push(t); });
+    }
+    let needPush = merged.length !== remoteTracks.length;
+
+    customTracks = merged;
+    try { localStorage.setItem(CUSTOM_TRACKS_KEY, JSON.stringify(customTracks)); } catch (e) {}
+
+    if (data.opsConfig && typeof data.opsConfig === "object") {
+      Object.keys(DEFAULT_OPS_CONFIG).forEach(k => { if (typeof data.opsConfig[k] === "string") opsConfig[k] = data.opsConfig[k]; });
+      opsIsCustom = true;
+      lsSet(OPS_CONFIG_KEY, JSON.stringify(opsConfig));
+    } else if (migrated) {
+      opsConfig = Object.assign({}, DEFAULT_OPS_CONFIG);
+      opsIsCustom = false;
+      try { localStorage.removeItem(OPS_CONFIG_KEY); } catch (e) {}
+    } else if (opsIsCustom) {
+      needPush = true;
+    }
+
+    // עדכון הרשימות הפתוחות
+    oldNames.filter(n => !customTracks.some(t => t.name === n)).forEach(removeOptionFromLiveSelects);
+    customTracks.forEach(t => addOptionToLiveSelects(t.name));
+    renderCustomTracksList();
+    const body = document.getElementById("opsEditBody");
+    if (body && !body.classList.contains("hidden")) fillOpsForm();
+
+    if (needPush) {
+      const ok = await pushRemote();
+      if (ok) lsSet(REMOTE_MIGRATED_KEY, "1");
+    } else {
+      lsSet(REMOTE_MIGRATED_KEY, "1");
+    }
+  }
+
+  setupCustomTracksUI();
+  syncPending();
+  setupOpsEditorUI();
+  setupImportUI();
+  render();
+  loadRemote();
+
+  document.getElementById("copyBtn").addEventListener("click", async () => {
+    const text = document.getElementById("summaryBox").textContent;
+    try { await navigator.clipboard.writeText(text); } catch (err) {}
+  });
+
+
+</script>
+</body>
+</html>
