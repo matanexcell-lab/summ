@@ -275,8 +275,8 @@
 <script>
 
 
-  const ACTION_TYPES = ["ניוד", "השארה", "פתיחת קופה", "קבלת בעלות", "פרט"];
-  const INVEST_COMPANIES = ["מגדל","כלל","הראל","אלטשולר שחם","ילין לפידות","אנליסט","מיטב","מור","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר"];
+  const ACTION_TYPES = ["ניוד", "השארה", "פתיחת קופה", "קבלת בעלות", "איחוד קופות", "פרט"];
+  const INVEST_COMPANIES = ["מגדל","כלל","הראל","אלטשולר שחם","ילין לפידות","אנליסט","מיטב","מור","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר","כלנית","מורים וגננות"];
   const INSURANCE_COMPANIES = ["מגדל","כלל","הראל","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר","ליברה"];
   const PRODUCTS = ["קרן פנסיה","קרן השתלמות","קופת גמל","קופת גמל להשקעה"];
   const PRIVATE_PRODUCTS = ["פוליסת חיים","פוליסת חיים משועבדת","פוליסת חיים למשכנתא","פוליסת משכנתא","ביטוח בריאות","ביטוח בריאות ומחלות קשות","ביטוח מחלות קשות"];
@@ -301,6 +301,7 @@
   let moreActionsAnswer = "";
   let moreActionsCount = 0;
   let neshamAssign = { a1: "", a2: "", a3: "" };
+  let neshamDone = false;
 
   const GOV_EMPLOYER_RE = /משרד(?:י)?\s*ה?ממשלה|מס\s*הכנסה|משרד\s*החינוך/;
   function isGovEmployerAction(a) {
@@ -309,15 +310,36 @@
   const DISCOUNT_PRODUCTS = ["פוליסת חיים","פוליסת חיים משועבדת","פוליסת חיים למשכנתא","פוליסת משכנתא","ביטוח בריאות","ביטוח בריאות ומחלות קשות","ביטוח מחלות קשות"];
   function needsNesham() { return actions.some(isGovEmployerAction); }
   function neshamCandidates() {
-    const out = [];
+    const out = [], seen = new Set();
+    const add = (idx, label) => { label = String(label).replace(/\s+/g, " ").trim(); if (label && !seen.has(label)) { seen.add(label); out.push({ idx: String(idx), label }); } };
+    // קודם כל: החברות שאליהן יש ניוד (חברה + מוצר יעד)
+    actions.forEach((a, i) => {
+      if (!a || a.type !== "ניוד") return;
+      const tc = formatCompanyWithOther(a.targetCompany, a.targetCompanyOther);
+      if (!tc || tc === "בחר...") return;
+      add(i, `${tc} ${a.targetProduct || resolveProduct(a)}`);
+    });
+    if (out.length) return out;
+    // אין ניוד — החברות הקיימות
     actions.forEach((a, i) => {
       if (!a || !a.type || a.type === "פרט") return;
       const company = formatCompanyWithOther(a.company, a.companyOther);
       const product = resolveProduct(a);
       const acct = a.accountNumber ? ` מספר קופה ${a.accountNumber}` : "";
       const pre = a.type === "פתיחת קופה" ? "פתיחת קופה: " : "";
-      out.push({ idx: String(i), label: `${pre}${company} ${product}${acct}`.replace(/\s+/g, " ").trim() });
+      add(i, `${pre}${company} ${product}${acct}`);
     });
+    return out;
+  }
+  function escHtml(x) { return String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function fundLabel(a) {
+    const company = formatCompanyWithOther(a.company, a.companyOther);
+    const acct = a.accountNumber ? ` מספר קופה ${a.accountNumber}` : "";
+    return `${company} ${resolveProduct(a)}${acct}`.replace(/\s+/g, " ").trim();
+  }
+  function mergeTargetOptions(selfIdx) {
+    const out = [];
+    actions.forEach((x, i) => { if (i !== selfIdx && x && x.type !== "פרט" && (x.company || x.product || x.accountNumber)) out.push({ idx: String(i), label: fundLabel(x) }); });
     return out;
   }
   function buildNeshamBlock() {
@@ -959,7 +981,7 @@
       }
     }
 
-    if (a.type === "קבלת בעלות") {
+    if (a.type === "קבלת בעלות" || a.type === "איחוד קופות") {
       if (!a.fromPdf) {
         html += `
           <div class="field-label">מה סוג המוצר?</div>
@@ -970,6 +992,15 @@
           <input type="text" id="companyOther" class="${a.company === "אחר" ? "" : "hidden"}" placeholder="שם החברה (אם 'אחר')" style="margin-top:6px;" value="${a.companyOther || ""}" />
           <div class="field-label" style="margin-top:12px;">מספר קופה</div><input type="text" id="accountNumberInput" value="${a.accountNumber || ""}" />
         `;
+      }
+      if (a.type === "איחוד קופות") {
+        const opts = mergeTargetOptions(currentActionIndex);
+        html += `<div class="field-label" style="margin-top:12px;">לאיזו קופה לאחד?</div>
+          <select id="mergeTargetSelect"><option value="">בחר...</option>` +
+          opts.map(o => `<option value="${o.idx}" ${String(a.mergeTarget) === o.idx ? "selected" : ""}>${escHtml(o.label)}</option>`).join("") +
+          `<option value="אחר" ${a.mergeTarget === "אחר" ? "selected" : ""}>אחר...</option></select>
+          <input type="text" id="mergeTargetOther" class="${a.mergeTarget === "אחר" ? "" : "hidden"}" placeholder="פרטי הקופה שאליה מאחדים" style="margin-top:6px;" value="${(a.mergeTargetOther || "").replace(/"/g,"&quot;")}" />`;
+        return html;
       }
       html += `
         <div class="field-label" style="margin-top:12px;">שם המעסיק (אופציונלי)</div>
@@ -1061,9 +1092,10 @@
     if (feeNeedsInput && a.type && a.type !== "פרט") {
       html += `<div class="field-label" style="margin-top:12px;">דמי ניהול</div>`;
       const mgmtPrefix = (a.type === "השארה") ? ["ללא שינוי"] : [];
-      if (a.product === "קרן פנסיה") {
+      const feeProduct = (a.type === "ניוד" && a.targetProduct) ? a.targetProduct : a.product;
+      if (feeProduct === "קרן פנסיה") {
         html += createSelect("mgmtSelect", [...mgmtPrefix, "0.1% מצבירה ועוד 1.5% מהפקדה","0.15% מצבירה ועוד 1.5% מהפקדה"], a.managementFee);
-      } else if (["קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"].includes(a.product)) {
+      } else if (["קרן השתלמות", "קופת גמל", "קופת גמל להשקעה"].includes(feeProduct)) {
         html += createSelect("mgmtSelect", [...mgmtPrefix, "0.6%", "0.7%", "0.8%"], a.managementFee);
       } else {
         html += `<input type="text" id="mgmtSelect" value="${a.managementFee || ""}" />`;
@@ -1100,6 +1132,7 @@
       ["newPolicyTypeSelect", "newPolicyTypeOther"],
       ["newPolicyCompanySelect", "newPolicyCompanyOther"],
       ["mgmtSelect", "mgmtOther"],
+      ["mergeTargetSelect", "mergeTargetOther"],
       ["depositType", "depositTypeOther"]
     ];
 
@@ -1143,7 +1176,7 @@
     [
       "actionTypeSelect", "targetCompanySelect", "keepTypeSelect", "openTrackSelect",
       "depositType", "employmentSelect", "newTrackSelect", "currentTrackSelect",
-      "mgmtSelect", "privateActionSelect", "privateProductSelect", "companySelect",
+      "mgmtSelect", "targetProductSelect", "privateActionSelect", "privateProductSelect", "companySelect",
       "productSelect", "moreActionsSelect", "newPolicyTypeSelect"
     ].forEach(id => {
       const el = document.getElementById(id);
@@ -1159,6 +1192,8 @@
           if (document.getElementById("productOther")) a.productOther = getValue("productOther");
           if (document.getElementById("depositTypeOther")) a.depositTypeOther = getValue("depositTypeOther");
           if (document.getElementById("targetProductSelect")) a.targetProduct = getValue("targetProductSelect");
+          if (document.getElementById("mergeTargetSelect")) a.mergeTarget = getValue("mergeTargetSelect");
+          if (document.getElementById("mergeTargetOther")) a.mergeTargetOther = getValue("mergeTargetOther");
           if (document.getElementById("employerDepositsSelect")) a.employerDeposits = getValue("employerDepositsSelect");
           if (document.getElementById("employerName")) a.employerName = getValue("employerName");
           if (document.getElementById("ownerEmployerName")) a.ownerEmployerName = getValue("ownerEmployerName");
@@ -1298,6 +1333,8 @@
         if (document.getElementById("targetCompanySelect")) a.targetCompany = getValue("targetCompanySelect");
         if (document.getElementById("targetCompanyOther")) a.targetCompanyOther = getValue("targetCompanyOther");
         if (document.getElementById("targetProductSelect")) a.targetProduct = getValue("targetProductSelect");
+        if (document.getElementById("mergeTargetSelect")) a.mergeTarget = getValue("mergeTargetSelect");
+        if (document.getElementById("mergeTargetOther")) a.mergeTargetOther = getValue("mergeTargetOther");
         if (document.getElementById("accountNumberInput")) { a.accountNumber = getValue("accountNumberInput"); }
         if (document.getElementById("openTrackSelect")) a.openTrack = getValue("openTrackSelect");
         if (document.getElementById("openTrackOther")) a.openTrackOther = getValue("openTrackOther");
@@ -1341,6 +1378,8 @@
         if (document.getElementById("targetCompanySelect")) { a.targetCompany = getValue("targetCompanySelect"); }
         if (document.getElementById("targetCompanyOther")) { a.targetCompanyOther = getValue("targetCompanyOther"); }
         if (document.getElementById("targetProductSelect")) { a.targetProduct = getValue("targetProductSelect"); }
+        if (document.getElementById("mergeTargetSelect")) { a.mergeTarget = getValue("mergeTargetSelect"); }
+        if (document.getElementById("mergeTargetOther")) { a.mergeTargetOther = getValue("mergeTargetOther"); }
         if (document.getElementById("accountNumberInput")) { a.accountNumber = getValue("accountNumberInput"); }
         if (document.getElementById("keepTypeSelect")) { a.keepType = getValue("keepTypeSelect"); }
         if (document.getElementById("keepTypeOther")) { a.keepTypeOther = getValue("keepTypeOther"); }
@@ -1424,10 +1463,13 @@
         currentActionIndex = startIndex;
         moreActionsAnswer = "";
         moreActionsCount = 0;
+        neshamDone = false;
         return "actionType";
       }
-      return (needsNesham() && neshamCandidates().length > 1) ? "nesham" : null;
+      return null;
     }
+
+    if (currentStep === "nesham") { neshamDone = true; return "moreActions"; }
 
     return null;
   }
@@ -1439,6 +1481,7 @@
       if (nextAction && (nextAction.company || nextAction.product || nextAction.accountNumber)) { return "fundPreview"; }
       return "actionType";
     }
+    if (needsNesham() && neshamCandidates().length > 1 && !neshamDone) { return "nesham"; }
     return "moreActions";
   }
 
@@ -1529,6 +1572,11 @@
         return re.test(rawCompany);
       });
       if (foundCompany) company = foundCompany;
+      else {
+        const head = section.slice(0, 400);
+        if (/כלנית/.test(head)) company = "כלנית";
+        else if (/מורים\s*ו?גננות|מורים\s*ולגננות/.test(head)) company = "מורים וגננות";
+      }
 
       let product = productMap[rawProductType] || rawProductType || "";
       if (product === "קופת גמל" && /להשקעה/.test(section.slice(0, 300))) { product = "קופת גמל להשקעה"; }
@@ -1658,6 +1706,16 @@
           const empTxt = ownEmp ? ` תחת המעסיק ${ownEmp}` : "";
           line += `קבלת בעלות על ${product} בחברת ${company}${acctPart}${empTxt}.`;
           opsLineText = `${linePrefix}${product} בחברת ${company}${acctPart} - יש לבצע קבלת בעלות${empTxt}.`;
+        }
+
+        if (a.type === "איחוד קופות") {
+          const acctPart = a.accountNumber ? ` מספר קופה ${a.accountNumber}` : "";
+          let tgt = "";
+          if (a.mergeTarget === "אחר") tgt = (a.mergeTargetOther || "").trim();
+          else if (a.mergeTarget !== "" && a.mergeTarget != null && actions[a.mergeTarget]) tgt = fundLabel(actions[a.mergeTarget]);
+          const tgtTxt = tgt ? ` לתוך ${tgt}` : "";
+          line += `${company} ${product}${acctPart} - תאוחד${tgtTxt}.`;
+          opsLineText = `${linePrefix}${company} ${product}${acctPart} - יש לבצע איחוד קופות${tgtTxt}.`;
         }
 
         if (a.type === "פתיחת קופה") {
