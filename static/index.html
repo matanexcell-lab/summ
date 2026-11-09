@@ -1217,6 +1217,19 @@
 
         if (id === "targetCompanySelect") a.targetCompany = el.value;
 
+        if (id === "targetProductSelect") {
+          a.targetProduct = el.value;
+          a.managementFee = ""; a.managementFeeOther = "";
+          if (document.getElementById("targetCompanySelect")) a.targetCompany = getValue("targetCompanySelect");
+          if (document.getElementById("targetCompanyOther")) a.targetCompanyOther = getValue("targetCompanyOther");
+          if (document.getElementById("openTrackSelect")) a.openTrack = getValue("openTrackSelect");
+          if (document.getElementById("openTrackOther")) a.openTrackOther = getValue("openTrackOther");
+          if (document.getElementById("accountNumberInput")) a.accountNumber = getValue("accountNumberInput");
+          preserveCompanyProduct();
+          render();
+          return;
+        }
+
         if (id === "keepTypeSelect") {
           a.keepType = el.value;
           if (document.getElementById("accountNumberInput")) a.accountNumber = getValue("accountNumberInput");
