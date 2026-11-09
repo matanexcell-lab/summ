@@ -436,6 +436,56 @@
     return `<select id="${id}"><option value="">בחר...</option>${htmlOptions}<option value="אחר" ${value === "אחר" ? "selected" : ""}>אחר...</option></select>`;
   }
 
+  // ===== אמצעי תשלום בהפקת פוליסה =====
+  const PAY_FIELD_IDS = ["cardNumber","cardExpiry","cardCvv","payerName","payerId","payerRelation","bankNumber","bankBranch","bankAccount"];
+  function payFieldsHtml(a) {
+    const v = x => String(x || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+    const inp = (id, label, ph, val, type) => `<div class="field-label" style="margin-top:10px;">${label}</div><input type="${type || "text"}" id="${id}" placeholder="${ph || ""}" value="${v(val)}" />`;
+    let h = `<div class="field-label" style="margin-top:14px;">מה אמצעי התשלום?</div>
+      <select id="payMethodSelect"><option value="">בחר...</option><option value="אשראי" ${a.payMethod === "אשראי" ? "selected" : ""}>אשראי</option><option value="הוראת קבע" ${a.payMethod === "הוראת קבע" ? "selected" : ""}>הוראת קבע</option></select>`;
+    if (a.payMethod === "אשראי") {
+      h += inp("cardNumber", "מספר כרטיס אשראי", "מספר כרטיס", a.cardNumber, "text");
+      h += inp("cardExpiry", "תוקף", "MM/YY", a.cardExpiry);
+      h += inp("cardCvv", "שלוש ספרות בגב הכרטיס", "CVV", a.cardCvv);
+    } else if (a.payMethod === "הוראת קבע") {
+      h += inp("bankNumber", "בנק", "מספר או שם בנק", a.bankNumber);
+      h += inp("bankBranch", "סניף", "מספר סניף", a.bankBranch);
+      h += inp("bankAccount", "מספר חשבון", "מספר חשבון", a.bankAccount);
+    }
+    if (a.payMethod) {
+      h += `<div class="field-label" style="margin-top:10px;">${a.payMethod === "אשראי" ? "על שם מי האשראי?" : "על שם מי החשבון?"}</div>
+        <select id="payOwnerSelect"><option value="">בחר...</option><option value="הלקוח" ${a.payOwner === "הלקוח" ? "selected" : ""}>של הלקוח/ה</option><option value="אחר" ${a.payOwner === "אחר" ? "selected" : ""}>של מישהו אחר</option></select>`;
+      if (a.payOwner === "אחר") {
+        h += inp("payerName", "שם בעל החשבון / הכרטיס", "שם מלא", a.payerName);
+        h += inp("payerId", "ת.ז", "תעודת זהות", a.payerId);
+        h += inp("payerRelation", "איך קשור ללקוח?", "לדוגמה: בעלה", a.payerRelation);
+      }
+    }
+    return h;
+  }
+  function savePayFields(a) {
+    const m = document.getElementById("payMethodSelect"); if (m) a.payMethod = (m.value || "").trim();
+    const o = document.getElementById("payOwnerSelect"); if (o) a.payOwner = (o.value || "").trim();
+    PAY_FIELD_IDS.forEach(id => { if (document.getElementById(id)) a[id] = getValue(id); });
+  }
+  function buildPayStr(a) {
+    if (!(a.type === "פרט" && (a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה") && a.payMethod)) return "";
+    const rows = [];
+    const who = (kind, mine) => a.payOwner === "אחר"
+      ? `${kind} על שם ${(a.payerName || "").trim()} ת.ז ${(a.payerId || "").trim()}, קשר ללקוח: ${(a.payerRelation || "").trim()}.`
+      : (a.payOwner ? `${kind} על שם ${mine}.` : "");
+    if (a.payMethod === "אשראי") {
+      rows.push(`אמצעי תשלום: כרטיס אשראי מספר ${(a.cardNumber || "").trim()}, תוקף ${(a.cardExpiry || "").trim()}, שלוש ספרות ${(a.cardCvv || "").trim()}.`);
+      const w = who("כרטיס אשראי", "הלקוחה"); if (w) rows.push(w);
+    } else {
+      rows.push(`אמצעי תשלום: הוראת קבע — בנק ${(a.bankNumber || "").trim()}, סניף ${(a.bankBranch || "").trim()}, חשבון ${(a.bankAccount || "").trim()}.`);
+      const w = who("חשבון בנק", "הלקוח"); if (w) rows.push(w);
+    }
+    return "\n" + rows.join("\n");
+  }
+  function maskPayment(t) {
+    return String(t || "").replace(/מספר ([\d\- ]{8,}), תוקף ([^,\n]+), שלוש ספרות ([^\s.]+)\./g, (m, n) => `מספר ****${n.replace(/\D/g, "").slice(-4)}, תוקף **/**, שלוש ספרות *** (פרטי האשראי המלאים לא נשמרים)`);
+  }
   function yesNoSelect(id, val) {
     return `<select id="${id}"><option value="">בחר...</option><option value="כן" ${val === "כן" ? "selected" : ""}>כן</option><option value="לא" ${val === "לא" ? "selected" : ""}>לא</option></select>`;
   }
@@ -447,10 +497,12 @@
     beforeTemplate: "היי\nיש לשלוח ללקוח לחתימה את הדברים הבאים:\n\n{פעולות}\n\n{קוביות}",
     afterTemplate: "לקוח חתם על הדברים הבאים:\n\n{פעולות}\n\nלא לשכוח להעלות את המסמכים לבפי.\n{קוביות}",
     kubiotYesBefore: "לא לשכוח לצרף טופס קוביות ולשלוח לי לאחר שחותם.",
-    kubiotNoBefore: "אין צורך לצרף טופס קוביות.",
+    kubiotNoBefore: "",
     kubiotYesAfter: "יש לשלוח לי טופס קוביות.",
     kubiotNoAfter: ""
   };
+  const OLD_KUBIOT_NO_BEFORE = "אין צורך לצרף טופס קוביות.";
+  function normalizeOps(o) { if (o && (o.kubiotNoBefore || "").trim() === OLD_KUBIOT_NO_BEFORE) o.kubiotNoBefore = ""; return o; }
   let opsConfig = Object.assign({}, DEFAULT_OPS_CONFIG);
   let opsIsCustom = false;
   try {
@@ -460,6 +512,7 @@
       if (p && typeof p === "object") {
         opsIsCustom = true;
         Object.keys(DEFAULT_OPS_CONFIG).forEach(k => { if (typeof p[k] === "string") opsConfig[k] = p[k]; });
+        normalizeOps(opsConfig);
       }
     }
   } catch (e) {}
@@ -563,6 +616,7 @@
     const cuts = markers.map(x => body.indexOf(x)).filter(x => x >= 0);
     let actionsText = body, rest = "";
     if (cuts.length) { const p = Math.min(...cuts); actionsText = body.slice(0, p).trim(); rest = body.slice(p); }
+    actionsText = actionsText.split("\n").filter(l => !/^\s*אמצעי תשלום:/.test(l) && !/^\s*(כרטיס אשראי|חשבון בנק) על שם/.test(l)).join("\n");
     let kub = "";
     if (opsConfig.kubiotYesBefore && rest.indexOf(opsConfig.kubiotYesBefore) >= 0) kub = opsConfig.kubiotYesAfter;
     else if (opsConfig.kubiotNoBefore && rest.indexOf(opsConfig.kubiotNoBefore) >= 0) kub = opsConfig.kubiotNoAfter;
@@ -1070,6 +1124,7 @@
             <input type="text" id="policyDiscountsInput" placeholder="לדוגמה: הנחה של 10% ל-3 שנים" value="${(a.policyDiscounts || "").replace(/"/g,"&quot;")}" />
           `;
         }
+        html += payFieldsHtml(a);
       }
 
       return html;
@@ -1305,7 +1360,7 @@
       "actionTypeSelect", "targetCompanySelect", "keepTypeSelect", "openTrackSelect",
       "depositType", "employmentSelect", "newTrackSelect", "currentTrackSelect",
       "mgmtSelect", "targetProductSelect", "privateActionSelect", "privateProductSelect", "companySelect",
-      "productSelect", "moreActionsSelect", "newPolicyTypeSelect"
+      "productSelect", "moreActionsSelect", "newPolicyTypeSelect", "payMethodSelect", "payOwnerSelect"
     ].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -1409,6 +1464,7 @@
           if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
           if (document.getElementById("newPolicyPremium")) a.newPolicyPremium = getValue("newPolicyPremium");
           if (document.getElementById("policyDiscountsInput")) a.policyDiscounts = getValue("policyDiscountsInput");
+          savePayFields(a);
           render();
           return;
         }
@@ -1422,8 +1478,10 @@
 
         if (id === "moreActionsSelect") { moreActionsAnswer = el.value; render(); return; }
 
-        if (id === "newPolicyTypeSelect") {
-          a.newPolicyType = el.value;
+        if (id === "newPolicyTypeSelect" || id === "payMethodSelect" || id === "payOwnerSelect") {
+          if (id === "newPolicyTypeSelect") a.newPolicyType = el.value;
+          else if (document.getElementById("newPolicyTypeSelect")) a.newPolicyType = getValue("newPolicyTypeSelect");
+          if (document.getElementById("newPolicyTypeOther")) a.newPolicyTypeOther = getValue("newPolicyTypeOther");
           if (document.getElementById("privateCompanySelect")) a.privateCompany = getValue("privateCompanySelect");
           if (document.getElementById("privateCompanyOther")) a.privateCompanyOther = getValue("privateCompanyOther");
           if (document.getElementById("privateProductSelect")) a.privateProduct = getValue("privateProductSelect");
@@ -1434,6 +1492,7 @@
           if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
           if (document.getElementById("newPolicyPremium")) a.newPolicyPremium = getValue("newPolicyPremium");
           if (document.getElementById("policyDiscountsInput")) a.policyDiscounts = getValue("policyDiscountsInput");
+          savePayFields(a);
           render();
           return;
         }
@@ -1504,6 +1563,7 @@
         if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
         if (document.getElementById("newPolicyPremium")) a.newPolicyPremium = getValue("newPolicyPremium");
         if (document.getElementById("policyDiscountsInput")) a.policyDiscounts = getValue("policyDiscountsInput");
+        savePayFields(a);
         if (document.getElementById("newPolicyTypeSelect")) a.newPolicyType = getValue("newPolicyTypeSelect");
         if (document.getElementById("newPolicyTypeOther")) a.newPolicyTypeOther = getValue("newPolicyTypeOther");
         if (document.getElementById("newPolicyCompanySelect")) a.newPolicyCompany = getValue("newPolicyCompanySelect");
@@ -1553,6 +1613,7 @@
         if (document.getElementById("insuranceSumInput")) a.insuranceSum = getValue("insuranceSumInput");
         if (document.getElementById("newPolicyPremium")) a.newPolicyPremium = getValue("newPolicyPremium");
         if (document.getElementById("policyDiscountsInput")) a.policyDiscounts = getValue("policyDiscountsInput");
+        savePayFields(a);
         if (document.getElementById("newPolicyTypeSelect")) a.newPolicyType = getValue("newPolicyTypeSelect");
         if (document.getElementById("newPolicyTypeOther")) a.newPolicyTypeOther = getValue("newPolicyTypeOther");
         if (document.getElementById("newPolicyCompanySelect")) a.newPolicyCompany = getValue("newPolicyCompanySelect");
@@ -2079,7 +2140,7 @@
           else { refStr += "\nאסמכתא על הוראה לחיוב חשבון אשלח לי בהמשך תשימי לעצמך גם תזכורת שאגיד לו"; }
         }
       }
-      opsLines.push((opsLineText !== null ? opsLineText : line) + refStr);
+      opsLines.push((opsLineText !== null ? opsLineText : line) + refStr + buildPayStr(a));
       const discStr = (a.type === "פרט" && (a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה") && (a.policyDiscounts || "").trim())
         ? `\nהנחות: ${a.policyDiscounts.trim()}` : "";
       opsAfterLines.push((opsLineText !== null ? opsLineText : line) + refStr + discStr);
@@ -2158,7 +2219,7 @@
       if (!nm) { alert("נא להזין שם לקוח."); return; }
       const list = loadPending().filter(x => x.name !== nm);
       const d = new Date();
-      const item = { id: String(Date.now()), name: nm, beforeText: window.__opsText, afterText: window.__opsAfterText, date: d.toLocaleDateString("he-IL"), unsynced: true };
+      const item = { id: String(Date.now()), name: nm, beforeText: maskPayment(window.__opsText), afterText: window.__opsAfterText, date: d.toLocaleDateString("he-IL"), unsynced: true };
       loadPending().filter(x => x.name === nm).forEach(x => pendingDeleteRemote(x.id));
       list.unshift(item);
       savePending(list);
@@ -2238,6 +2299,7 @@
 
     if (data.opsConfig && typeof data.opsConfig === "object") {
       Object.keys(DEFAULT_OPS_CONFIG).forEach(k => { if (typeof data.opsConfig[k] === "string") opsConfig[k] = data.opsConfig[k]; });
+      normalizeOps(opsConfig);
       opsIsCustom = true;
       lsSet(OPS_CONFIG_KEY, JSON.stringify(opsConfig));
     } else if (migrated) {
