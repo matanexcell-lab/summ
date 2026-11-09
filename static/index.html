@@ -165,6 +165,8 @@
         <span id="modePill" class="mode-pill"></span>
       </div>
 
+      <div id="clientBadge" class="hidden" style="margin:6px 0;padding:8px 12px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;font-weight:700;color:#3730a3;"></div>
+      <div id="pendingBox" style="margin:8px 0;"></div>
       <div id="subtitle" class="subtitle"></div>
       <div id="stepIndicator" class="step-indicator"></div>
 
@@ -257,6 +259,12 @@
       <button id="copyBtn" class="btn btn-secondary btn-small hidden" style="width:100%;">
         העתק סיכום
       </button>
+
+      <div id="clientSaveRow" class="hidden" style="margin:8px 0;padding:10px;border:1px dashed #9ca3af;border-radius:10px;">
+        <div class="field-label">שם הלקוח (לשמירת ההנחיות לפני חתימה)</div>
+        <input type="text" id="clientNameInput" placeholder="שם הלקוח" />
+        <button id="saveBeforeBtn" class="btn btn-secondary btn-small" style="width:100%;margin-top:8px;">שמור הנחיות לפני חתימה ללקוח</button>
+      </div>
 
       <button id="opsCopyBtn" class="btn btn-secondary btn-small hidden" style="width:100%;">
         העתק הנחיות לתפעול לחתימה
@@ -375,6 +383,7 @@
     actions.forEach((x, i) => { if (i !== selfIdx && x && (x.type === "ניוד" || x.type === "פתיחת קופה")) { const l = newFundLabel(x); if (l) out.push({ idx: "n" + i, label: l }); } });
     return out;
   }
+  function fundLabelSafe(a) { try { return fundLabel(a); } catch (e) { return ""; } }
   function buildNeshamBlock() {
     if (!needsNesham()) return "";
     const cands = neshamCandidates();
@@ -414,6 +423,9 @@
     return `<select id="${id}"><option value="">בחר...</option>${htmlOptions}<option value="אחר" ${value === "אחר" ? "selected" : ""}>אחר...</option></select>`;
   }
 
+  function yesNoSelect(id, val) {
+    return `<select id="${id}"><option value="">בחר...</option><option value="כן" ${val === "כן" ? "selected" : ""}>כן</option><option value="לא" ${val === "לא" ? "selected" : ""}>לא</option></select>`;
+  }
   function getValue(id) { const el = document.getElementById(id); return el ? (el.value || "").trim() : ""; }
   function resolveProduct(a) { return (a.product === "אחר" ? (a.productOther || "") : (a.product || "")).trim(); }
   // ===== הנחיות לתפעול (ניתנות לעריכה, נשמרות בדפדפן) =====
@@ -784,6 +796,9 @@
     if (opsBtnR) opsBtnR.classList.add("hidden");
     const opsAfterR = document.getElementById("opsAfterBtn");
     if (opsAfterR) opsAfterR.classList.add("hidden");
+    const saveRowR = document.getElementById("clientSaveRow");
+    if (saveRowR) saveRowR.classList.add("hidden");
+    renderPending();
     const tracksBox = document.getElementById("customTracksBox");
     if (tracksBox) tracksBox.classList.toggle("hidden", currentStep !== "mode");
     const importBoxR = document.getElementById("importBox");
@@ -1074,9 +1089,11 @@
       `;
       if (a.depositType === "הוראת קבע" || a.depositType === "גם וגם") {
         html += `<div class="field-label" style="margin-top:12px;">כמה להפקיד בכל חודש?</div><input type="number" id="depositMonthly" value="${a.depositMonthly || ""}" placeholder="סכום חודשי" />`;
+        html += `<div class="field-label" style="margin-top:12px;">האם יש אסמכתא על הוראה לחיוב חשבון?</div>${yesNoSelect("depositMonthlyRef", a.depositMonthlyRef)}`;
       }
       if (a.depositType === "חד פעמי" || a.depositType === "גם וגם") {
         html += `<div class="field-label" style="margin-top:12px;">כמה להפקיד באופן חד פעמי?</div><input type="number" id="depositOneTime" value="${a.depositOneTime || ""}" placeholder="סכום חד פעמי" />`;
+        html += `<div class="field-label" style="margin-top:12px;">האם יש אסמכתא על ההעברה?</div>${yesNoSelect("depositOneTimeRef", a.depositOneTimeRef)}`;
       }
     }
 
@@ -1240,6 +1257,8 @@
           if (document.getElementById("ownerEmployerName")) a.ownerEmployerName = getValue("ownerEmployerName");
           if (document.getElementById("depositMonthly")) a.depositMonthly = getValue("depositMonthly");
           if (document.getElementById("depositOneTime")) a.depositOneTime = getValue("depositOneTime");
+          if (document.getElementById("depositOneTimeRef")) a.depositOneTimeRef = getValue("depositOneTimeRef");
+          if (document.getElementById("depositMonthlyRef")) a.depositMonthlyRef = getValue("depositMonthlyRef");
           if (document.getElementById("newTrackOther")) a.newTrackOther = getValue("newTrackOther");
           if (document.getElementById("keepTypeOther")) a.keepTypeOther = getValue("keepTypeOther");
           if (document.getElementById("mgmtOther")) a.managementFeeOther = getValue("mgmtOther");
@@ -1384,6 +1403,8 @@
         if (document.getElementById("depositTypeOther")) a.depositTypeOther = getValue("depositTypeOther");
         if (document.getElementById("depositMonthly")) a.depositMonthly = getValue("depositMonthly");
         if (document.getElementById("depositOneTime")) a.depositOneTime = getValue("depositOneTime");
+        if (document.getElementById("depositOneTimeRef")) a.depositOneTimeRef = getValue("depositOneTimeRef");
+        if (document.getElementById("depositMonthlyRef")) a.depositMonthlyRef = getValue("depositMonthlyRef");
         if (document.getElementById("targetCompanySelect")) a.targetCompany = getValue("targetCompanySelect");
         if (document.getElementById("targetCompanyOther")) a.targetCompanyOther = getValue("targetCompanyOther");
         if (document.getElementById("targetProductSelect")) a.targetProduct = getValue("targetProductSelect");
@@ -1429,6 +1450,8 @@
         if (document.getElementById("depositTypeOther")) { a.depositTypeOther = getValue("depositTypeOther"); }
         if (document.getElementById("depositMonthly")) { a.depositMonthly = getValue("depositMonthly"); }
         if (document.getElementById("depositOneTime")) { a.depositOneTime = getValue("depositOneTime"); }
+        if (document.getElementById("depositOneTimeRef")) { a.depositOneTimeRef = getValue("depositOneTimeRef"); }
+        if (document.getElementById("depositMonthlyRef")) { a.depositMonthlyRef = getValue("depositMonthlyRef"); }
         if (document.getElementById("targetCompanySelect")) { a.targetCompany = getValue("targetCompanySelect"); }
         if (document.getElementById("targetCompanyOther")) { a.targetCompanyOther = getValue("targetCompanyOther"); }
         if (document.getElementById("targetProductSelect")) { a.targetProduct = getValue("targetProductSelect"); }
@@ -1705,6 +1728,107 @@
     render();
   }
 
+  // ===== לקוחות ממתינים לחתימה (נשמר בדפדפן הזה) =====
+  const PENDING_KEY = "pendingClientsV1";
+  let currentClient = "";
+  let openedPendingId = null;
+  function loadPending() { try { const p = JSON.parse(localStorage.getItem(PENDING_KEY) || "[]"); return Array.isArray(p) ? p : []; } catch (e) { return []; } }
+  function savePending(list) { try { localStorage.setItem(PENDING_KEY, JSON.stringify(list)); } catch (e) {} }
+  async function pendingReq(method, path, body, retried) {
+    const headers = { "X-Edit-Password": (function(){ try { return localStorage.getItem("editPwV1") || ""; } catch (e) { return ""; } })() };
+    if (body) headers["Content-Type"] = "application/json";
+    const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    if (res.status === 401 && !retried) {
+      const pw = prompt("נא להזין סיסמת עריכה:");
+      if (pw) { try { localStorage.setItem("editPwV1", pw); } catch (e) {} return pendingReq(method, path, body, true); }
+    }
+    return res;
+  }
+  async function pendingPush(item) {
+    try {
+      const res = await pendingReq("POST", "/api/pending", { id: item.id, name: item.name, beforeText: item.beforeText, date: item.date });
+      if (res.ok) {
+        const list = loadPending();
+        const x = list.find(y => y.id === item.id);
+        if (x) { delete x.unsynced; savePending(list); }
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+  async function pendingDeleteRemote(id) { try { await pendingReq("DELETE", "/api/pending/" + encodeURIComponent(id)); } catch (e) {} }
+  let pendingSyncing = false;
+  async function syncPending() {
+    if (pendingSyncing) return;
+    pendingSyncing = true;
+    try {
+      for (const x of loadPending().filter(y => y.unsynced)) { await pendingPush(x); }
+      const res = await pendingReq("GET", "/api/pending");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data || !Array.isArray(data.items)) return;
+      const keep = loadPending().filter(y => y.unsynced);
+      const merged = data.items.concat(keep.filter(k => !data.items.some(i => i.id === k.id)));
+      savePending(merged);
+      if (openedPendingId && !merged.some(x => x.id === openedPendingId)) openedPendingId = null;
+      renderPending();
+    } catch (e) {} finally { pendingSyncing = false; }
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) syncPending(); });
+  window.addEventListener("focus", () => { syncPending(); });
+  function setClient(name) {
+    currentClient = (name || "").trim();
+    const b = document.getElementById("clientBadge");
+    if (!b) return;
+    if (currentClient) { b.textContent = "לקוח: " + currentClient; b.classList.remove("hidden"); } else { b.textContent = ""; b.classList.add("hidden"); }
+  }
+  function removePendingByName(name) {
+    const n = (name || "").trim();
+    if (!n) return false;
+    const list = loadPending();
+    const rest = list.filter(x => x.name !== n);
+    if (rest.length === list.length) return false;
+    list.filter(x => x.name === n).forEach(x => pendingDeleteRemote(x.id));
+    savePending(rest);
+    if (openedPendingId && !rest.some(x => x.id === openedPendingId)) openedPendingId = null;
+    return true;
+  }
+  function renderPending() {
+    const box = document.getElementById("pendingBox");
+    if (!box) return;
+    box.textContent = "";
+    const list = loadPending();
+    const opened = list.find(x => x.id === openedPendingId);
+    const mk = (tag, txt, css) => { const e = document.createElement(tag); if (txt) e.textContent = txt; if (css) e.style.cssText = css; return e; };
+    if (opened) {
+      const v = mk("div", "", "border:2px solid #6366f1;border-radius:10px;padding:10px;background:#f5f3ff;margin-bottom:8px;");
+      v.appendChild(mk("div", "הנחיות לפני חתימה — " + opened.name, "font-weight:700;margin-bottom:6px;"));
+      const pre = mk("pre", opened.beforeText, "white-space:pre-wrap;font-family:inherit;margin:0 0 8px;max-height:220px;overflow:auto;background:#fff;border:1px solid #ddd;border-radius:8px;padding:8px;");
+      v.appendChild(pre);
+      const row = mk("div", "", "display:flex;gap:8px;");
+      const c = mk("button", "העתק", ""); c.type = "button"; c.className = "btn btn-secondary btn-small";
+      c.onclick = async () => { try { await navigator.clipboard.writeText(opened.beforeText); c.textContent = "הועתק ✓"; } catch (e) { c.textContent = "ההעתקה נכשלה"; } setTimeout(() => { c.textContent = "העתק"; }, 1500); };
+      const h = mk("button", "סגור", ""); h.type = "button"; h.className = "btn btn-secondary btn-small";
+      h.onclick = () => { openedPendingId = null; setClient(""); renderPending(); };
+      const d = mk("button", "מחק לקוח", ""); d.type = "button"; d.className = "btn btn-secondary btn-small";
+      d.onclick = () => { if (!confirm("למחוק את " + opened.name + "?")) return; pendingDeleteRemote(opened.id); savePending(loadPending().filter(x => x.id !== opened.id)); openedPendingId = null; setClient(""); renderPending(); };
+      row.appendChild(c); row.appendChild(h); row.appendChild(d);
+      v.appendChild(row);
+      box.appendChild(v);
+    }
+    if (currentStep === "mode" && list.length) {
+      const wrap = mk("div", "", "border:1px solid #d1d5db;border-radius:10px;padding:10px;background:#fff;");
+      wrap.appendChild(mk("div", "לקוחות ממתינים לחתימה", "font-weight:700;margin-bottom:6px;"));
+      list.forEach(x => {
+        const b = mk("button", x.name + "  (" + (x.date || "") + ")", "width:100%;margin-bottom:6px;text-align:right;");
+        b.type = "button"; b.className = "btn btn-secondary btn-small";
+        b.onclick = () => { openedPendingId = x.id; setClient(x.name); renderPending(); };
+        wrap.appendChild(b);
+      });
+      box.appendChild(wrap);
+    }
+  }
+
   function showSummary() {
     const box = document.getElementById("summaryBox");
     const copyBtn = document.getElementById("copyBtn");
@@ -1725,6 +1849,7 @@
     const opsLines = [];
     const opsAfterLines = [];
     let needsKubiot = false;
+    const refReminders = [];
 
     actions.forEach((a, idx) => {
       if (!a || !a.type) return;
@@ -1847,183 +1972,4 @@
           if (mode === MODE_RECOMMENDATION) {
             line += `פתיחת ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
           } else {
-            line += `תופק ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
-          }
-        } else if (a.privateAction === "ביטול והפקה חדשה") {
-          let newType = (a.newPolicyType === "אחר" ? a.newPolicyTypeOther : a.newPolicyType);
-          let newComp = formatCompanyWithOther(a.newPolicyCompany, a.newPolicyCompanyOther);
-          let sumPart = "";
-          const lifeTypes2 = ["פוליסת חיים","פוליסת חיים משועבדת","פוליסת חיים למשכנתא","ביטוח בריאות","ביטוח בריאות ומחלות קשות","ביטוח מחלות קשות"];
-          if (lifeTypes2.includes(product) && a.insuranceSum) sumPart = ` עם פיצוי של ${a.insuranceSum} ₪`;
-          line += `${product} בחברת ${company} מספר פוליסה ${a.policyNumber} - פוליסה זו תתבטל ובמקום זה תופק ${newType}${sumPart} בחברת ${newComp} בפרמיה חודשית של ${a.newPolicyPremium} ₪.`;
-        }
-      }
-
-      opsLines.push(opsLineText !== null ? opsLineText : line);
-      const discStr = (a.type === "פרט" && (a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה") && (a.policyDiscounts || "").trim())
-        ? `\nהנחות: ${a.policyDiscounts.trim()}` : "";
-      opsAfterLines.push((opsLineText !== null ? opsLineText : line) + discStr);
-      if (a.__employerDeposits) needsKubiot = true;
-
-      if (mode === MODE_RECOMMENDATION && a.reasons && a.reasons.length) {
-        line += "\nלהלן הסיבות להמלצה זאת:\n";
-        if (a.reasons.length === 1) {
-          line += a.reasons[0];
-        } else {
-          a.reasons.forEach((r, i) => {
-            const letter = HEBREW_LETTERS[i] || "";
-            line += `${letter}. ${r}\n`;
-          });
-          line = line.trimEnd();
-        }
-      }
-
-      lines.push(line);
-      lines.push("");
-    });
-
-    box.textContent = lines.join("\n").trim();
-    box.classList.remove("hidden");
-    copyBtn.classList.remove("hidden");
-    copyBtn.onclick = () => {
-      try { navigator.clipboard.writeText(box.textContent || ""); } catch (e) {}
-    };
-
-    // הנחיות לתפעול
-    const actionsBlock = opsLines.join("\n\n");
-    const neshamBlock = buildNeshamBlock();
-    const beforeKubiotLine = (needsKubiot ? opsConfig.kubiotYesBefore : opsConfig.kubiotNoBefore);
-    const extraBlocks = [neshamBlock, buildSelfEmpBlock()].filter(Boolean).join("\n\n");
-    const opsText = buildOpsText(opsConfig.beforeTemplate, actionsBlock,
-      extraBlocks ? (beforeKubiotLine ? beforeKubiotLine + "\n\n" : "") + extraBlocks : beforeKubiotLine);
-    const opsAfterText = buildOpsText(opsConfig.afterTemplate, opsAfterLines.join("\n\n"),
-      needsKubiot ? opsConfig.kubiotYesAfter : opsConfig.kubiotNoAfter);
-    window.__opsText = opsText;
-    window.__opsAfterText = opsAfterText;
-
-    function wireCopyBtn(btn, label, text) {
-      btn.classList.remove("hidden");
-      btn.textContent = label;
-      btn.onclick = async () => {
-        try {
-          await navigator.clipboard.writeText(text);
-          btn.textContent = "הועתק ✓";
-        } catch (e) {
-          btn.textContent = "ההעתקה נכשלה";
-        }
-        setTimeout(() => { btn.textContent = label; }, 1800);
-      };
-    }
-    wireCopyBtn(document.getElementById("opsCopyBtn"), "העתק הנחיות לתפעול לחתימה", opsText);
-    wireCopyBtn(document.getElementById("opsAfterBtn"), "העתק הנחיות לתפעול לאחר חתימה", opsAfterText);
-  }
-
-  document.getElementById("nextBtn").addEventListener("click", () => {
-    const isValid = saveCurrentStep();
-    if (!isValid) return;
-    history.push(currentStep);
-    const next = computeNextStep();
-    if (next !== null) { currentStep = next; render(); } else { showSummary(); }
-  });
-
-  document.getElementById("backBtn").addEventListener("click", () => {
-    if (!history.length) return;
-    currentStep = history.pop();
-    render();
-  });
-
-  // ===== סנכרון מול השרת (אם האתר רץ עם שרת) =====
-  const EDIT_PW_KEY = "editPwV1";
-  const REMOTE_MIGRATED_KEY = "remoteMigratedV1";
-  let remoteAvailable = false;
-
-  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
-  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
-
-  async function pushRemote(retried) {
-    if (!remoteAvailable) return false;
-    try {
-      const res = await fetch("/api/config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", "X-Edit-Password": lsGet(EDIT_PW_KEY) || "" },
-        body: JSON.stringify({ customTracks, opsConfig: opsIsCustom ? opsConfig : null })
-      });
-      if (res.status === 401) {
-        if (!retried) {
-          const pw = prompt("נא להזין סיסמת עריכה:");
-          if (pw) { lsSet(EDIT_PW_KEY, pw); return pushRemote(true); }
-        } else {
-          alert("הסיסמה שגויה — השינוי נשמר רק במכשיר הזה.");
-        }
-        return false;
-      }
-      return res.ok;
-    } catch (e) { return false; }
-  }
-
-  async function loadRemote() {
-    let data;
-    try {
-      const res = await fetch("/api/config");
-      if (!res.ok) return;
-      data = await res.json();
-    } catch (e) { return; }
-    if (!data || typeof data !== "object") return;
-    remoteAvailable = true;
-
-    const migrated = lsGet(REMOTE_MIGRATED_KEY) === "1";
-    const valid = t => t && typeof t.name === "string" && t.name.trim();
-    const remoteTracks = Array.isArray(data.customTracks) ? data.customTracks.filter(valid) : [];
-    const oldNames = customTracks.map(t => t.name);
-
-    let merged = remoteTracks.slice();
-    if (!migrated) {
-      customTracks.forEach(t => { if (!merged.some(m => m.name === t.name)) merged.push(t); });
-    }
-    let needPush = merged.length !== remoteTracks.length;
-
-    customTracks = merged;
-    try { localStorage.setItem(CUSTOM_TRACKS_KEY, JSON.stringify(customTracks)); } catch (e) {}
-
-    if (data.opsConfig && typeof data.opsConfig === "object") {
-      Object.keys(DEFAULT_OPS_CONFIG).forEach(k => { if (typeof data.opsConfig[k] === "string") opsConfig[k] = data.opsConfig[k]; });
-      opsIsCustom = true;
-      lsSet(OPS_CONFIG_KEY, JSON.stringify(opsConfig));
-    } else if (migrated) {
-      opsConfig = Object.assign({}, DEFAULT_OPS_CONFIG);
-      opsIsCustom = false;
-      try { localStorage.removeItem(OPS_CONFIG_KEY); } catch (e) {}
-    } else if (opsIsCustom) {
-      needPush = true;
-    }
-
-    // עדכון הרשימות הפתוחות
-    oldNames.filter(n => !customTracks.some(t => t.name === n)).forEach(removeOptionFromLiveSelects);
-    customTracks.forEach(t => addOptionToLiveSelects(t.name));
-    renderCustomTracksList();
-    const body = document.getElementById("opsEditBody");
-    if (body && !body.classList.contains("hidden")) fillOpsForm();
-
-    if (needPush) {
-      const ok = await pushRemote();
-      if (ok) lsSet(REMOTE_MIGRATED_KEY, "1");
-    } else {
-      lsSet(REMOTE_MIGRATED_KEY, "1");
-    }
-  }
-
-  setupCustomTracksUI();
-  setupOpsEditorUI();
-  setupImportUI();
-  render();
-  loadRemote();
-
-  document.getElementById("copyBtn").addEventListener("click", async () => {
-    const text = document.getElementById("summaryBox").textContent;
-    try { await navigator.clipboard.writeText(text); } catch (err) {}
-  });
-
-
-</script>
-</body>
-</html>
+      
