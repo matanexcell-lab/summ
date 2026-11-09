@@ -302,6 +302,25 @@
   let moreActionsCount = 0;
   let neshamAssign = { a1: "", a2: "", a3: "" };
   let neshamDone = false;
+  let selfEmp = { revenue: "", field: "", address: "" };
+  let selfEmpDone = false;
+  function selfEmpEffectiveProduct(a) { return (a.type === "ניוד" && a.targetProduct) ? a.targetProduct : resolveProduct(a); }
+  function needsSelfEmp() {
+    return actions.some(a => a && ["ניוד","פתיחת קופה"].includes(a.type) && a.employmentType === "עצמאית" && ["קרן פנסיה","קרן השתלמות"].includes(selfEmpEffectiveProduct(a)));
+  }
+  function buildSelfEmpBlock() {
+    if (!needsSelfEmp()) return "";
+    const rows = [];
+    if ((selfEmp.revenue || "").trim()) rows.push(`מחזור הכנסות: ${selfEmp.revenue.trim()}`);
+    if ((selfEmp.field || "").trim()) rows.push(`תחום עיסוק: ${selfEmp.field.trim()}`);
+    if ((selfEmp.address || "").trim()) rows.push(`כתובת המעסיק: ${selfEmp.address.trim()}`);
+    return "פרטי העצמאי לטופסי ההצטרפות" + (rows.length ? ":\n" + rows.join("\n") : ".");
+  }
+  function nextPreMore() {
+    if (needsNesham() && neshamCandidates().length > 1 && !neshamDone) return "nesham";
+    if (needsSelfEmp() && !selfEmpDone) return "selfEmp";
+    return "moreActions";
+  }
 
   const GOV_EMPLOYER_RE = /משרד(?:י)?\s*ה?ממשלה|מס\s*הכנסה|משרד\s*החינוך/;
   function isGovEmployerAction(a) {
@@ -337,9 +356,23 @@
     const acct = a.accountNumber ? ` מספר קופה ${a.accountNumber}` : "";
     return `${company} ${resolveProduct(a)}${acct}`.replace(/\s+/g, " ").trim();
   }
+  function newFundLabel(x) {
+    if (x.type === "ניוד") {
+      const tc = formatCompanyWithOther(x.targetCompany, x.targetCompanyOther);
+      if (!tc || tc === "בחר...") return "";
+      return `${tc} ${x.targetProduct || resolveProduct(x)} (קופה חדשה בניוד)`.replace(/\s+/g, " ").trim();
+    }
+    return `${formatCompanyWithOther(x.company, x.companyOther)} ${resolveProduct(x)} (קופה חדשה)`.replace(/\s+/g, " ").trim();
+  }
+  function mergeTargetLabel(v) {
+    if (v == null || v === "" || v === "אחר") return "";
+    if (v[0] === "n") { const x = actions[v.slice(1)]; return x ? newFundLabel(x).replace(/ \((?:קופה חדשה בניוד|קופה חדשה)\)$/, " החדשה") : ""; }
+    return actions[v] ? fundLabel(actions[v]) : "";
+  }
   function mergeTargetOptions(selfIdx) {
     const out = [];
     actions.forEach((x, i) => { if (i !== selfIdx && x && x.type !== "פרט" && (x.company || x.product || x.accountNumber)) out.push({ idx: String(i), label: fundLabel(x) }); });
+    actions.forEach((x, i) => { if (i !== selfIdx && x && (x.type === "ניוד" || x.type === "פתיחת קופה")) { const l = newFundLabel(x); if (l) out.push({ idx: "n" + i, label: l }); } });
     return out;
   }
   function buildNeshamBlock() {
@@ -800,6 +833,14 @@
         }
         html += `<button type="button" class="btn btn-secondary btn-small" id="addReasonBtn">הוסף נימוק נוסף</button>`;
         break;
+      case "selfEmp": {
+        setSubtitle("פרטי עצמאי");
+        html += `<div class="question-title">זוהתה קרן עצמאית — פרטים להנחיות לתפעול</div>`;
+        html += `<div class="field-label" style="margin-top:12px;">מה מחזור ההכנסות?</div><input type="text" id="selfEmpRevenue" value="${(selfEmp.revenue || "").replace(/"/g,"&quot;")}" />`;
+        html += `<div class="field-label" style="margin-top:12px;">מהו תחום העיסוק?</div><input type="text" id="selfEmpField" value="${(selfEmp.field || "").replace(/"/g,"&quot;")}" />`;
+        html += `<div class="field-label" style="margin-top:12px;">מהי כתובת המעסיק?</div><input type="text" id="selfEmpAddress" value="${(selfEmp.address || "").replace(/"/g,"&quot;")}" />`;
+        break;
+      }
       case "nesham": {
         setSubtitle('טפסי נש"מ');
         html += `<div class="question-title">זוהה מעסיק ממשלתי — יש לצרף טפסי נש"מ</div>`;
@@ -1428,6 +1469,12 @@
         if (txt) { a.reasons = a.reasons || []; a.reasons.push(txt); }
         return true;
       }
+      case "selfEmp": {
+        selfEmp.revenue = getValue("selfEmpRevenue");
+        selfEmp.field = getValue("selfEmpField");
+        selfEmp.address = getValue("selfEmpAddress");
+        return true;
+      }
       case "nesham": {
         ["a1","a2","a3"].forEach(k => { if (document.getElementById("nesham_" + k)) neshamAssign[k] = getValue("nesham_" + k); });
         return true;
@@ -1477,12 +1524,14 @@
         moreActionsAnswer = "";
         moreActionsCount = 0;
         neshamDone = false;
+        selfEmpDone = false;
         return "actionType";
       }
       return null;
     }
 
-    if (currentStep === "nesham") { neshamDone = true; return "moreActions"; }
+    if (currentStep === "nesham") { neshamDone = true; return nextPreMore(); }
+    if (currentStep === "selfEmp") { selfEmpDone = true; return "moreActions"; }
 
     return null;
   }
@@ -1494,8 +1543,7 @@
       if (nextAction && (nextAction.company || nextAction.product || nextAction.accountNumber)) { return "fundPreview"; }
       return "actionType";
     }
-    if (needsNesham() && neshamCandidates().length > 1 && !neshamDone) { return "nesham"; }
-    return "moreActions";
+    return nextPreMore();
   }
 
   document.getElementById("pdfUpload").addEventListener("change", async (e) => {
@@ -1725,7 +1773,7 @@
           const acctPart = a.accountNumber ? ` מספר קופה ${a.accountNumber}` : "";
           let tgt = "";
           if (a.mergeTarget === "אחר") tgt = (a.mergeTargetOther || "").trim();
-          else if (a.mergeTarget !== "" && a.mergeTarget != null && actions[a.mergeTarget]) tgt = fundLabel(actions[a.mergeTarget]);
+          else tgt = mergeTargetLabel(a.mergeTarget);
           const tgtTxt = tgt ? ` לתוך ${tgt}` : "";
           line += `${company} ${product}${acctPart} - תאוחד${tgtTxt}.`;
           opsLineText = `${linePrefix}${company} ${product}${acctPart} - יש לבצע איחוד קופות${tgtTxt}.`;
@@ -1837,8 +1885,9 @@
     const actionsBlock = opsLines.join("\n\n");
     const neshamBlock = buildNeshamBlock();
     const beforeKubiotLine = (needsKubiot ? opsConfig.kubiotYesBefore : opsConfig.kubiotNoBefore);
+    const extraBlocks = [neshamBlock, buildSelfEmpBlock()].filter(Boolean).join("\n\n");
     const opsText = buildOpsText(opsConfig.beforeTemplate, actionsBlock,
-      neshamBlock ? (beforeKubiotLine ? beforeKubiotLine + "\n\n" : "") + neshamBlock : beforeKubiotLine);
+      extraBlocks ? (beforeKubiotLine ? beforeKubiotLine + "\n\n" : "") + extraBlocks : beforeKubiotLine);
     const opsAfterText = buildOpsText(opsConfig.afterTemplate, opsAfterLines.join("\n\n"),
       needsKubiot ? opsConfig.kubiotYesAfter : opsConfig.kubiotNoAfter);
     window.__opsText = opsText;
