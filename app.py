@@ -104,6 +104,66 @@ def save_config(cfg):
             conn.close()
 
 
+
+# ---------- pending clients (ממתינים לחתימה) ----------
+PENDING_PREFIX = "pending:"
+
+
+def _kv_exec(pg_sql, sqlite_sql, params, fetch=False):
+    if DATABASE_URL:
+        conn = _pg_conn()
+        try:
+            with conn, conn.cursor() as cur:
+                cur.execute(pg_sql, params)
+                return cur.fetchall() if fetch else None
+        finally:
+            conn.close()
+    conn = sqlite3.connect(SQLITE_PATH)
+    try:
+        with conn:
+            cur = conn.execute(sqlite_sql, params)
+            return cur.fetchall() if fetch else None
+    finally:
+        conn.close()
+
+
+def pending_list():
+    rows = _kv_exec(
+        "SELECT value FROM summary_config WHERE key LIKE %s",
+        "SELECT value FROM summary_config WHERE key LIKE ?",
+        (PENDING_PREFIX + "%",), fetch=True,
+    ) or []
+    out = []
+    for (raw,) in rows:
+        try:
+            out.append(json.loads(raw))
+        except ValueError:
+            pass
+    out.sort(key=lambda x: str(x.get("id", "")), reverse=True)
+    return out
+
+
+def pending_set(item):
+    raw = json.dumps(item, ensure_ascii=False)
+    _kv_exec(
+        "INSERT INTO summary_config (key, value) VALUES (%s, %s) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+        "INSERT INTO summary_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        (PENDING_PREFIX + item["id"], raw),
+    )
+
+
+def pending_delete(pid):
+    _kv_exec(
+        "DELETE FROM summary_config WHERE key = %s",
+        "DELETE FROM summary_config WHERE key = ?",
+        (PENDING_PREFIX + pid,),
+    )
+
+
+def _authorized():
+    return not EDIT_PASSWORD or request.headers.get("X-Edit-Password", "") == EDIT_PASSWORD
+
+
 # ---------- validation ----------
 def clean_payload(payload):
     if not isinstance(payload, dict):
@@ -157,6 +217,46 @@ def put_config():
     except ValueError:
         return jsonify({"error": "bad request"}), 400
     save_config(cfg)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/pending", methods=["GET"])
+def get_pending():
+    if not _authorized():
+        return jsonify({"error": "unauthorized"}), 401
+    resp = jsonify({"items": pending_list()})
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
+@app.route("/api/pending", methods=["POST"])
+def post_pending():
+    if not _authorized():
+        return jsonify({"error": "unauthorized"}), 401
+    p = request.get_json(force=True, silent=True)
+    if not isinstance(p, dict):
+        return jsonify({"error": "bad request"}), 400
+    pid = str(p.get("id", "")).strip()[:40]
+    name = str(p.get("name", "")).strip()[:120]
+    if not pid or not name or not pid.replace("-", "").isalnum():
+        return jsonify({"error": "bad request"}), 400
+    # שם לקוח ייחודי: שמירה חוזרת באותו שם מחליפה את הקודמת
+    for old in pending_list():
+        if old.get("name") == name and old.get("id") != pid:
+            pending_delete(str(old.get("id")))
+    pending_set({
+        "id": pid, "name": name,
+        "beforeText": str(p.get("beforeText", ""))[:20000],
+        "date": str(p.get("date", ""))[:20],
+    })
+    return jsonify({"ok": True})
+
+
+@app.route("/api/pending/<pid>", methods=["DELETE"])
+def delete_pending(pid):
+    if not _authorized():
+        return jsonify({"error": "unauthorized"}), 401
+    pending_delete(pid[:40])
     return jsonify({"ok": True})
 
 
