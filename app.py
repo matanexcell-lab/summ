@@ -247,6 +247,7 @@ def post_pending():
     pending_set({
         "id": pid, "name": name,
         "beforeText": str(p.get("beforeText", ""))[:20000],
+        "afterText": str(p.get("afterText", ""))[:20000],
         "date": str(p.get("date", ""))[:20],
     })
     return jsonify({"ok": True})
