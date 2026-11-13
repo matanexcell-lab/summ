@@ -437,7 +437,7 @@
   }
 
   // ===== אמצעי תשלום בהפקת פוליסה =====
-  const PAY_FIELD_IDS = ["cardNumber","cardExpiry","cardCvv","payerName","payerId","payerRelation","bankNumber","bankBranch","bankAccount"];
+  const PAY_FIELD_IDS = ["policyStartDate","cardNumber","cardExpiry","cardCvv","payerName","payerId","payerRelation","bankNumber","bankBranch","bankAccount"];
   function payFieldsHtml(a) {
     const v = x => String(x || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;");
     const inp = (id, label, ph, val, type) => `<div class="field-label" style="margin-top:10px;">${label}</div><input type="${type || "text"}" id="${id}" placeholder="${ph || ""}" value="${v(val)}" />`;
@@ -482,6 +482,12 @@
       const w = who("חשבון בנק", "הלקוח"); if (w) rows.push(w);
     }
     return "\n" + rows.join("\n");
+  }
+  function buildStartDateStr(a) {
+    if (!(a.type === "פרט" && (a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה") && (a.policyStartDate || "").trim())) return "";
+    const v = a.policyStartDate.trim();
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+    return "\nתאריך תחילת ביטוח: " + (m ? `${m[3]}/${m[2]}/${m[1]}` : v);
   }
   function maskPayment(t) {
     return String(t || "").replace(/מספר ([\d\- ]{8,}), תוקף ([^,\n]+), שלוש ספרות ([^\s.]+)\./g, (m, n) => `מספר ****${n.replace(/\D/g, "").slice(-4)}, תוקף **/**, שלוש ספרות *** (פרטי האשראי המלאים לא נשמרים)`);
@@ -1124,6 +1130,7 @@
             <input type="text" id="policyDiscountsInput" placeholder="לדוגמה: הנחה של 10% ל-3 שנים" value="${(a.policyDiscounts || "").replace(/"/g,"&quot;")}" />
           `;
         }
+        html += `<div class="field-label" style="margin-top:12px;">מה תאריך תחילת הביטוח של הביטוחים החדשים?</div><input type="date" id="policyStartDate" value="${String(a.policyStartDate || "").replace(/"/g,"&quot;")}" />`;
         html += payFieldsHtml(a);
       }
 
@@ -2140,10 +2147,10 @@
           else { refStr += "\nאסמכתא על הוראה לחיוב חשבון אשלח לי בהמשך תשימי לעצמך גם תזכורת שאגיד לו"; }
         }
       }
-      opsLines.push((opsLineText !== null ? opsLineText : line) + refStr + buildPayStr(a));
+      opsLines.push((opsLineText !== null ? opsLineText : line) + buildStartDateStr(a) + refStr + buildPayStr(a));
       const discStr = (a.type === "פרט" && (a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה") && (a.policyDiscounts || "").trim())
         ? `\nהנחות: ${a.policyDiscounts.trim()}` : "";
-      opsAfterLines.push((opsLineText !== null ? opsLineText : line) + refStr + discStr);
+      opsAfterLines.push((opsLineText !== null ? opsLineText : line) + buildStartDateStr(a) + refStr + discStr);
       if (a.__employerDeposits) needsKubiot = true;
 
       if (mode === MODE_RECOMMENDATION && a.reasons && a.reasons.length) {
@@ -2203,6 +2210,7 @@
     }
     wireCopyBtn(document.getElementById("opsCopyBtn"), "העתק הנחיות לתפעול לחתימה", opsText);
     wireCopyBtn(document.getElementById("opsAfterBtn"), "העתק הנחיות לתפעול לאחר חתימה", opsAfterText, () => {
+      clearDraft();
       const nm = (document.getElementById("clientNameInput").value || "").trim() || currentClient;
       if (removePendingByName(nm)) { setClient(""); renderPending(); return " — הלקוח נמחק מהרשימה"; }
       return "";
@@ -2230,12 +2238,56 @@
     };
   }
 
+  // ===== טיוטה אוטומטית (שורדת רענון / סגירת הדפדפן) =====
+  const DRAFT_KEY = "summaryDraftV1";
+  const DRAFT_MAX_AGE_MS = 48 * 3600 * 1000;
+  function saveDraft() {
+    try {
+      if (currentStep === "mode" && !actions.some(x => x && x.type)) { localStorage.removeItem(DRAFT_KEY); return; }
+      const safeActions = JSON.parse(JSON.stringify(actions));
+      safeActions.forEach(a => { if (a) { delete a.cardNumber; delete a.cardExpiry; delete a.cardCvv; } });
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        v: 1, t: Date.now(), mode, totalActions, currentActionIndex, currentStep, history,
+        moreActionsAnswer, moreActionsCount, neshamAssign, neshamDone, selfEmp, selfEmpDone,
+        actions: safeActions, client: currentClient
+      }));
+    } catch (e) {}
+  }
+  function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+  function restoreDraft(d) {
+    mode = d.mode; totalActions = d.totalActions; currentActionIndex = d.currentActionIndex; currentStep = d.currentStep;
+    history = d.history || []; moreActionsAnswer = d.moreActionsAnswer || ""; moreActionsCount = d.moreActionsCount || 0;
+    neshamAssign = d.neshamAssign || { a1: "", a2: "", a3: "" }; neshamDone = !!d.neshamDone;
+    selfEmp = d.selfEmp || { revenue: "", field: "", address: "" }; selfEmpDone = !!d.selfEmpDone;
+    actions.splice(0, actions.length, ...(d.actions || []));
+    if (d.client) setClient(d.client);
+    render();
+  }
+  function offerDraft() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) {}
+    if (!d || d.v !== 1 || !Array.isArray(d.actions) || Date.now() - d.t > DRAFT_MAX_AGE_MS) { if (d) clearDraft(); return; }
+    const bar = document.createElement("div");
+    bar.style.cssText = "margin:8px 0;padding:10px;border:2px solid #10b981;border-radius:10px;background:#ecfdf5;";
+    const when = new Date(d.t).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" });
+    const t = document.createElement("div"); t.style.cssText = "font-weight:700;margin-bottom:8px;"; t.textContent = "יש סיכום שלא הסתיים (" + when + ")";
+    const row = document.createElement("div"); row.style.cssText = "display:flex;gap:8px;";
+    const go = document.createElement("button"); go.type = "button"; go.className = "btn btn-primary btn-small"; go.textContent = "המשך מאיפה שעצרתי";
+    go.onclick = () => { bar.remove(); restoreDraft(d); };
+    const del = document.createElement("button"); del.type = "button"; del.className = "btn btn-secondary btn-small"; del.textContent = "מחק טיוטה";
+    del.onclick = () => { bar.remove(); clearDraft(); };
+    row.appendChild(go); row.appendChild(del); bar.appendChild(t); bar.appendChild(row);
+    const pb = document.getElementById("pendingBox");
+    pb.parentNode.insertBefore(bar, pb);
+  }
+
   document.getElementById("nextBtn").addEventListener("click", () => {
     const isValid = saveCurrentStep();
     if (!isValid) return;
     history.push(currentStep);
+    saveDraft();
     const next = computeNextStep();
-    if (next !== null) { currentStep = next; render(); } else { showSummary(); }
+    if (next !== null) { currentStep = next; render(); saveDraft(); } else { showSummary(); saveDraft(); }
   });
 
   document.getElementById("backBtn").addEventListener("click", () => {
@@ -2331,6 +2383,7 @@
   setupImportUI();
   setupConvertUI();
   render();
+  offerDraft();
   loadRemote();
 
   document.getElementById("copyBtn").addEventListener("click", async () => {
