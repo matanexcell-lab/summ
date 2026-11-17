@@ -297,7 +297,7 @@
 
 
   const ACTION_TYPES = ["ניוד", "השארה", "פתיחת קופה", "קבלת בעלות", "איחוד קופות", "פרט"];
-  const INVEST_COMPANIES = ["מגדל","כלל","הראל","אלטשולר שחם","ילין לפידות","אנליסט","מיטב","מור","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר","כלנית","מורים וגננות"];
+  const INVEST_COMPANIES = ["מגדל","כלל","הראל","אלטשולר שחם","ילין לפידות","אנליסט","מיטב","מור","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר","כלנית","מורים וגננות","אינפיניטי"];
   const INSURANCE_COMPANIES = ["מגדל","כלל","הראל","הפניקס","הכשרה","מנורה","איילון","ביטוח ישיר","ליברה"];
   const PRODUCTS = ["קרן פנסיה","קרן השתלמות","קופת גמל","קופת גמל להשקעה"];
   const PRIVATE_PRODUCTS = ["פוליסת חיים","פוליסת חיים משועבדת","פוליסת חיים למשכנתא","פוליסת משכנתא","ביטוח בריאות","ביטוח בריאות ומחלות קשות","ביטוח מחלות קשות"];
@@ -1723,6 +1723,9 @@
         const content = await page.getTextContent();
         text += content.items.map(item => item.str).join(" ");
       }
+      // המצב שנבחר במסך הראשון (העלאת PDF עוקפת את כפתור "המשך")
+      const modeEl = document.getElementById("modeSelect");
+      if (modeEl && modeEl.value) mode = modeEl.value;
       parsePdfData(text);
     };
     reader.readAsArrayBuffer(file);
@@ -1801,6 +1804,8 @@
         const head = section.slice(0, 400);
         if (/כלנית/.test(head)) company = "כלנית";
         else if (/מורים\s*ו?גננות|מורים\s*ולגננות/.test(head)) company = "מורים וגננות";
+        else if (/א\s*י\s*נ\s*פ\s*י\s*נ/.test(section.slice(0, 700))) company = "אינפיניטי";
+        else if ((rawCompany || "").trim().length >= 4 && !/^(קרנות|קרן|קופת|קופות|פוליס|פנסי|השתלמות|גמל)/.test((rawCompany || "").trim())) company = rawCompany.trim();
       }
 
       let product = productMap[rawProductType] || rawProductType || "";
@@ -2210,6 +2215,7 @@
     }
     wireCopyBtn(document.getElementById("opsCopyBtn"), "העתק הנחיות לתפעול לחתימה", opsText);
     wireCopyBtn(document.getElementById("opsAfterBtn"), "העתק הנחיות לתפעול לאחר חתימה", opsAfterText, () => {
+      clearDraft();
       const nm = (document.getElementById("clientNameInput").value || "").trim() || currentClient;
       if (removePendingByName(nm)) { setClient(""); renderPending(); return " — הלקוח נמחק מהרשימה"; }
       return "";
@@ -2237,12 +2243,56 @@
     };
   }
 
+  // ===== טיוטה אוטומטית (שורדת רענון / סגירת הדפדפן) =====
+  const DRAFT_KEY = "summaryDraftV1";
+  const DRAFT_MAX_AGE_MS = 48 * 3600 * 1000;
+  function saveDraft() {
+    try {
+      if (currentStep === "mode" && !actions.some(x => x && x.type)) { localStorage.removeItem(DRAFT_KEY); return; }
+      const safeActions = JSON.parse(JSON.stringify(actions));
+      safeActions.forEach(a => { if (a) { delete a.cardNumber; delete a.cardExpiry; delete a.cardCvv; } });
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        v: 1, t: Date.now(), mode, totalActions, currentActionIndex, currentStep, history,
+        moreActionsAnswer, moreActionsCount, neshamAssign, neshamDone, selfEmp, selfEmpDone,
+        actions: safeActions, client: currentClient
+      }));
+    } catch (e) {}
+  }
+  function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+  function restoreDraft(d) {
+    mode = d.mode; totalActions = d.totalActions; currentActionIndex = d.currentActionIndex; currentStep = d.currentStep;
+    history = d.history || []; moreActionsAnswer = d.moreActionsAnswer || ""; moreActionsCount = d.moreActionsCount || 0;
+    neshamAssign = d.neshamAssign || { a1: "", a2: "", a3: "" }; neshamDone = !!d.neshamDone;
+    selfEmp = d.selfEmp || { revenue: "", field: "", address: "" }; selfEmpDone = !!d.selfEmpDone;
+    actions.splice(0, actions.length, ...(d.actions || []));
+    if (d.client) setClient(d.client);
+    render();
+  }
+  function offerDraft() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) {}
+    if (!d || d.v !== 1 || !Array.isArray(d.actions) || Date.now() - d.t > DRAFT_MAX_AGE_MS) { if (d) clearDraft(); return; }
+    const bar = document.createElement("div");
+    bar.style.cssText = "margin:8px 0;padding:10px;border:2px solid #10b981;border-radius:10px;background:#ecfdf5;";
+    const when = new Date(d.t).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" });
+    const t = document.createElement("div"); t.style.cssText = "font-weight:700;margin-bottom:8px;"; t.textContent = "יש סיכום שלא הסתיים (" + when + ")";
+    const row = document.createElement("div"); row.style.cssText = "display:flex;gap:8px;";
+    const go = document.createElement("button"); go.type = "button"; go.className = "btn btn-primary btn-small"; go.textContent = "המשך מאיפה שעצרתי";
+    go.onclick = () => { bar.remove(); restoreDraft(d); };
+    const del = document.createElement("button"); del.type = "button"; del.className = "btn btn-secondary btn-small"; del.textContent = "מחק טיוטה";
+    del.onclick = () => { bar.remove(); clearDraft(); };
+    row.appendChild(go); row.appendChild(del); bar.appendChild(t); bar.appendChild(row);
+    const pb = document.getElementById("pendingBox");
+    pb.parentNode.insertBefore(bar, pb);
+  }
+
   document.getElementById("nextBtn").addEventListener("click", () => {
     const isValid = saveCurrentStep();
     if (!isValid) return;
     history.push(currentStep);
+    saveDraft();
     const next = computeNextStep();
-    if (next !== null) { currentStep = next; render(); } else { showSummary(); }
+    if (next !== null) { currentStep = next; render(); saveDraft(); } else { showSummary(); saveDraft(); }
   });
 
   document.getElementById("backBtn").addEventListener("click", () => {
@@ -2338,6 +2388,7 @@
   setupImportUI();
   setupConvertUI();
   render();
+  offerDraft();
   loadRemote();
 
   document.getElementById("copyBtn").addEventListener("click", async () => {
