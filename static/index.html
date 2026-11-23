@@ -496,6 +496,25 @@
   function maskPayment(t) {
     return String(t || "").replace(/מספר ([\d\- ]{8,}), תוקף ([^,\n]+), שלוש ספרות ([^\s.]+)\./g, (m, n) => `מספר ****${n.replace(/\D/g, "").slice(-4)}, תוקף **/**, שלוש ספרות *** (פרטי האשראי המלאים לא נשמרים)`);
   }
+  // ===== אסמכתאות: נוסח אחיד =====
+  function refLines(one, mon) {
+    const L = [];
+    if (one === "כן" && mon === "כן") L.push('מצ"ב אסמכתא על ההעברה ואסמכתא על אישור הקמת הרשאה.');
+    else {
+      if (one === "כן") L.push('מצ"ב אסמכתא על ההעברה.');
+      else if (one === "לא") L.push("אסמכתא על ההעברה אשלח לי בהמשך תשימי לעצמך גם תזכורת שאגיד לו");
+      if (mon === "כן") L.push('מצ"ב אסמכתא על אישור הקמת הרשאה.');
+      else if (mon === "לא") L.push("אסמכתא על אישור הקמת הרשאה אשלח לי בהמשך תשימי לעצמך גם תזכורת שאגיד לו");
+    }
+    return L.map(x => "\n" + x).join("");
+  }
+  function refAfterBlock(oneYes, monYes) {
+    if (!oneYes && !monYes) return "";
+    const parts = [];
+    if (oneYes) parts.push("לא לשכוח להעלות את האסמכתא על ההעברה לבפי,לשלוח לחברות ולשים תזכורת ששוייך הכסף");
+    if (monYes) parts.push((oneYes ? "כמו כן יש" : "יש") + " להעלות לבפי את האסמכתא על אישור הקמת הרשאה\nולשלוח עם ההוראה לחיוב חשבון שמצורף בטופס ההצטרפות\nלחברת הביטוח");
+    return "חשוב מאוד!\n\n" + parts.join("\n") + "\n\nשימי לב גם לא לשכוח להעלות את כל המסמכים שהלקוח חתם לבפי";
+  }
   function yesNoSelect(id, val) {
     return `<select id="${id}"><option value="">בחר...</option><option value="כן" ${val === "כן" ? "selected" : ""}>כן</option><option value="לא" ${val === "לא" ? "selected" : ""}>לא</option></select>`;
   }
@@ -631,10 +650,8 @@
     if (opsConfig.kubiotYesBefore && rest.indexOf(opsConfig.kubiotYesBefore) >= 0) kub = opsConfig.kubiotYesAfter;
     else if (opsConfig.kubiotNoBefore && rest.indexOf(opsConfig.kubiotNoBefore) >= 0) kub = opsConfig.kubiotNoAfter;
     let out = buildOpsText(opsConfig.afterTemplate, actionsText, kub);
-    const blocks = [];
-    if (/מצ"ב אסמכתא על ההעברה/.test(actionsText)) blocks.push("חשוב מאוד!\nלא לשכוח להעלות את האסמכתא לבפי, לשלוח לחברות ולשים תזכורת לראות ששוייך");
-    if (/מצ"ב אסמכתא על הוראה לחיוב חשבון/.test(actionsText)) blocks.push("חשוב מאוד!\nלא לשכוח להעלות את האסמכתא לבפי ולשלוח לחברות");
-    if (blocks.length) out += "\n\n" + blocks.join("\n\n");
+    const cb = refAfterBlock(/מצ"ב אסמכתא על ההעברה/.test(actionsText), /מצ"ב אסמכתא[^\n]*אישור הקמת הרשאה|מצ"ב אסמכתא על הוראה לחיוב חשבון/.test(actionsText));
+    if (cb) out += "\n\n" + cb;
     return out;
   }
 
@@ -690,18 +707,13 @@
       if (!actionsText) { alert("נא להדביק סיכום שיחה."); return; }
       // אסמכתאות: אותה התנהגות כמו בהזנה ידנית של הפקדה חד פעמית / הוראת קבע
       const refOne = document.getElementById("importRefOne").value, refMon = document.getElementById("importRefMonthly").value;
-      const importBlocks = [];
+      let impOne = false, impMon = false;
       actionsText = actionsText.split("\n").map(line => {
-        let out = line;
-        if (/הפקדה חד[\s-]*פעמית/.test(line) && refOne) {
-          out += refOne === "כן" ? '\nמצ"ב אסמכתא על ההעברה.' : "\nאסמכתא על ההעברה אשלח לי בהמשך תשימי לעצמך גם תזכורת שאגיד לו";
-          if (refOne === "כן" && importBlocks.indexOf("one") < 0) importBlocks.push("one");
-        }
-        if (/הוראת קבע/.test(line) && refMon) {
-          out += refMon === "כן" ? '\nמצ"ב אסמכתא על הוראה לחיוב חשבון.' : "\nאסמכתא על הוראה לחיוב חשבון אשלח לי בהמשך תשימי לעצמך גם תזכורת שאגיד לו";
-          if (refMon === "כן" && importBlocks.indexOf("mon") < 0) importBlocks.push("mon");
-        }
-        return out;
+        const hasOne = /הפקדה חד[\s-]*פעמית/.test(line), hasMon = /הוראת קבע/.test(line);
+        if (!hasOne && !hasMon) return line;
+        if (hasOne && refOne === "כן") impOne = true;
+        if (hasMon && refMon === "כן") impMon = true;
+        return line + refLines(hasOne ? refOne : "", hasMon ? refMon : "");
       }).join("\n");
       const needsKubiot = /עם (?:המשך )?הפקדות/.test(actionsText);
       const importGov = /המעסיק[^\n]*?(?:משרד(?:י)?\s*ה?ממשלה|מס\s*הכנסה|משרד\s*החינוך)/.test(actionsText);
@@ -710,10 +722,8 @@
         importGov ? (importKubLine ? importKubLine + "\n\n" : "") + 'יש לצרף גם טפסי נש"מ.' : importKubLine);
       let after = buildOpsText(opsConfig.afterTemplate, actionsText,
         needsKubiot ? opsConfig.kubiotYesAfter : opsConfig.kubiotNoAfter);
-      const impImportant = [];
-      if (importBlocks.indexOf("one") >= 0) impImportant.push("חשוב מאוד!\nלא לשכוח להעלות את האסמכתא לבפי, לשלוח לחברות ולשים תזכורת לראות ששוייך");
-      if (importBlocks.indexOf("mon") >= 0) impImportant.push("חשוב מאוד!\nלא לשכוח להעלות את האסמכתא לבפי ולשלוח לחברות");
-      if (impImportant.length) after += "\n\n" + impImportant.join("\n\n");
+      const impB = refAfterBlock(impOne, impMon);
+      if (impB) after += "\n\n" + impB;
       window.__importBefore = before;
       window.__importAfter = after;
       document.getElementById("importResult").classList.remove("hidden");
@@ -2173,15 +2183,7 @@
 
       let refStr = "";
       if (a.type !== "פרט" && ["קרן פנסיה","קרן השתלמות","קופת גמל","קופת גמל להשקעה"].includes(resolveProduct(a)) && shouldAskDeposit(a) && a.depositType && a.depositType !== "ללא הפקדה") {
-        const who = fundLabelSafe(a);
-        if (["חד פעמי","גם וגם"].includes(a.depositType) && a.depositOneTimeRef) {
-          if (a.depositOneTimeRef === "כן") refStr += '\nמצ"ב אסמכתא על ההעברה.';
-          else { refStr += "\nאסמכתא על ההעברה אשלח לי בהמשך תשימי לעצמך גם תזכורת שאגיד לו"; }
-        }
-        if (["הוראת קבע","גם וגם"].includes(a.depositType) && a.depositMonthlyRef) {
-          if (a.depositMonthlyRef === "כן") refStr += '\nמצ"ב אסמכתא על הוראה לחיוב חשבון.';
-          else { refStr += "\nאסמכתא על הוראה לחיוב חשבון אשלח לי בהמשך תשימי לעצמך גם תזכורת שאגיד לו"; }
-        }
+        refStr = refLines(["חד פעמי","גם וגם"].includes(a.depositType) ? a.depositOneTimeRef : "", ["הוראת קבע","גם וגם"].includes(a.depositType) ? a.depositMonthlyRef : "");
       }
       opsLines.push((opsLineText !== null ? opsLineText : line) + buildStartDateStr(a) + refStr + buildPayStr(a));
       const discStr = (a.type === "פרט" && (a.privateAction === "הפקה" || a.privateAction === "ביטול והפקה חדשה") && (a.policyDiscounts || "").trim())
@@ -2222,12 +2224,10 @@
       extraBlocks ? (beforeKubiotLine ? beforeKubiotLine + "\n\n" : "") + extraBlocks : beforeKubiotLine);
     let opsAfterText = buildOpsText(opsConfig.afterTemplate, opsAfterLines.join("\n\n"),
       needsKubiot ? opsConfig.kubiotYesAfter : opsConfig.kubiotNoAfter);
-    const importantBlocks = [];
-    if (actions.some(x => x && x.type !== "פרט" && shouldAskDeposit(x) && ["חד פעמי","גם וגם"].includes(x.depositType) && x.depositOneTimeRef === "כן"))
-      importantBlocks.push("חשוב מאוד!\nלא לשכוח להעלות את האסמכתא לבפי, לשלוח לחברות ולשים תזכורת לראות ששוייך");
-    if (actions.some(x => x && x.type !== "פרט" && shouldAskDeposit(x) && ["הוראת קבע","גם וגם"].includes(x.depositType) && x.depositMonthlyRef === "כן"))
-      importantBlocks.push("חשוב מאוד!\nלא לשכוח להעלות את האסמכתא לבפי ולשלוח לחברות");
-    if (importantBlocks.length) opsAfterText = opsAfterText + "\n\n" + importantBlocks.join("\n\n");
+    const impOneYes = actions.some(x => x && x.type !== "פרט" && shouldAskDeposit(x) && ["חד פעמי","גם וגם"].includes(x.depositType) && x.depositOneTimeRef === "כן");
+    const impMonYes = actions.some(x => x && x.type !== "פרט" && shouldAskDeposit(x) && ["הוראת קבע","גם וגם"].includes(x.depositType) && x.depositMonthlyRef === "כן");
+    const impBlock = refAfterBlock(impOneYes, impMonYes);
+    if (impBlock) opsAfterText = opsAfterText + "\n\n" + impBlock;
     window.__opsText = opsText;
     window.__opsAfterText = opsAfterText;
 
