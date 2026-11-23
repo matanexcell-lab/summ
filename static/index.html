@@ -179,6 +179,10 @@
           <textarea id="importText" placeholder="בהמשך לשיחתנו&#10;סוכם על הדברים הבאים:&#10;1. ..." style="min-height:140px;"></textarea>
           <div class="field-label" style="margin-top:8px;">או טען קובץ טקסט (.txt):</div>
           <input type="file" id="importFile" accept=".txt,text/plain" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:10px;background:white;" />
+          <div id="importRefOneBox" class="hidden" style="margin-top:8px;"><div class="field-label">זוהתה הפקדה חד פעמית — האם יש אסמכתא על ההעברה?</div>
+            <select id="importRefOne"><option value="">בחר...</option><option value="כן">כן</option><option value="לא">לא</option></select></div>
+          <div id="importRefMonthlyBox" class="hidden" style="margin-top:8px;"><div class="field-label">זוהתה הוראת קבע — האם יש אסמכתא על הוראה לחיוב חשבון?</div>
+            <select id="importRefMonthly"><option value="">בחר...</option><option value="כן">כן</option><option value="לא">לא</option></select></div>
           <button type="button" id="importBuildBtn" class="btn btn-primary btn-small" style="width:100%;">צור הנחיות לתפעול</button>
           <div id="importResult" class="hidden" style="margin-top:8px;">
             <div id="importKubiotNote" class="helper-text"></div>
@@ -672,17 +676,44 @@
       r.readAsText(f, "utf-8");
     });
 
+    const refUi = () => {
+      const t = document.getElementById("importText").value;
+      document.getElementById("importRefOneBox").classList.toggle("hidden", !/הפקדה חד[\s-]*פעמית/.test(t));
+      document.getElementById("importRefMonthlyBox").classList.toggle("hidden", !/הוראת קבע/.test(t));
+    };
+    document.getElementById("importText").addEventListener("input", refUi);
+    document.getElementById("importFile").addEventListener("change", () => setTimeout(refUi, 200));
+
     document.getElementById("importBuildBtn").onclick = () => {
       const raw = document.getElementById("importText").value;
-      const actionsText = extractActionsFromSummary(raw);
+      let actionsText = extractActionsFromSummary(raw);
       if (!actionsText) { alert("נא להדביק סיכום שיחה."); return; }
-      const needsKubiot = /עם (?:המשך )?הפקדות מהמעסיק/.test(actionsText);
+      // אסמכתאות: אותה התנהגות כמו בהזנה ידנית של הפקדה חד פעמית / הוראת קבע
+      const refOne = document.getElementById("importRefOne").value, refMon = document.getElementById("importRefMonthly").value;
+      const importBlocks = [];
+      actionsText = actionsText.split("\n").map(line => {
+        let out = line;
+        if (/הפקדה חד[\s-]*פעמית/.test(line) && refOne) {
+          out += refOne === "כן" ? '\nמצ"ב אסמכתא על ההעברה.' : "\nאסמכתא על ההעברה אשלח לי בהמשך תשימי לעצמך גם תזכורת שאגיד לו";
+          if (refOne === "כן" && importBlocks.indexOf("one") < 0) importBlocks.push("one");
+        }
+        if (/הוראת קבע/.test(line) && refMon) {
+          out += refMon === "כן" ? '\nמצ"ב אסמכתא על הוראה לחיוב חשבון.' : "\nאסמכתא על הוראה לחיוב חשבון אשלח לי בהמשך תשימי לעצמך גם תזכורת שאגיד לו";
+          if (refMon === "כן" && importBlocks.indexOf("mon") < 0) importBlocks.push("mon");
+        }
+        return out;
+      }).join("\n");
+      const needsKubiot = /עם (?:המשך )?הפקדות/.test(actionsText);
       const importGov = /המעסיק[^\n]*?(?:משרד(?:י)?\s*ה?ממשלה|מס\s*הכנסה|משרד\s*החינוך)/.test(actionsText);
       const importKubLine = needsKubiot ? opsConfig.kubiotYesBefore : opsConfig.kubiotNoBefore;
       const before = buildOpsText(opsConfig.beforeTemplate, actionsText,
         importGov ? (importKubLine ? importKubLine + "\n\n" : "") + 'יש לצרף גם טפסי נש"מ.' : importKubLine);
-      const after = buildOpsText(opsConfig.afterTemplate, actionsText,
+      let after = buildOpsText(opsConfig.afterTemplate, actionsText,
         needsKubiot ? opsConfig.kubiotYesAfter : opsConfig.kubiotNoAfter);
+      const impImportant = [];
+      if (importBlocks.indexOf("one") >= 0) impImportant.push("חשוב מאוד!\nלא לשכוח להעלות את האסמכתא לבפי, לשלוח לחברות ולשים תזכורת לראות ששוייך");
+      if (importBlocks.indexOf("mon") >= 0) impImportant.push("חשוב מאוד!\nלא לשכוח להעלות את האסמכתא לבפי ולשלוח לחברות");
+      if (impImportant.length) after += "\n\n" + impImportant.join("\n\n");
       window.__importBefore = before;
       window.__importAfter = after;
       document.getElementById("importResult").classList.remove("hidden");
